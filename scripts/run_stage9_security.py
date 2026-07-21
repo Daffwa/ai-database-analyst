@@ -7,6 +7,7 @@ import json
 import subprocess
 import sys
 import tempfile
+import uuid
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -130,61 +131,70 @@ def _sql_security_tests() -> bool:
     return tested.returncode == 0
 
 
-def _container_scan(temp_directory: Path) -> bool:
-    trivy_cache = temp_directory / "trivy-cache"
-    trivy_cache.mkdir()
-    cache_mount = f"type=bind,source={trivy_cache},target=/root/.cache/trivy"
-    for application_image in APPLICATION_IMAGES:
-        exists = _run(["docker", "image", "inspect", application_image], timeout=30)
-        if exists.returncode != 0:
-            return False
-        scanned = _run(
+def _container_scan() -> bool:
+    # A bind-mounted cache becomes root-owned when Trivy runs in its container,
+    # which prevents GitHub's non-root runner from cleaning its temp directory.
+    # A uniquely named Docker volume keeps the shared cache inside Docker and is
+    # removed explicitly regardless of the scan result.
+    cache_volume = f"ai-database-analyst-trivy-{uuid.uuid4().hex}"
+    created = _run(["docker", "volume", "create", cache_volume], timeout=30)
+    if created.returncode != 0:
+        return False
+    cache_mount = f"type=volume,source={cache_volume},target=/root/.cache/trivy"
+    try:
+        for application_image in APPLICATION_IMAGES:
+            exists = _run(["docker", "image", "inspect", application_image], timeout=30)
+            if exists.returncode != 0:
+                return False
+            scanned = _run(
+                [
+                    "docker",
+                    "run",
+                    "--rm",
+                    "--mount",
+                    "type=bind,source=/var/run/docker.sock,target=/var/run/docker.sock",
+                    "--mount",
+                    cache_mount,
+                    TRIVY_IMAGE,
+                    "image",
+                    "--scanners",
+                    "vuln,secret",
+                    "--ignore-unfixed",
+                    "--severity",
+                    "HIGH,CRITICAL",
+                    "--exit-code",
+                    "1",
+                    "--no-progress",
+                    "--skip-version-check",
+                    application_image,
+                ],
+                timeout=900,
+            )
+            if scanned.returncode != 0:
+                return False
+        config_scan = _run(
             [
                 "docker",
                 "run",
                 "--rm",
                 "--mount",
-                "type=bind,source=/var/run/docker.sock,target=/var/run/docker.sock",
+                f"type=bind,source={ROOT},target=/repo,readonly",
                 "--mount",
                 cache_mount,
                 TRIVY_IMAGE,
-                "image",
-                "--scanners",
-                "vuln,secret",
-                "--ignore-unfixed",
+                "config",
                 "--severity",
                 "HIGH,CRITICAL",
                 "--exit-code",
                 "1",
-                "--no-progress",
                 "--skip-version-check",
-                application_image,
+                "/repo",
             ],
-            timeout=900,
+            timeout=600,
         )
-        if scanned.returncode != 0:
-            return False
-    config_scan = _run(
-        [
-            "docker",
-            "run",
-            "--rm",
-            "--mount",
-            f"type=bind,source={ROOT},target=/repo,readonly",
-            "--mount",
-            cache_mount,
-            TRIVY_IMAGE,
-            "config",
-            "--severity",
-            "HIGH,CRITICAL",
-            "--exit-code",
-            "1",
-            "--skip-version-check",
-            "/repo",
-        ],
-        timeout=600,
-    )
-    return config_scan.returncode == 0
+        return config_scan.returncode == 0
+    finally:
+        _run(["docker", "volume", "rm", "--force", cache_volume], timeout=30)
 
 
 def main() -> int:
@@ -202,9 +212,7 @@ def main() -> int:
             "sast_passed": _sast(temp_directory),
             "secret_scan_passed": _secret_scan(),
             "sql_security_tests_passed": _sql_security_tests(),
-            "container_scan_passed": (
-                None if args.skip_containers else _container_scan(temp_directory)
-            ),
+            "container_scan_passed": (None if args.skip_containers else _container_scan()),
         }
     executed_checks_passed = all(value is True for value in checks.values() if value is not None)
     complete_gate_passed = executed_checks_passed and checks["container_scan_passed"] is True
