@@ -1,18 +1,17 @@
 {
   "blockers": [
-    "Authorize and verify the GitHub owner, visibility, and remote.",
     "Verify the required hosted GitHub Actions runs."
   ],
   "broken_local_links": [],
   "checked_at": "2026-07-21T12:57:16.037432+00:00",
   "deployment_required_for_local_gate": false,
   "external_checks": {
-    "github_remote_verified": false,
+    "github_remote_verified": true,
     "hosted_actions_verified": false,
     "project_license_selected": true,
     "public_deployment_performed": false
   },
-  "github_remote": null,
+  "github_remote": "https://github.com/Daffwa/ai-database-analyst.git",
   "local_checks": {
     "clean_checkout_gate_verified": true,
     "compose_gate_verified": true,

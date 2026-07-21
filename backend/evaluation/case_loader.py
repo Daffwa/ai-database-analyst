@@ -31,7 +31,7 @@ class EvaluationDatasetError(ValueError):
 
 @dataclass(frozen=True, slots=True)
 class EvaluationDataset:
-    """Loaded cases plus the exact content identity of their JSONL source."""
+    """Loaded cases plus the platform-independent identity of their JSONL source."""
 
     version: str
     sha256: str
@@ -92,9 +92,14 @@ def load_evaluation_dataset(
                 "evaluation category distribution does not match the required 100-case contract"
             )
 
+    # Git may materialize text files with different platform line endings. Hash a
+    # canonical LF representation so the same committed corpus has one identity
+    # on Windows and Linux while all other byte-level drift remains detectable.
+    canonical_raw = raw.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+
     return EvaluationDataset(
         version=expected_version,
-        sha256=hashlib.sha256(raw).hexdigest(),
+        sha256=hashlib.sha256(canonical_raw).hexdigest(),
         path=path,
         cases=tuple(cases),
     )

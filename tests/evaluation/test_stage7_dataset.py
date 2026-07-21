@@ -39,6 +39,19 @@ def test_dataset_questions_are_not_verified_prompt_examples() -> None:
     assert all(case.question.casefold() not in verified_text for case in dataset.cases)
 
 
+def test_dataset_identity_is_stable_across_platform_line_endings(tmp_path: Path) -> None:
+    source = DATASET_PATH.read_bytes().replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+    lf_path = tmp_path / "lf.jsonl"
+    crlf_path = tmp_path / "crlf.jsonl"
+    lf_path.write_bytes(source)
+    crlf_path.write_bytes(source.replace(b"\n", b"\r\n"))
+
+    lf_dataset = load_evaluation_dataset(lf_path)
+    crlf_dataset = load_evaluation_dataset(crlf_path)
+
+    assert lf_dataset.sha256 == crlf_dataset.sha256
+
+
 @pytest.mark.parametrize("mutation", ["duplicate", "version", "distribution", "invalid_json"])
 def test_loader_fails_closed_on_dataset_drift(tmp_path: Path, mutation: str) -> None:
     lines = DATASET_PATH.read_text(encoding="utf-8").splitlines()

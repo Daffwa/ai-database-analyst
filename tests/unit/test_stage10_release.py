@@ -27,5 +27,8 @@ def test_stage10_evaluator_records_local_and_external_state_separately() -> None
     assert report["local_release_gate_passed"] is True
     assert report["stage_gate_passed"] is False
     assert report["external_checks"]["project_license_selected"] is True
-    assert report["external_checks"]["github_remote_verified"] is False
+    remote = report["github_remote"]
+    assert report["external_checks"]["github_remote_verified"] is (
+        isinstance(remote, str) and "github.com" in remote.lower()
+    )
     assert report["broken_local_links"] == []
