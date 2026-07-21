@@ -1,0 +1,17 @@
+title = "AI Database Analyst secret scanning"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Generated and local-only paths excluded from repository scanning"
+paths = [
+  '''(^|/)\.env$''',
+  '''(^|/)\.env\.compose$''',
+  '''(^|/)\.venv/''',
+  '''(^|/)venv/''',
+  '''(^|/)\.git/''',
+  '''(^|/)htmlcov/''',
+  '''(^|/)reports/security/''',
+  '''(^|/)data/raw/Chinook_PostgreSql\.sql$''',
+]

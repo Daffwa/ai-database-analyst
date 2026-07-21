@@ -1,0 +1,149 @@
+semantic_version: v1
+schema_hash: 58c6c16d147308c44996f88c3b893c0baa264a9b0ca6d06418f1ba3f199def7c
+queries:
+  - query_id: customer_count
+    questions:
+      id: ["Berapa jumlah pelanggan?"]
+      en: ["How many customers are there?"]
+    sql: SELECT COUNT(CustomerId) AS customer_count FROM Customer
+    tables: [Customer]
+    columns: [Customer.CustomerId]
+    metric_ids: [customer_count]
+    tags: [customer, count]
+    expected_result_sha256: 3f73b7ad322a5a588c8f4d3e0aa4b873e85eb7c0f9c84d5fc0608a8f950cf932
+    status: valid
+    review_status: project_verified
+    source_refs: [backend/evaluation/mini_cases.py]
+
+  - query_id: total_revenue
+    questions:
+      id: ["Berapa total nilai seluruh invoice?"]
+      en: ["What is the total value of all invoices?"]
+    sql: SELECT ROUND(SUM(Total), 2) AS total_invoice_value FROM Invoice
+    tables: [Invoice]
+    columns: [Invoice.Total]
+    metric_ids: [total_revenue]
+    tags: [revenue, invoice, aggregate]
+    expected_result_sha256: 1aa3818bf795ecaaf80bc052f1c705a636c9b96e8c7b36fe4db53d9e6c700444
+    status: valid
+    review_status: project_verified
+    source_refs: [backend/evaluation/mini_cases.py]
+
+  - query_id: average_invoice_value
+    questions:
+      id: ["Berapa rata-rata nilai invoice?"]
+      en: ["What is the average invoice value?"]
+    sql: SELECT ROUND(AVG(Total), 2) AS average_invoice_value FROM Invoice
+    tables: [Invoice]
+    columns: [Invoice.Total]
+    metric_ids: [average_invoice_value]
+    tags: [invoice, average]
+    expected_result_sha256: 16c1103e8f3703d7cd6a5914e1c6bc2e9751db6d0d0a7d2b5e87b73568a6dfc1
+    status: valid
+    review_status: project_verified
+    source_refs: [backend/evaluation/mini_cases.py]
+
+  - query_id: top_revenue_country
+    questions:
+      id: ["Negara billing mana yang memiliki pendapatan terbesar?"]
+      en: ["Which billing country has the highest revenue?"]
+    sql: SELECT BillingCountry, ROUND(SUM(Total), 2) AS revenue FROM Invoice GROUP BY BillingCountry ORDER BY revenue DESC, BillingCountry LIMIT 1
+    tables: [Invoice]
+    columns: [Invoice.BillingCountry, Invoice.Total]
+    metric_ids: [total_revenue]
+    tags: [revenue, country, ranking]
+    expected_result_sha256: 66369ec3f621b830d083c0b6a24a77ceab19175075e858a79d93df041a849963
+    status: valid
+    review_status: project_verified
+    source_refs: [backend/evaluation/mini_cases.py]
+
+  - query_id: top_customers_by_spend
+    questions:
+      id: ["Tampilkan lima pelanggan dengan total belanja terbesar."]
+      en: ["Show the five customers with the highest total spend."]
+    sql: SELECT c.CustomerId, c.FirstName, c.LastName, ROUND(SUM(i.Total), 2) AS total_spend FROM Customer AS c JOIN Invoice AS i ON i.CustomerId = c.CustomerId GROUP BY c.CustomerId, c.FirstName, c.LastName ORDER BY total_spend DESC, c.CustomerId LIMIT 5
+    tables: [Customer, Invoice]
+    columns: [Customer.CustomerId, Customer.FirstName, Customer.LastName, Invoice.CustomerId, Invoice.Total]
+    metric_ids: [customer_total_spend]
+    join_ids: [invoice_to_customer]
+    tags: [customer, spend, ranking]
+    expected_result_sha256: 2989c37f7a0100b93371120af06c30fed9bbaa0510aeb8a33ea86232072d865c
+    status: valid
+    review_status: project_verified
+    source_refs: [backend/evaluation/mini_cases.py]
+
+  - query_id: sales_by_genre
+    questions:
+      id: ["Tampilkan total penjualan per genre."]
+      en: ["Show total sales by genre."]
+    sql: SELECT g.Name AS genre, ROUND(SUM(il.UnitPrice * il.Quantity), 2) AS sales FROM InvoiceLine AS il JOIN Track AS t ON t.TrackId = il.TrackId JOIN Genre AS g ON g.GenreId = t.GenreId GROUP BY g.GenreId, g.Name ORDER BY sales DESC, genre
+    tables: [Genre, InvoiceLine, Track]
+    columns: [InvoiceLine.UnitPrice, InvoiceLine.Quantity, InvoiceLine.TrackId, Track.TrackId, Track.GenreId, Genre.GenreId, Genre.Name]
+    metric_ids: [product_sales_value]
+    join_ids: [invoice_line_to_track, track_to_genre]
+    assumptions:
+      id: [Penjualan dihitung sebagai UnitPrice dikali Quantity.]
+      en: [Sales are calculated as UnitPrice multiplied by Quantity.]
+    tags: [sales, genre, aggregate]
+    expected_result_sha256: 681e3fbc92ecf7f938cfeff4d6853c9188c4bad6160f91ece98fa9a394172260
+    status: valid
+    review_status: project_verified
+    source_refs: [backend/evaluation/mini_cases.py]
+
+  - query_id: monthly_revenue_trend
+    questions:
+      id: ["Bagaimana tren pendapatan setiap bulan?"]
+      en: ["What is the monthly revenue trend?"]
+    sql: SELECT strftime('%Y-%m', InvoiceDate) AS month, ROUND(SUM(Total), 2) AS revenue FROM Invoice GROUP BY month ORDER BY month
+    tables: [Invoice]
+    columns: [Invoice.InvoiceDate, Invoice.Total]
+    metric_ids: [total_revenue]
+    tags: [revenue, month, trend]
+    expected_result_sha256: 195c5e22ae921d061195eb48f79ae9445bc98e49960eac4e72fd6c9ac3db2ef4
+    status: valid
+    review_status: project_verified
+    source_refs: [backend/evaluation/mini_cases.py]
+
+  - query_id: invoice_count_by_year
+    questions:
+      id: ["Bandingkan jumlah invoice per tahun."]
+      en: ["Compare invoice counts by year."]
+    sql: SELECT strftime('%Y', InvoiceDate) AS year, COUNT(InvoiceId) AS invoice_count FROM Invoice GROUP BY year ORDER BY year
+    tables: [Invoice]
+    columns: [Invoice.InvoiceDate, Invoice.InvoiceId]
+    metric_ids: [invoice_count]
+    tags: [invoice, year, count]
+    expected_result_sha256: 8e9bc945756f9126dc907093f76a7ff8775091ab21550d9881ebbfc263245708
+    status: valid
+    review_status: project_verified
+    source_refs: [backend/evaluation/mini_cases.py]
+
+  - query_id: frequent_customers
+    questions:
+      id: ["Siapa sepuluh pelanggan yang paling sering bertransaksi?"]
+      en: ["Which ten customers transact most frequently?"]
+    sql: SELECT c.CustomerId, c.FirstName, c.LastName, COUNT(i.InvoiceId) AS transaction_count FROM Customer AS c JOIN Invoice AS i ON i.CustomerId = c.CustomerId GROUP BY c.CustomerId, c.FirstName, c.LastName ORDER BY transaction_count DESC, c.CustomerId LIMIT 10
+    tables: [Customer, Invoice]
+    columns: [Customer.CustomerId, Customer.FirstName, Customer.LastName, Invoice.CustomerId, Invoice.InvoiceId]
+    metric_ids: [invoice_count]
+    join_ids: [invoice_to_customer]
+    tags: [customer, transaction, ranking]
+    expected_result_sha256: 4b0dafbd1196b06f3bd5125642f876066f8b8a90b1f2e9b940d0d78d57e6ac8f
+    status: valid
+    review_status: project_verified
+    source_refs: [backend/evaluation/mini_cases.py]
+
+  - query_id: artist_with_most_tracks
+    questions:
+      id: ["Artis mana yang memiliki track terbanyak?"]
+      en: ["Which artist has the most tracks?"]
+    sql: SELECT ar.ArtistId, ar.Name, COUNT(t.TrackId) AS track_count FROM Artist AS ar JOIN Album AS al ON al.ArtistId = ar.ArtistId JOIN Track AS t ON t.AlbumId = al.AlbumId GROUP BY ar.ArtistId, ar.Name ORDER BY track_count DESC, ar.ArtistId LIMIT 1
+    tables: [Album, Artist, Track]
+    columns: [Artist.ArtistId, Artist.Name, Album.ArtistId, Album.AlbumId, Track.AlbumId, Track.TrackId]
+    metric_ids: [track_count]
+    join_ids: [album_to_artist, track_to_album]
+    tags: [artist, track, ranking]
+    expected_result_sha256: ccb27a82657cbfb10462ddb876f982143be4526c31deb58ce1086f56f85b16c4
+    status: valid
+    review_status: project_verified
+    source_refs: [backend/evaluation/mini_cases.py]

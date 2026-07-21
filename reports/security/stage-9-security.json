@@ -1,0 +1,16 @@
+{
+  "checked_at": "2026-07-21T11:39:29.122021+00:00",
+  "checks": {
+    "container_scan_passed": true,
+    "dependency_audit_passed": true,
+    "sast_passed": true,
+    "secret_scan_passed": true,
+    "sql_security_tests_passed": true
+  },
+  "executed_checks_passed": true,
+  "gitleaks_image": "ghcr.io/gitleaks/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f",
+  "report_version": "stage-9-security-v1",
+  "sensitive_findings_in_report": false,
+  "stage_gate_passed": true,
+  "trivy_image": "aquasec/trivy:0.70.0@sha256:be1190afcb28352bfddc4ddeb71470835d16462af68d310f9f4bca710961a41e"
+}

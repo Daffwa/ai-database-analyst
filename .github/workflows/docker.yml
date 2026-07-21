@@ -1,0 +1,41 @@
+name: Docker
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docker-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  clean-compose-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout without persisted credentials
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - name: Install pinned uv and Python
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+        with:
+          version: 0.11.14
+          python-version: "3.12"
+      - name: Build without cache and verify the complete stack
+        run: uv run python scripts/dev.py docker-smoke
+      - name: Upload Compose gate evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: stage-9-compose
+          path: reports/test-results/stage-9-compose.json
+          retention-days: 14
+
+# Image publication is intentionally absent. A registry push may be added only
+# for a tag/release after registry ownership and credentials are configured.

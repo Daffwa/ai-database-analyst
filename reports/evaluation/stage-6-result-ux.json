@@ -1,0 +1,23 @@
+{
+  "evaluation_version": "stage-6-v1",
+  "case_count": 20,
+  "database_result_matches": 20,
+  "presentation_matches": 20,
+  "chart_contracts_valid": 20,
+  "expected_chart_case_count": 4,
+  "expected_chart_matches": 4,
+  "grounded_summaries": 20,
+  "csv_exports_valid": 20,
+  "chart_type_counts": {
+    "kpi": 3,
+    "table": 3,
+    "line": 5,
+    "bar": 9
+  },
+  "empty_result_state_valid": true,
+  "feedback_saved": true,
+  "history_metadata_safe": true,
+  "database_explorer_table_count": 11,
+  "system_info_safe": true,
+  "failed_case_ids": []
+}

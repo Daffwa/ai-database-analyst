@@ -1,0 +1,8 @@
+{
+  "blocker": null,
+  "checked_at": "2026-07-21T11:26:11.409293+00:00",
+  "container_image": "postgres:17.10-alpine3.24",
+  "postgresql_integration_verified": true,
+  "report_version": "stage-8-postgres-v1",
+  "test_return_code": 0
+}

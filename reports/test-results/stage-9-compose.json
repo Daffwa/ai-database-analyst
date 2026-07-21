@@ -1,0 +1,22 @@
+{
+  "api_image_user": "10001:10001",
+  "blocker": null,
+  "bootstrap_completed": true,
+  "build_without_cache": true,
+  "checked_at": "2026-07-21T11:26:25.467015+00:00",
+  "frontend_image_user": "10001:10001",
+  "image_secret_detected": false,
+  "operational_metrics_verified": true,
+  "project_name": "ai-database-analyst-stage9-gate",
+  "project_resources_removed": true,
+  "report_version": "stage-9-compose-v1",
+  "request_id_propagated": true,
+  "sensitive_log_payload_detected": false,
+  "services_healthy": [
+    "db",
+    "api",
+    "frontend"
+  ],
+  "stage_gate_passed": true,
+  "structured_log_fields_verified": true
+}

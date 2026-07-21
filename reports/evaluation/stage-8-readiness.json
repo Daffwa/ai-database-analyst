@@ -1,0 +1,28 @@
+{
+  "blocker": null,
+  "checked_at": "2026-07-21T12:56:37.429179+00:00",
+  "checks": {
+    "alembic_revision_present": true,
+    "fastapi_factory_present": true,
+    "frontend_uses_api_client": true,
+    "metadata_models_complete": true,
+    "metadata_omits_raw_sensitive_payloads": true,
+    "postgres_artifact_pinned": true,
+    "postgres_integration_tests_present": true,
+    "postgres_semantic_overlay_valid": true,
+    "postgres_snapshot_content_addressed": true
+  },
+  "implementation_gate_passed": true,
+  "postgresql_integration_verified": true,
+  "provenance": {
+    "api_version": "v1",
+    "chinook_postgresql_sha256": "e3fde5c1a5b51a2a91429a702c9ca6e69ba56e6c7f5e112724d70c3d03db695e",
+    "chinook_version": "v1.4.5",
+    "prompt_version": "v2",
+    "schema_hash": "f3569fc49358ddbd50328badf58ac4748cd0ccc60995c741648cb79b2db02e4e",
+    "semantic_content_hash": "c0187da88398e477c15cbf380d7c277b486067d4a0f74105e119ac8f3c3fde8d",
+    "semantic_version": "v1-postgresql"
+  },
+  "report_version": "stage-8-readiness-v1",
+  "stage_gate_passed": true
+}

@@ -1,0 +1,123 @@
+semantic_version: v1
+schema_hash: 58c6c16d147308c44996f88c3b893c0baa264a9b0ca6d06418f1ba3f199def7c
+joins:
+  - join_id: album_to_artist
+    left_table: Album
+    left_columns: [ArtistId]
+    right_table: Artist
+    right_columns: [ArtistId]
+    cardinality: many_to_one
+    approval_status: approved
+    double_counting_risk: low
+    guidance: Banyak album dapat dimiliki satu artist; agregasikan pada grain yang diminta.
+    source_refs: [data/schemas/chinook-v1.4.5.json]
+
+  - join_id: customer_to_support_rep
+    left_table: Customer
+    left_columns: [SupportRepId]
+    right_table: Employee
+    right_columns: [EmployeeId]
+    cardinality: many_to_one
+    approval_status: approved
+    double_counting_risk: low
+    guidance: Banyak pelanggan dapat didukung satu employee.
+    source_refs: [data/schemas/chinook-v1.4.5.json]
+
+  - join_id: employee_to_manager
+    left_table: Employee
+    left_columns: [ReportsTo]
+    right_table: Employee
+    right_columns: [EmployeeId]
+    cardinality: many_to_one
+    approval_status: approved
+    double_counting_risk: low
+    guidance: Self-join wajib memakai alias berbeda untuk employee dan manager.
+    source_refs: [data/schemas/chinook-v1.4.5.json]
+
+  - join_id: invoice_to_customer
+    left_table: Invoice
+    left_columns: [CustomerId]
+    right_table: Customer
+    right_columns: [CustomerId]
+    cardinality: many_to_one
+    approval_status: approved
+    double_counting_risk: low
+    guidance: Banyak invoice dimiliki satu customer; group customer sebelum ranking.
+    source_refs: [data/schemas/chinook-v1.4.5.json]
+
+  - join_id: invoice_line_to_invoice
+    left_table: InvoiceLine
+    left_columns: [InvoiceId]
+    right_table: Invoice
+    right_columns: [InvoiceId]
+    cardinality: many_to_one
+    approval_status: approved
+    double_counting_risk: high
+    guidance: Invoice.Total berulang untuk setiap line; jangan menjumlahkannya setelah join tanpa deduplikasi InvoiceId.
+    source_refs: [data/schemas/chinook-v1.4.5.json]
+
+  - join_id: invoice_line_to_track
+    left_table: InvoiceLine
+    left_columns: [TrackId]
+    right_table: Track
+    right_columns: [TrackId]
+    cardinality: many_to_one
+    approval_status: approved
+    double_counting_risk: low
+    guidance: Gunakan untuk analisis penjualan pada dimensi track, album, artist, genre, atau media type.
+    source_refs: [data/schemas/chinook-v1.4.5.json]
+
+  - join_id: playlist_track_to_playlist
+    left_table: PlaylistTrack
+    left_columns: [PlaylistId]
+    right_table: Playlist
+    right_columns: [PlaylistId]
+    cardinality: many_to_one
+    approval_status: approved
+    double_counting_risk: medium
+    guidance: Grain PlaylistTrack adalah pasangan playlist-track; jangan gunakan untuk total penjualan global.
+    source_refs: [data/schemas/chinook-v1.4.5.json]
+
+  - join_id: playlist_track_to_track
+    left_table: PlaylistTrack
+    left_columns: [TrackId]
+    right_table: Track
+    right_columns: [TrackId]
+    cardinality: many_to_one
+    approval_status: approved
+    double_counting_risk: high
+    guidance: Satu track dapat muncul di beberapa playlist sehingga agregasi track dapat berulang.
+    source_refs: [data/schemas/chinook-v1.4.5.json]
+
+  - join_id: track_to_album
+    left_table: Track
+    left_columns: [AlbumId]
+    right_table: Album
+    right_columns: [AlbumId]
+    cardinality: many_to_one
+    approval_status: approved
+    double_counting_risk: low
+    guidance: Banyak track dapat berada dalam satu album.
+    source_refs: [data/schemas/chinook-v1.4.5.json]
+
+  - join_id: track_to_genre
+    left_table: Track
+    left_columns: [GenreId]
+    right_table: Genre
+    right_columns: [GenreId]
+    cardinality: many_to_one
+    approval_status: approved
+    double_counting_risk: low
+    guidance: Banyak track dapat memiliki satu genre.
+    source_refs: [data/schemas/chinook-v1.4.5.json]
+
+  - join_id: track_to_media_type
+    left_table: Track
+    left_columns: [MediaTypeId]
+    right_table: MediaType
+    right_columns: [MediaTypeId]
+    cardinality: many_to_one
+    approval_status: approved
+    double_counting_risk: low
+    guidance: Banyak track dapat memiliki satu media type.
+    source_refs: [data/schemas/chinook-v1.4.5.json]

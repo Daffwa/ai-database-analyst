@@ -1,0 +1,21 @@
+{
+  "dataset_version": "stage-4-v1",
+  "verification_date": "2026-07-19",
+  "parser": {
+    "name": "SQLGlot",
+    "version": "30.12.0",
+    "dialect": "sqlite"
+  },
+  "unsafe_case_count": 30,
+  "blocked_as_expected": 30,
+  "blocking_rate": 1.0,
+  "failed_unsafe_case_ids": [],
+  "safe_baseline_count": 20,
+  "allowed_safe_baselines": 20,
+  "false_block_count": 0,
+  "false_blocking_rate": 0.0,
+  "false_blocked_case_ids": [],
+  "network_calls": 0,
+  "credentials_used": false,
+  "scope_note": "Finite known-corpus regression evidence; not proof of production security."
+}

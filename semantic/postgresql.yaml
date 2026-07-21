@@ -1,0 +1,13 @@
+base_semantic_version: v1
+semantic_version: v1-postgresql
+base_schema_hash: 58c6c16d147308c44996f88c3b893c0baa264a9b0ca6d06418f1ba3f199def7c
+schema_hash: f3569fc49358ddbd50328badf58ac4748cd0ccc60995c741648cb79b2db02e4e
+dialect: postgres
+clear_expected_result_hashes: true
+query_overrides:
+  monthly_revenue_trend:
+    sql: SELECT SUBSTR(CAST(InvoiceDate AS TEXT), 1, 7) AS month, ROUND(SUM(Total), 2) AS revenue FROM Invoice GROUP BY month ORDER BY month
+    expected_result_sha256: null
+  invoice_count_by_year:
+    sql: SELECT SUBSTR(CAST(InvoiceDate AS TEXT), 1, 4) AS year, COUNT(InvoiceId) AS invoice_count FROM Invoice GROUP BY year ORDER BY year
+    expected_result_sha256: null

@@ -1,0 +1,73 @@
+{
+  "report_version": "stage-7-regression-v1",
+  "baseline_run_id": "8407005c-a78a-4ea9-b6b9-0098271e4af6",
+  "current_run_id": "8407005c-a78a-4ea9-b6b9-0098271e4af6",
+  "comparable": true,
+  "comparison_notes": [],
+  "thresholds": {
+    "max_execution_accuracy_drop": 0.0,
+    "max_valid_sql_rate_drop": 0.0,
+    "max_clarification_accuracy_drop": 0.0,
+    "max_false_blocking_rate_increase": 0.0,
+    "max_latency_p95_increase_ratio": 0.5,
+    "required_unsafe_blocking_rate": 1.0
+  },
+  "checks": [
+    {
+      "metric": "unsafe_blocking_rate",
+      "baseline": 1.0,
+      "current": 1.0,
+      "delta": 0.0,
+      "threshold": 1.0,
+      "passed": true,
+      "gate": true
+    },
+    {
+      "metric": "execution_accuracy",
+      "baseline": 1.0,
+      "current": 1.0,
+      "delta": 0.0,
+      "threshold": 0.0,
+      "passed": true,
+      "gate": true
+    },
+    {
+      "metric": "valid_sql_rate",
+      "baseline": 1.0,
+      "current": 1.0,
+      "delta": 0.0,
+      "threshold": 0.0,
+      "passed": true,
+      "gate": true
+    },
+    {
+      "metric": "clarification_accuracy",
+      "baseline": 1.0,
+      "current": 1.0,
+      "delta": 0.0,
+      "threshold": 0.0,
+      "passed": true,
+      "gate": true
+    },
+    {
+      "metric": "false_blocking_rate",
+      "baseline": 0.0,
+      "current": 0.0,
+      "delta": 0.0,
+      "threshold": 0.0,
+      "passed": true,
+      "gate": true
+    },
+    {
+      "metric": "latency_p95_ms",
+      "baseline": 52.91209999995772,
+      "current": 52.91209999995772,
+      "delta": 0.0,
+      "threshold": 79.36814999993658,
+      "passed": true,
+      "gate": false
+    }
+  ],
+  "gate_passed": true,
+  "gate_failures": []
+}

@@ -1,0 +1,207 @@
+semantic_version: v1
+schema_hash: 58c6c16d147308c44996f88c3b893c0baa264a9b0ca6d06418f1ba3f199def7c
+metrics:
+  - metric_id: total_revenue
+    label: {id: Total pendapatan, en: Total revenue}
+    definition:
+      id: Jumlah nilai final seluruh Invoice pada grain invoice.
+      en: Sum of final Invoice values at invoice grain.
+    aliases:
+      id: [total pendapatan, total omzet, nilai seluruh invoice]
+      en: [total revenue, total invoiced value]
+    expression: SUM(Invoice.Total)
+    source_table: Invoice
+    term_ids: [revenue]
+    grain: Satu baris per Invoice sebelum agregasi.
+    aggregation: sum
+    format: currency
+    dimensions: [Invoice.BillingCountry, Invoice.CustomerId, Invoice.InvoiceDate]
+    time_dimension: Invoice.InvoiceDate
+    requires_period: false
+    double_counting_note: Jangan jumlahkan Invoice.Total setelah join ke InvoiceLine karena invoice akan berulang per line.
+    review_status: project_verified
+    source_refs: [data/schemas/chinook-v1.4.5.json, backend/evaluation/mini_cases.py]
+
+  - metric_id: invoice_count
+    label: {id: Jumlah transaksi, en: Transaction count}
+    definition:
+      id: Jumlah baris Invoice.
+      en: Count of Invoice rows.
+    aliases:
+      id: [jumlah transaksi, jumlah invoice]
+      en: [transaction count, invoice count]
+    expression: COUNT(Invoice.InvoiceId)
+    source_table: Invoice
+    term_ids: [transaction]
+    grain: Satu transaksi per InvoiceId.
+    aggregation: count
+    format: integer
+    dimensions: [Invoice.BillingCountry, Invoice.CustomerId, Invoice.InvoiceDate]
+    time_dimension: Invoice.InvoiceDate
+    requires_period: false
+    double_counting_note: Gunakan COUNT(DISTINCT Invoice.InvoiceId) jika query harus bergabung ke InvoiceLine.
+    review_status: project_verified
+    source_refs: [data/schemas/chinook-v1.4.5.json, backend/evaluation/mini_cases.py]
+
+  - metric_id: customer_count
+    label: {id: Jumlah pelanggan, en: Customer count}
+    definition:
+      id: Jumlah baris Customer berdasarkan CustomerId unik.
+      en: Count of Customer rows by unique CustomerId.
+    aliases:
+      id: [jumlah pelanggan, banyak pelanggan]
+      en: [customer count, number of customers]
+    expression: COUNT(Customer.CustomerId)
+    source_table: Customer
+    term_ids: []
+    grain: Satu pelanggan per CustomerId.
+    aggregation: count
+    format: integer
+    dimensions: [Customer.Country, Customer.City, Customer.SupportRepId]
+    requires_period: false
+    double_counting_note: Gunakan COUNT(DISTINCT Customer.CustomerId) setelah join one-to-many ke Invoice.
+    review_status: project_verified
+    source_refs: [data/schemas/chinook-v1.4.5.json, backend/evaluation/mini_cases.py]
+
+  - metric_id: average_invoice_value
+    label: {id: Rata-rata nilai invoice, en: Average invoice value}
+    definition:
+      id: Rata-rata Invoice.Total pada grain invoice.
+      en: Average Invoice.Total at invoice grain.
+    aliases:
+      id: [rata-rata invoice, rata-rata nilai transaksi]
+      en: [average invoice value, average transaction value]
+    expression: AVG(Invoice.Total)
+    source_table: Invoice
+    term_ids: []
+    grain: Satu baris per Invoice sebelum agregasi.
+    aggregation: average
+    format: currency
+    dimensions: [Invoice.BillingCountry, Invoice.InvoiceDate]
+    time_dimension: Invoice.InvoiceDate
+    requires_period: false
+    double_counting_note: Jangan hitung AVG(Invoice.Total) setelah join ke InvoiceLine tanpa deduplikasi invoice.
+    review_status: project_verified
+    source_refs: [data/schemas/chinook-v1.4.5.json, backend/evaluation/mini_cases.py]
+
+  - metric_id: active_customer_count
+    label: {id: Jumlah pelanggan aktif, en: Active customer count}
+    definition:
+      id: Jumlah CustomerId berbeda yang memiliki Invoice sesuai definisi periode yang disetujui.
+      en: Distinct CustomerIds with an Invoice under the agreed period definition.
+    aliases:
+      id: [jumlah pelanggan aktif]
+      en: [active customer count]
+    expression: COUNT(DISTINCT Invoice.CustomerId)
+    source_table: Invoice
+    term_ids: [active_customer]
+    grain: Pelanggan berbeda pada periode terpilih.
+    aggregation: count_distinct
+    format: integer
+    dimensions: [Invoice.BillingCountry, Invoice.InvoiceDate]
+    time_dimension: Invoice.InvoiceDate
+    requires_period: true
+    double_counting_note: Periode wajib eksplisit; tanpa periode metric tidak boleh diasumsikan.
+    review_status: project_verified
+    source_refs: [data/schemas/chinook-v1.4.5.json, docs/question-inventory.md]
+
+  - metric_id: customer_total_spend
+    label: {id: Total belanja pelanggan, en: Customer total spend}
+    definition:
+      id: Jumlah Invoice.Total per CustomerId.
+      en: Sum of Invoice.Total per CustomerId.
+    aliases:
+      id: [total belanja pelanggan, pengeluaran pelanggan]
+      en: [customer total spend, customer lifetime spend]
+    expression: SUM(Invoice.Total)
+    source_table: Invoice
+    term_ids: [purchase]
+    grain: Satu hasil per CustomerId setelah agregasi.
+    aggregation: sum
+    format: currency
+    dimensions: [Invoice.CustomerId, Invoice.BillingCountry, Invoice.InvoiceDate]
+    time_dimension: Invoice.InvoiceDate
+    requires_period: false
+    double_counting_note: Group by CustomerId dan jangan join InvoiceLine ketika menjumlahkan Invoice.Total.
+    review_status: project_verified
+    source_refs: [data/schemas/chinook-v1.4.5.json, backend/evaluation/mini_cases.py]
+
+  - metric_id: product_sales_value
+    label: {id: Nilai penjualan produk, en: Product sales value}
+    definition:
+      id: Jumlah UnitPrice dikali Quantity pada InvoiceLine.
+      en: Sum of UnitPrice multiplied by Quantity on InvoiceLine.
+    aliases:
+      id: [nilai penjualan produk, pendapatan produk]
+      en: [product sales value, product revenue]
+    expression: SUM(InvoiceLine.UnitPrice * InvoiceLine.Quantity)
+    source_table: InvoiceLine
+    term_ids: [sales, largest_sales]
+    grain: Satu baris per InvoiceLine sebelum agregasi.
+    aggregation: sum
+    format: currency
+    dimensions: [InvoiceLine.TrackId, InvoiceLine.InvoiceId]
+    requires_period: false
+    double_counting_note: Join ke Track aman pada many-to-one; join ke PlaylistTrack dapat menggandakan track lintas playlist.
+    review_status: project_verified
+    source_refs: [data/schemas/chinook-v1.4.5.json, backend/evaluation/mini_cases.py]
+
+  - metric_id: units_sold
+    label: {id: Unit terjual, en: Units sold}
+    definition:
+      id: Jumlah InvoiceLine.Quantity.
+      en: Sum of InvoiceLine.Quantity.
+    aliases:
+      id: [unit terjual, volume penjualan]
+      en: [units sold, sales volume]
+    expression: SUM(InvoiceLine.Quantity)
+    source_table: InvoiceLine
+    term_ids: [sales, largest_sales]
+    grain: Satu baris per InvoiceLine sebelum agregasi.
+    aggregation: sum
+    format: integer
+    dimensions: [InvoiceLine.TrackId, InvoiceLine.InvoiceId]
+    requires_period: false
+    double_counting_note: Jangan join ke hubungan many-to-many PlaylistTrack ketika menghitung total global.
+    review_status: project_verified
+    source_refs: [data/schemas/chinook-v1.4.5.json]
+
+  - metric_id: track_count
+    label: {id: Jumlah track, en: Track count}
+    definition:
+      id: Jumlah TrackId pada grain track.
+      en: Count of TrackId at track grain.
+    aliases:
+      id: [jumlah track, jumlah lagu]
+      en: [track count, number of tracks]
+    expression: COUNT(Track.TrackId)
+    source_table: Track
+    term_ids: []
+    grain: Satu track per TrackId.
+    aggregation: count
+    format: integer
+    dimensions: [Track.GenreId, Track.AlbumId, Track.MediaTypeId]
+    requires_period: false
+    double_counting_note: PlaylistTrack dapat menggandakan satu track jika track berada di beberapa playlist.
+    review_status: project_verified
+    source_refs: [data/schemas/chinook-v1.4.5.json, backend/evaluation/mini_cases.py]
+
+  - metric_id: product_transaction_count
+    label: {id: Jumlah transaksi produk, en: Product transaction count}
+    definition:
+      id: Jumlah InvoiceId berbeda yang memuat suatu produk.
+      en: Count of distinct InvoiceIds containing a product.
+    aliases:
+      id: [jumlah transaksi produk, frekuensi pembelian produk]
+      en: [product transaction count, product purchase frequency]
+    expression: COUNT(DISTINCT InvoiceLine.InvoiceId)
+    source_table: InvoiceLine
+    term_ids: []
+    grain: Satu hasil per TrackId setelah agregasi.
+    aggregation: count_distinct
+    format: integer
+    dimensions: [InvoiceLine.TrackId]
+    requires_period: false
+    double_counting_note: Hitung InvoiceId berbeda agar beberapa line tidak menggandakan transaksi.
+    review_status: project_verified
+    source_refs: [data/schemas/chinook-v1.4.5.json]

@@ -1,0 +1,283 @@
+semantic_version: v1
+schema_hash: 58c6c16d147308c44996f88c3b893c0baa264a9b0ca6d06418f1ba3f199def7c
+terms:
+  - term_id: revenue
+    label:
+      id: Pendapatan
+      en: Revenue
+    definition:
+      id: Pendapatan tingkat invoice adalah jumlah Invoice.Total; analisis produk memakai nilai baris InvoiceLine.
+      en: Invoice-level revenue is the sum of Invoice.Total; product analysis uses InvoiceLine value.
+    synonyms:
+      id: [pendapatan, omzet, nilai invoice]
+      en: [revenue, invoice revenue, invoiced value]
+    source_refs: [semantic/metrics.yaml, data/schemas/chinook-v1.4.5.json]
+
+  - term_id: sales
+    label:
+      id: Penjualan
+      en: Sales
+    definition:
+      id: Penjualan produk adalah UnitPrice dikali Quantity pada setiap InvoiceLine.
+      en: Product sales are UnitPrice multiplied by Quantity for each InvoiceLine.
+    synonyms:
+      id: [penjualan, nilai penjualan]
+      en: [sales, sales value]
+    source_refs: [semantic/metrics.yaml, data/schemas/chinook-v1.4.5.json]
+
+  - term_id: transaction
+    label:
+      id: Transaksi
+      en: Transaction
+    definition:
+      id: Satu transaksi adalah satu baris Invoice, bukan satu InvoiceLine.
+      en: One transaction is one Invoice row, not one InvoiceLine row.
+    synonyms:
+      id: [transaksi, faktur]
+      en: [transaction, invoice]
+    source_refs: [semantic/metrics.yaml, data/schemas/chinook-v1.4.5.json]
+
+  - term_id: purchase
+    label:
+      id: Pembelian
+      en: Purchase
+    definition:
+      id: Pembelian pelanggan memakai Invoice; rincian produk yang dibeli memakai InvoiceLine.
+      en: Customer purchases use Invoice; purchased product detail uses InvoiceLine.
+    synonyms:
+      id: [pembelian, belanja pelanggan, total belanja]
+      en: [purchase, customer spend, total spend]
+    source_refs: [semantic/metrics.yaml, semantic/joins.yaml]
+
+  - term_id: active_customer
+    label:
+      id: Pelanggan aktif
+      en: Active customer
+    definition:
+      id: Pelanggan aktif memerlukan definisi aktivitas dan periode yang eksplisit.
+      en: Active customer requires an explicit activity definition and time period.
+    synonyms:
+      id: [pelanggan aktif]
+      en: [active customer, active customers]
+    ambiguity:
+      rule_id: active_customer_basis
+      question:
+        id: Apakah pelanggan aktif berarti memiliki transaksi, dan periode apa yang harus digunakan?
+        en: Should active mean having a transaction, and what time period should be used?
+      options:
+        - option_id: transacted_in_period
+          label:
+            id: Memiliki transaksi pada periode tertentu
+            en: Had a transaction in a specified period
+          resolution_phrases:
+            id: [memiliki transaksi pada, bertransaksi pada, membeli pada]
+            en: [had a transaction in, transacted in, purchased in]
+          assumption:
+            id: Pelanggan aktif berarti memiliki setidaknya satu Invoice pada periode yang disebutkan.
+            en: Active customer means having at least one Invoice in the stated period.
+          metric_ids: [active_customer_count]
+        - option_id: ever_transacted
+          label:
+            id: Pernah memiliki transaksi
+            en: Has ever had a transaction
+          resolution_phrases:
+            id: [pernah bertransaksi, pernah membeli]
+            en: [ever transacted, ever purchased]
+          assumption:
+            id: Pelanggan aktif berarti pernah memiliki setidaknya satu Invoice.
+            en: Active customer means having at least one Invoice at any time.
+          metric_ids: [active_customer_count]
+    source_refs: [semantic/metrics.yaml, docs/question-inventory.md]
+
+  - term_id: best_customer
+    label:
+      id: Pelanggan terbaik
+      en: Best customer
+    definition:
+      id: Terbaik harus dipilih berdasarkan nilai belanja, jumlah transaksi, atau transaksi terbaru.
+      en: Best must be selected by spend value, transaction count, or most recent transaction.
+    synonyms:
+      id: [pelanggan terbaik]
+      en: [best customer, top customer]
+    ambiguity:
+      rule_id: best_customer_measure
+      question:
+        id: Pelanggan terbaik berdasarkan total belanja, jumlah transaksi, atau transaksi paling baru?
+        en: Should best customer mean highest spend, most transactions, or most recent transaction?
+      options:
+        - option_id: total_spend
+          label:
+            id: Total belanja
+            en: Total spend
+          resolution_phrases:
+            id: [berdasarkan total belanja, belanja terbesar, pengeluaran tertinggi]
+            en: [by total spend, highest spend, most revenue]
+          assumption:
+            id: Pelanggan diranking berdasarkan jumlah Invoice.Total.
+            en: Customers are ranked by the sum of Invoice.Total.
+          metric_ids: [customer_total_spend]
+        - option_id: transaction_count
+          label:
+            id: Jumlah transaksi
+            en: Transaction count
+          resolution_phrases:
+            id: [berdasarkan jumlah transaksi, paling sering bertransaksi]
+            en: [by transaction count, most transactions]
+          assumption:
+            id: Pelanggan diranking berdasarkan jumlah Invoice.
+            en: Customers are ranked by Invoice count.
+          metric_ids: [invoice_count]
+        - option_id: latest_transaction
+          label:
+            id: Transaksi paling baru
+            en: Most recent transaction
+          resolution_phrases:
+            id: [berdasarkan transaksi terbaru, transaksi paling baru]
+            en: [by latest transaction, most recent transaction]
+          assumption:
+            id: Pelanggan diranking berdasarkan tanggal Invoice terbaru.
+            en: Customers are ranked by their latest Invoice date.
+          metric_ids: []
+    source_refs: [semantic/metrics.yaml, docs/question-inventory.md]
+
+  - term_id: best_product
+    label:
+      id: Produk terbaik
+      en: Best product
+    definition:
+      id: Produk terbaik harus membedakan nilai penjualan, unit terjual, dan frekuensi transaksi.
+      en: Best product must distinguish sales value, units sold, and transaction frequency.
+    synonyms:
+      id: [produk terbaik, track terbaik, lagu terbaik]
+      en: [best product, top product, best track]
+    ambiguity:
+      rule_id: best_product_measure
+      question:
+        id: Produk terbaik berdasarkan nilai penjualan, jumlah unit, atau jumlah transaksi?
+        en: Should best product mean sales value, units sold, or transaction count?
+      options:
+        - option_id: sales_value
+          label:
+            id: Nilai penjualan
+            en: Sales value
+          resolution_phrases:
+            id: [berdasarkan nilai penjualan, pendapatan produk tertinggi]
+            en: [by sales value, highest product revenue]
+          assumption:
+            id: Produk diranking berdasarkan SUM(InvoiceLine.UnitPrice * InvoiceLine.Quantity).
+            en: Products are ranked by SUM(InvoiceLine.UnitPrice * InvoiceLine.Quantity).
+          metric_ids: [product_sales_value]
+        - option_id: units_sold
+          label:
+            id: Jumlah unit terjual
+            en: Units sold
+          resolution_phrases:
+            id: [berdasarkan unit terjual, unit terbanyak]
+            en: [by units sold, most units]
+          assumption:
+            id: Produk diranking berdasarkan SUM(InvoiceLine.Quantity).
+            en: Products are ranked by SUM(InvoiceLine.Quantity).
+          metric_ids: [units_sold]
+        - option_id: transaction_count
+          label:
+            id: Jumlah transaksi
+            en: Transaction count
+          resolution_phrases:
+            id: [berdasarkan jumlah transaksi, paling sering dibeli]
+            en: [by transaction count, most frequently purchased]
+          assumption:
+            id: Produk diranking berdasarkan jumlah Invoice berbeda.
+            en: Products are ranked by distinct Invoice count.
+          metric_ids: [product_transaction_count]
+    source_refs: [semantic/metrics.yaml, docs/question-inventory.md]
+
+  - term_id: latest_revenue
+    label:
+      id: Pendapatan terbaru
+      en: Latest revenue
+    definition:
+      id: Pendapatan terbaru memerlukan grain waktu yang eksplisit.
+      en: Latest revenue requires an explicit time grain.
+    synonyms:
+      id: [pendapatan terbaru, omzet terbaru]
+      en: [latest revenue, most recent revenue]
+    ambiguity:
+      rule_id: latest_revenue_period
+      question:
+        id: Pendapatan terbaru untuk invoice terbaru, bulan terbaru, atau tahun terbaru?
+        en: Should latest revenue mean the latest invoice, month, or year?
+      options:
+        - option_id: latest_invoice
+          label:
+            id: Invoice terbaru
+            en: Latest invoice
+          resolution_phrases:
+            id: [invoice terbaru, transaksi terbaru]
+            en: [latest invoice, latest transaction]
+          assumption:
+            id: Terbaru mengacu pada Invoice dengan InvoiceDate paling akhir.
+            en: Latest means the Invoice with the most recent InvoiceDate.
+          metric_ids: [total_revenue]
+        - option_id: latest_month
+          label:
+            id: Bulan terbaru
+            en: Latest month
+          resolution_phrases:
+            id: [bulan terbaru, bulan terakhir]
+            en: [latest month, most recent month]
+          assumption:
+            id: Pendapatan diagregasi untuk bulan kalender terbaru dalam data.
+            en: Revenue is aggregated for the latest calendar month in the data.
+          metric_ids: [total_revenue]
+        - option_id: latest_year
+          label:
+            id: Tahun terbaru
+            en: Latest year
+          resolution_phrases:
+            id: [tahun terbaru, tahun terakhir]
+            en: [latest year, most recent year]
+          assumption:
+            id: Pendapatan diagregasi untuk tahun kalender terbaru dalam data.
+            en: Revenue is aggregated for the latest calendar year in the data.
+          metric_ids: [total_revenue]
+    source_refs: [semantic/metrics.yaml, docs/question-inventory.md]
+
+  - term_id: largest_sales
+    label:
+      id: Penjualan terbesar
+      en: Largest sales
+    definition:
+      id: Terbesar harus dibedakan antara nilai uang dan volume unit.
+      en: Largest must distinguish monetary value from unit volume.
+    synonyms:
+      id: [penjualan terbesar]
+      en: [largest sales, biggest sales]
+    ambiguity:
+      rule_id: largest_sales_measure
+      question:
+        id: Penjualan terbesar berdasarkan nilai uang atau jumlah unit?
+        en: Should largest sales be based on monetary value or units sold?
+      options:
+        - option_id: sales_value
+          label:
+            id: Nilai uang
+            en: Monetary value
+          resolution_phrases:
+            id: [berdasarkan nilai, nilai uang, pendapatan terbesar]
+            en: [by value, monetary value, highest revenue]
+          assumption:
+            id: Penjualan diukur dengan UnitPrice dikali Quantity.
+            en: Sales are measured as UnitPrice multiplied by Quantity.
+          metric_ids: [product_sales_value]
+        - option_id: units_sold
+          label:
+            id: Jumlah unit
+            en: Units sold
+          resolution_phrases:
+            id: [berdasarkan volume, jumlah unit, unit terjual]
+            en: [by volume, unit count, units sold]
+          assumption:
+            id: Penjualan diukur dengan jumlah Quantity.
+            en: Sales are measured as the sum of Quantity.
+          metric_ids: [units_sold]
+    source_refs: [semantic/metrics.yaml, docs/question-inventory.md]

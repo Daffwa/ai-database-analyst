@@ -1,0 +1,58 @@
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+!.env.compose.example
+
+# Python environments and bytecode
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Test, lint, type-check, and coverage caches
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Packaging
+build/
+dist/
+*.egg-info/
+
+# Runtime data and logs
+*.log
+logs/
+reports/security/*
+!reports/security/README.md
+!reports/security/stage-*.json
+*.db
+*.sqlite
+*.sqlite3
+data/processed/*
+!data/processed/README.md
+data/raw/*
+!data/raw/README.md
+!data/raw/SHA256SUMS.txt
+
+# Generated reports; preserve documentation placeholders
+reports/test-results/*
+!reports/test-results/README.md
+!reports/test-results/stage-*.md
+!reports/test-results/stage-*.json
+reports/evaluation/*
+!reports/evaluation/README.md
+!reports/evaluation/stage-*.json
+!reports/evaluation/stage-*.md
+
+# Editors and operating systems
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+Desktop.ini

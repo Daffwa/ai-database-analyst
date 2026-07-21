@@ -1,0 +1,26 @@
+{
+  "blocker": null,
+  "checked_at": "2026-07-21T12:57:16.706367+00:00",
+  "checks": {
+    "clean_checkout_gate_passed": true,
+    "compose_gate_passed": true,
+    "compose_has_named_volume": true,
+    "compose_health_and_readiness": true,
+    "compose_requires_runtime_secrets": true,
+    "compose_services_complete": true,
+    "fork_workflows_reference_no_secrets": true,
+    "least_privilege_workflows": true,
+    "observability_fields_present": true,
+    "operational_rates_present": true,
+    "pinned_non_root_images": true,
+    "request_id_frontend_api_propagation": true,
+    "security_gate_passed": true,
+    "stage8_gate_preserved": true
+  },
+  "clean_checkout_gate_verified": true,
+  "compose_gate_verified": true,
+  "implementation_gate_passed": true,
+  "report_version": "stage-9-readiness-v1",
+  "security_gate_verified": true,
+  "stage_gate_passed": true
+}

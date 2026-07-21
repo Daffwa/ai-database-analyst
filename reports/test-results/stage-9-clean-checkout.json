@@ -1,0 +1,18 @@
+{
+  "blocker": null,
+  "checked_at": "2026-07-21T11:50:02.188193+00:00",
+  "checkout_clean_before_verification": true,
+  "ephemeral_commit": "21a25c8993e2f137e5b77da94e10192021950d8e",
+  "python_matrix": [
+    "3.11",
+    "3.12"
+  ],
+  "python_results": {
+    "3.11": true,
+    "3.12": true
+  },
+  "report_version": "stage-9-clean-checkout-v1",
+  "source_file_count": 236,
+  "source_sha256": "64aaa05fa0f4e860ec5b7524b2a3368613d33be55299eec5ce7dd04923d85063",
+  "stage_gate_passed": true
+}

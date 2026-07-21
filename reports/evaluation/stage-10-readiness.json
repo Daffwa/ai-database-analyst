@@ -1,0 +1,44 @@
+{
+  "blockers": [
+    "Authorize and verify the GitHub owner, visibility, and remote.",
+    "Verify the required hosted GitHub Actions runs."
+  ],
+  "broken_local_links": [],
+  "checked_at": "2026-07-21T12:57:16.037432+00:00",
+  "deployment_required_for_local_gate": false,
+  "external_checks": {
+    "github_remote_verified": false,
+    "hosted_actions_verified": false,
+    "project_license_selected": true,
+    "public_deployment_performed": false
+  },
+  "github_remote": null,
+  "local_checks": {
+    "clean_checkout_gate_verified": true,
+    "compose_gate_verified": true,
+    "dataset_source_and_license_documented": true,
+    "fake_provider_limitation_disclosed": true,
+    "local_markdown_links_resolve": true,
+    "readme_commands_are_supported": true,
+    "required_release_documents_present": true,
+    "reviewed_screenshots_present": true,
+    "security_gate_verified": true,
+    "stage7_evaluation_preserved": true,
+    "stage8_gate_preserved": true,
+    "stage9_gate_preserved": true
+  },
+  "local_release_gate_passed": true,
+  "report_version": "stage-10-readiness-v1",
+  "screenshot_dimensions": {
+    "stage-9-ui-details.jpg": [
+      1280,
+      720
+    ],
+    "stage-9-ui-result.jpg": [
+      1280,
+      720
+    ]
+  },
+  "stage_gate_passed": false,
+  "unknown_readme_commands": []
+}

@@ -1,0 +1,760 @@
+{
+  "dialect": "sqlite",
+  "schema_hash": "58c6c16d147308c44996f88c3b893c0baa264a9b0ca6d06418f1ba3f199def7c",
+  "schema_version": "v1.4.5",
+  "source_name": "chinook",
+  "tables": [
+    {
+      "columns": [
+        {
+          "data_type": "INTEGER",
+          "default": null,
+          "name": "AlbumId",
+          "nullable": false,
+          "position": 0,
+          "primary_key_position": 1
+        },
+        {
+          "data_type": "NVARCHAR(160)",
+          "default": null,
+          "name": "Title",
+          "nullable": false,
+          "position": 1,
+          "primary_key_position": null
+        },
+        {
+          "data_type": "INTEGER",
+          "default": null,
+          "name": "ArtistId",
+          "nullable": false,
+          "position": 2,
+          "primary_key_position": null
+        }
+      ],
+      "foreign_keys": [
+        {
+          "constrained_columns": [
+            "ArtistId"
+          ],
+          "name": null,
+          "on_delete": null,
+          "on_update": null,
+          "referred_columns": [
+            "ArtistId"
+          ],
+          "referred_table": "Artist"
+        }
+      ],
+      "name": "Album",
+      "primary_key": [
+        "AlbumId"
+      ]
+    },
+    {
+      "columns": [
+        {
+          "data_type": "INTEGER",
+          "default": null,
+          "name": "ArtistId",
+          "nullable": false,
+          "position": 0,
+          "primary_key_position": 1
+        },
+        {
+          "data_type": "NVARCHAR(120)",
+          "default": null,
+          "name": "Name",
+          "nullable": true,
+          "position": 1,
+          "primary_key_position": null
+        }
+      ],
+      "foreign_keys": [],
+      "name": "Artist",
+      "primary_key": [
+        "ArtistId"
+      ]
+    },
+    {
+      "columns": [
+        {
+          "data_type": "INTEGER",
+          "default": null,
+          "name": "CustomerId",
+          "nullable": false,
+          "position": 0,
+          "primary_key_position": 1
+        },
+        {
+          "data_type": "NVARCHAR(40)",
+          "default": null,
+          "name": "FirstName",
+          "nullable": false,
+          "position": 1,
+          "primary_key_position": null
+        },
+        {
+          "data_type": "NVARCHAR(20)",
+          "default": null,
+          "name": "LastName",
+          "nullable": false,
+          "position": 2,
+          "primary_key_position": null
+        },
+        {
+          "data_type": "NVARCHAR(80)",
+          "default": null,
+          "name": "Company",
+          "nullable": true,
+          "position": 3,
+          "primary_key_position": null
+        },
+        {
+          "data_type": "NVARCHAR(70)",
+          "default": null,
+          "name": "Address",
+          "nullable": true,
+          "position": 4,
+          "primary_key_position": null
+        },
+        {
+          "data_type": "NVARCHAR(40)",
+          "default": null,
+          "name": "City",
+          "nullable": true,
+          "position": 5,
+          "primary_key_position": null
+        },
+        {
+          "data_type": "NVARCHAR(40)",
+          "default": null,
+          "name": "State",
+          "nullable": true,
+          "position": 6,
+          "primary_key_position": null
+        },
+        {
+          "data_type": "NVARCHAR(40)",
+          "default": null,
+          "name": "Country",
+          "nullable": true,
+          "position": 7,
+          "primary_key_position": null
+        },
+        {
+          "data_type": "NVARCHAR(10)",
+          "default": null,
+          "name": "PostalCode",
+          "nullable": true,
+          "position": 8,
+          "primary_key_position": null
+        },
+        {
+          "data_type": "NVARCHAR(24)",
+          "default": null,
+          "name": "Phone",
+          "nullable": true,
+          "position": 9,
+          "primary_key_position": null
+        },
+        {
+          "data_type": "NVARCHAR(24)",
+          "default": null,
+          "name": "Fax",
+          "nullable": true,
+          "position": 10,
+          "primary_key_position": null
+        },
+        {
+          "data_type": "NVARCHAR(60)",
+          "default": null,
+          "name": "Email",
+          "nullable": false,
+          "position": 11,
+          "primary_key_position": null
+        },
+        {
+          "data_type": "INTEGER",
+          "default": null,
+          "name": "SupportRepId",
+          "nullable": true,
+          "position": 12,
+          "primary_key_position": null
+        }
+      ],
+      "foreign_keys": [
+        {
+          "constrained_columns": [
+            "SupportRepId"
+          ],
+          "name": null,
+          "on_delete": null,
+          "on_update": null,
+          "referred_columns": [
+            "EmployeeId"
+          ],
+          "referred_table": "Employee"
+        }
+      ],
+      "name": "Customer",
+      "primary_key": [
+        "CustomerId"
+      ]
+    },
+    {
+      "columns": [
+        {
+          "data_type": "INTEGER",
+          "default": null,
+          "name": "EmployeeId",
+          "nullable": false,
+          "position": 0,
+          "primary_key_position": 1
+        },
+        {
+          "data_type": "NVARCHAR(20)",
+          "default": null,
+          "name": "LastName",
+          "nullable": false,
+          "position": 1,
+          "primary_key_position": null
+        },
+        {
+          "data_type": "NVARCHAR(20)",
+          "default": null,
+          "name": "FirstName",
+          "nullable": false,
+          "position": 2,
+          "primary_key_position": null
+        },
+        {
+          "data_type": "NVARCHAR(30)",
+          "default": null,
+          "name": "Title",
+          "nullable": true,
+          "position": 3,
+          "primary_key_position": null
+        },
+        {
+          "data_type": "INTEGER",
+          "default": null,
+          "name": "ReportsTo",
+          "nullable": true,
+          "position": 4,
+          "primary_key_position": null
+        },
+        {
+          "data_type": "DATETIME",
+          "default": null,
+          "name": "BirthDate",
+          "nullable": true,
+          "position": 5,
+          "primary_key_position": null
+        },
+        {
+          "data_type": "DATETIME",
+          "default": null,
+          "name": "HireDate",
+          "nullable": true,
+          "position": 6,
+          "primary_key_position": null
+        },
+        {
+          "data_type": "NVARCHAR(70)",
+          "default": null,
+          "name": "Address",
+          "nullable": true,
+          "position": 7,
+          "primary_key_position": null
+        },
+        {
+          "data_type": "NVARCHAR(40)",
+          "default": null,
+          "name": "City",
+          "nullable": true,
+          "position": 8,
+          "primary_key_position": null
+        },
+        {
+          "data_type": "NVARCHAR(40)",
+          "default": null,
+          "name": "State",
+          "nullable": true,
+          "position": 9,
+          "primary_key_position": null
+        },
+        {
+          "data_type": "NVARCHAR(40)",
+          "default": null,
+          "name": "Country",
+          "nullable": true,
+          "position": 10,
+          "primary_key_position": null
+        },
+        {
+          "data_type": "NVARCHAR(10)",
+          "default": null,
+          "name": "PostalCode",
+          "nullable": true,
+          "position": 11,
+          "primary_key_position": null
+        },
+        {
+          "data_type": "NVARCHAR(24)",
+          "default": null,
+          "name": "Phone",
+          "nullable": true,
+          "position": 12,
+          "primary_key_position": null
+        },
+        {
+          "data_type": "NVARCHAR(24)",
+          "default": null,
+          "name": "Fax",
+          "nullable": true,
+          "position": 13,
+          "primary_key_position": null
+        },
+        {
+          "data_type": "NVARCHAR(60)",
+          "default": null,
+          "name": "Email",
+          "nullable": true,
+          "position": 14,
+          "primary_key_position": null
+        }
+      ],
+      "foreign_keys": [
+        {
+          "constrained_columns": [
+            "ReportsTo"
+          ],
+          "name": null,
+          "on_delete": null,
+          "on_update": null,
+          "referred_columns": [
+            "EmployeeId"
+          ],
+          "referred_table": "Employee"
+        }
+      ],
+      "name": "Employee",
+      "primary_key": [
+        "EmployeeId"
+      ]
+    },
+    {
+      "columns": [
+        {
+          "data_type": "INTEGER",
+          "default": null,
+          "name": "GenreId",
+          "nullable": false,
+          "position": 0,
+          "primary_key_position": 1
+        },
+        {
+          "data_type": "NVARCHAR(120)",
+          "default": null,
+          "name": "Name",
+          "nullable": true,
+          "position": 1,
+          "primary_key_position": null
+        }
+      ],
+      "foreign_keys": [],
+      "name": "Genre",
+      "primary_key": [
+        "GenreId"
+      ]
+    },
+    {
+      "columns": [
+        {
+          "data_type": "INTEGER",
+          "default": null,
+          "name": "InvoiceId",
+          "nullable": false,
+          "position": 0,
+          "primary_key_position": 1
+        },
+        {
+          "data_type": "INTEGER",
+          "default": null,
+          "name": "CustomerId",
+          "nullable": false,
+          "position": 1,
+          "primary_key_position": null
+        },
+        {
+          "data_type": "DATETIME",
+          "default": null,
+          "name": "InvoiceDate",
+          "nullable": false,
+          "position": 2,
+          "primary_key_position": null
+        },
+        {
+          "data_type": "NVARCHAR(70)",
+          "default": null,
+          "name": "BillingAddress",
+          "nullable": true,
+          "position": 3,
+          "primary_key_position": null
+        },
+        {
+          "data_type": "NVARCHAR(40)",
+          "default": null,
+          "name": "BillingCity",
+          "nullable": true,
+          "position": 4,
+          "primary_key_position": null
+        },
+        {
+          "data_type": "NVARCHAR(40)",
+          "default": null,
+          "name": "BillingState",
+          "nullable": true,
+          "position": 5,
+          "primary_key_position": null
+        },
+        {
+          "data_type": "NVARCHAR(40)",
+          "default": null,
+          "name": "BillingCountry",
+          "nullable": true,
+          "position": 6,
+          "primary_key_position": null
+        },
+        {
+          "data_type": "NVARCHAR(10)",
+          "default": null,
+          "name": "BillingPostalCode",
+          "nullable": true,
+          "position": 7,
+          "primary_key_position": null
+        },
+        {
+          "data_type": "NUMERIC(10, 2)",
+          "default": null,
+          "name": "Total",
+          "nullable": false,
+          "position": 8,
+          "primary_key_position": null
+        }
+      ],
+      "foreign_keys": [
+        {
+          "constrained_columns": [
+            "CustomerId"
+          ],
+          "name": null,
+          "on_delete": null,
+          "on_update": null,
+          "referred_columns": [
+            "CustomerId"
+          ],
+          "referred_table": "Customer"
+        }
+      ],
+      "name": "Invoice",
+      "primary_key": [
+        "InvoiceId"
+      ]
+    },
+    {
+      "columns": [
+        {
+          "data_type": "INTEGER",
+          "default": null,
+          "name": "InvoiceLineId",
+          "nullable": false,
+          "position": 0,
+          "primary_key_position": 1
+        },
+        {
+          "data_type": "INTEGER",
+          "default": null,
+          "name": "InvoiceId",
+          "nullable": false,
+          "position": 1,
+          "primary_key_position": null
+        },
+        {
+          "data_type": "INTEGER",
+          "default": null,
+          "name": "TrackId",
+          "nullable": false,
+          "position": 2,
+          "primary_key_position": null
+        },
+        {
+          "data_type": "NUMERIC(10, 2)",
+          "default": null,
+          "name": "UnitPrice",
+          "nullable": false,
+          "position": 3,
+          "primary_key_position": null
+        },
+        {
+          "data_type": "INTEGER",
+          "default": null,
+          "name": "Quantity",
+          "nullable": false,
+          "position": 4,
+          "primary_key_position": null
+        }
+      ],
+      "foreign_keys": [
+        {
+          "constrained_columns": [
+            "InvoiceId"
+          ],
+          "name": null,
+          "on_delete": null,
+          "on_update": null,
+          "referred_columns": [
+            "InvoiceId"
+          ],
+          "referred_table": "Invoice"
+        },
+        {
+          "constrained_columns": [
+            "TrackId"
+          ],
+          "name": null,
+          "on_delete": null,
+          "on_update": null,
+          "referred_columns": [
+            "TrackId"
+          ],
+          "referred_table": "Track"
+        }
+      ],
+      "name": "InvoiceLine",
+      "primary_key": [
+        "InvoiceLineId"
+      ]
+    },
+    {
+      "columns": [
+        {
+          "data_type": "INTEGER",
+          "default": null,
+          "name": "MediaTypeId",
+          "nullable": false,
+          "position": 0,
+          "primary_key_position": 1
+        },
+        {
+          "data_type": "NVARCHAR(120)",
+          "default": null,
+          "name": "Name",
+          "nullable": true,
+          "position": 1,
+          "primary_key_position": null
+        }
+      ],
+      "foreign_keys": [],
+      "name": "MediaType",
+      "primary_key": [
+        "MediaTypeId"
+      ]
+    },
+    {
+      "columns": [
+        {
+          "data_type": "INTEGER",
+          "default": null,
+          "name": "PlaylistId",
+          "nullable": false,
+          "position": 0,
+          "primary_key_position": 1
+        },
+        {
+          "data_type": "NVARCHAR(120)",
+          "default": null,
+          "name": "Name",
+          "nullable": true,
+          "position": 1,
+          "primary_key_position": null
+        }
+      ],
+      "foreign_keys": [],
+      "name": "Playlist",
+      "primary_key": [
+        "PlaylistId"
+      ]
+    },
+    {
+      "columns": [
+        {
+          "data_type": "INTEGER",
+          "default": null,
+          "name": "PlaylistId",
+          "nullable": false,
+          "position": 0,
+          "primary_key_position": 1
+        },
+        {
+          "data_type": "INTEGER",
+          "default": null,
+          "name": "TrackId",
+          "nullable": false,
+          "position": 1,
+          "primary_key_position": 2
+        }
+      ],
+      "foreign_keys": [
+        {
+          "constrained_columns": [
+            "PlaylistId"
+          ],
+          "name": null,
+          "on_delete": null,
+          "on_update": null,
+          "referred_columns": [
+            "PlaylistId"
+          ],
+          "referred_table": "Playlist"
+        },
+        {
+          "constrained_columns": [
+            "TrackId"
+          ],
+          "name": null,
+          "on_delete": null,
+          "on_update": null,
+          "referred_columns": [
+            "TrackId"
+          ],
+          "referred_table": "Track"
+        }
+      ],
+      "name": "PlaylistTrack",
+      "primary_key": [
+        "PlaylistId",
+        "TrackId"
+      ]
+    },
+    {
+      "columns": [
+        {
+          "data_type": "INTEGER",
+          "default": null,
+          "name": "TrackId",
+          "nullable": false,
+          "position": 0,
+          "primary_key_position": 1
+        },
+        {
+          "data_type": "NVARCHAR(200)",
+          "default": null,
+          "name": "Name",
+          "nullable": false,
+          "position": 1,
+          "primary_key_position": null
+        },
+        {
+          "data_type": "INTEGER",
+          "default": null,
+          "name": "AlbumId",
+          "nullable": true,
+          "position": 2,
+          "primary_key_position": null
+        },
+        {
+          "data_type": "INTEGER",
+          "default": null,
+          "name": "MediaTypeId",
+          "nullable": false,
+          "position": 3,
+          "primary_key_position": null
+        },
+        {
+          "data_type": "INTEGER",
+          "default": null,
+          "name": "GenreId",
+          "nullable": true,
+          "position": 4,
+          "primary_key_position": null
+        },
+        {
+          "data_type": "NVARCHAR(220)",
+          "default": null,
+          "name": "Composer",
+          "nullable": true,
+          "position": 5,
+          "primary_key_position": null
+        },
+        {
+          "data_type": "INTEGER",
+          "default": null,
+          "name": "Milliseconds",
+          "nullable": false,
+          "position": 6,
+          "primary_key_position": null
+        },
+        {
+          "data_type": "INTEGER",
+          "default": null,
+          "name": "Bytes",
+          "nullable": true,
+          "position": 7,
+          "primary_key_position": null
+        },
+        {
+          "data_type": "NUMERIC(10, 2)",
+          "default": null,
+          "name": "UnitPrice",
+          "nullable": false,
+          "position": 8,
+          "primary_key_position": null
+        }
+      ],
+      "foreign_keys": [
+        {
+          "constrained_columns": [
+            "AlbumId"
+          ],
+          "name": null,
+          "on_delete": null,
+          "on_update": null,
+          "referred_columns": [
+            "AlbumId"
+          ],
+          "referred_table": "Album"
+        },
+        {
+          "constrained_columns": [
+            "GenreId"
+          ],
+          "name": null,
+          "on_delete": null,
+          "on_update": null,
+          "referred_columns": [
+            "GenreId"
+          ],
+          "referred_table": "Genre"
+        },
+        {
+          "constrained_columns": [
+            "MediaTypeId"
+          ],
+          "name": null,
+          "on_delete": null,
+          "on_update": null,
+          "referred_columns": [
+            "MediaTypeId"
+          ],
+          "referred_table": "MediaType"
+        }
+      ],
+      "name": "Track",
+      "primary_key": [
+        "TrackId"
+      ]
+    }
+  ],
+  "views": []
+}
