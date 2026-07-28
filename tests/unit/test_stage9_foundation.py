@@ -70,7 +70,7 @@ def test_workflows_use_minimum_permissions_pinned_actions_and_no_secrets() -> No
         assert "contents: read" in source
         assert "persist-credentials: false" in source
         assert "secrets." not in source
-        assert "actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd" in source
+        assert "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1" in source
     assert "security-events: write" in workflows["security.yml"]
     assert "pull_request:" in workflows["security.yml"]
     assert "Image publication is intentionally absent" in workflows["docker.yml"]
