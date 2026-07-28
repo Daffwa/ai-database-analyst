@@ -22,7 +22,7 @@ classifiers = [
 dependencies = [
   "alembic==1.18.5",
   "altair==6.2.2",
-  "fastapi==0.139.2",
+  "fastapi==0.140.13",
   "gitpython==3.1.55",
   "httpx==0.28.1",
   "numpy==2.4.6",
