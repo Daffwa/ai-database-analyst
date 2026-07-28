@@ -1,16 +1,18 @@
 # Deployment and Rollback Guide
 
-- Status: release procedure defined; no public platform or resource selected
+- Status: public repository released; no application hosting platform selected
 - Scope: managed PostgreSQL, FastAPI, Streamlit, and optional real LLM
-- Last reviewed: 2026-07-21
+- Last reviewed: 2026-07-28
 
 ## Decision boundary
 
-No cloud account, paid resource, public hostname, GitHub repository, or real LLM
-credential has been created by this project. Platform selection requires a
-current cost and data-policy review plus explicit approval of the account,
-region, budget, repository visibility, and authentication design. The project
-license is MIT. Local success must not be described as a deployed demo.
+The MIT-licensed source is published in the authorized public GitHub repository,
+and its hosted CI/security/evaluation evidence is recorded. No cloud account,
+paid resource, public application hostname, or real LLM credential has been
+created by this project. Platform selection requires a current cost and
+data-policy review plus explicit approval of the account, region, budget, and
+authentication design. Repository or local success must not be described as a
+deployed demo.
 
 ## Required production topology
 
@@ -34,7 +36,7 @@ snapshot recovery, and distinct database roles.
 ## Pre-deployment gate
 
 1. Verify the selected MIT project license and dataset attribution obligations.
-2. Publish an authorized repository and verify hosted CI.
+2. Confirm the authorized public repository and recorded hosted CI evidence.
 3. Run `verify`, `test-postgres`, `docker-smoke`, `security-stage9`, and
    `test-clean-checkout` against the exact release source.
 4. Pin image digests and record application, dataset, schema, prompt, semantic,

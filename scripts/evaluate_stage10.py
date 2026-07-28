@@ -12,6 +12,19 @@ from scripts.dev import COMMANDS
 
 ROOT = Path(__file__).resolve().parents[1]
 REPORT_PATH = ROOT / "reports" / "evaluation" / "stage-10-readiness.json"
+EXTERNAL_EVIDENCE_PATH = ROOT / "reports" / "evaluation" / "stage-10-external-evidence.json"
+REQUIRED_HOSTED_WORKFLOWS = ("CI", "Docker", "Security", "Evaluation")
+REQUIRED_DEPLOYMENT_CONTROLS = (
+    "authentication",
+    "authorization",
+    "https",
+    "managed_postgresql",
+    "managed_secrets",
+    "monitoring",
+    "rate_limiting",
+    "rollback_tested",
+    "smoke_tests",
+)
 MARKDOWN_LINK = re.compile(r"!?\[[^\]]*\]\(([^)]+)\)")
 DEV_COMMAND = re.compile(r"(?:uv run )?python scripts/dev\.py ([a-z0-9-]+)")
 
@@ -82,6 +95,55 @@ def _github_remote() -> str | None:
     return value if completed.returncode == 0 and value else None
 
 
+def _mapping(value: object) -> dict[str, object]:
+    return value if isinstance(value, dict) else {}
+
+
+def _repository_url(value: object) -> str | None:
+    if not isinstance(value, str) or not value.startswith("https://github.com/"):
+        return None
+    return value.removesuffix(".git").rstrip("/")
+
+
+def _hosted_actions_verified(evidence: dict[str, object]) -> bool:
+    repository = _mapping(evidence.get("repository"))
+    repository_url = _repository_url(repository.get("url"))
+    hosted = _mapping(evidence.get("hosted_actions"))
+    verified_commit = hosted.get("verified_commit")
+    workflows = _mapping(hosted.get("required_workflows"))
+    if (
+        repository_url is None
+        or str(repository.get("visibility", "")).lower() != "public"
+        or not isinstance(verified_commit, str)
+        or re.fullmatch(r"[0-9a-f]{40}", verified_commit) is None
+    ):
+        return False
+    for workflow_name in REQUIRED_HOSTED_WORKFLOWS:
+        run = _mapping(workflows.get(workflow_name))
+        run_id = run.get("run_id")
+        if (
+            not isinstance(run_id, int)
+            or run_id <= 0
+            or run.get("head_sha") != verified_commit
+            or run.get("conclusion") != "success"
+            or run.get("url") != f"{repository_url}/actions/runs/{run_id}"
+        ):
+            return False
+    return True
+
+
+def _public_deployment_verified(evidence: dict[str, object]) -> bool:
+    deployment = _mapping(evidence.get("public_deployment"))
+    controls = _mapping(deployment.get("controls"))
+    public_url = deployment.get("public_url")
+    return (
+        deployment.get("performed") is True
+        and isinstance(public_url, str)
+        and public_url.startswith("https://")
+        and all(controls.get(control) is True for control in REQUIRED_DEPLOYMENT_CONTROLS)
+    )
+
+
 def main() -> int:
     required_documents = (
         ROOT / "README.md",
@@ -138,11 +200,14 @@ def main() -> int:
     }
     local_release_gate_passed = all(local_checks.values())
     remote = _github_remote()
+    external_evidence = _json(EXTERNAL_EVIDENCE_PATH)
+    hosted_actions_verified = _hosted_actions_verified(external_evidence)
+    public_deployment_performed = _public_deployment_verified(external_evidence)
     external_checks = {
         "project_license_selected": (ROOT / "LICENSE").exists(),
         "github_remote_verified": remote is not None and "github.com" in remote.lower(),
-        "hosted_actions_verified": False,
-        "public_deployment_performed": False,
+        "hosted_actions_verified": hosted_actions_verified,
+        "public_deployment_performed": public_deployment_performed,
     }
     stage_gate_passed = (
         local_release_gate_passed
@@ -151,13 +216,17 @@ def main() -> int:
         and external_checks["hosted_actions_verified"]
     )
     report = {
-        "report_version": "stage-10-readiness-v1",
+        "report_version": "stage-10-readiness-v2",
         "checked_at": datetime.now(UTC).isoformat(),
         "local_checks": local_checks,
         "local_release_gate_passed": local_release_gate_passed,
         "external_checks": external_checks,
         "github_remote": remote,
+        "external_evidence_path": EXTERNAL_EVIDENCE_PATH.relative_to(ROOT).as_posix(),
+        "hosted_actions_evidence": _mapping(external_evidence.get("hosted_actions")),
+        "public_deployment_evidence": _mapping(external_evidence.get("public_deployment")),
         "deployment_required_for_local_gate": False,
+        "deployment_required_for_stage_gate": False,
         "unknown_readme_commands": unknown_commands,
         "broken_local_links": broken_links,
         "screenshot_dimensions": screenshot_dimensions,
@@ -180,6 +249,12 @@ def main() -> int:
             )
             if blocked
         ],
+        "remaining_external_actions": [
+            "Select and verify a public deployment platform, authentication, HTTPS, "
+            "rate limiting, managed secrets/PostgreSQL, monitoring, smoke tests, and rollback."
+        ]
+        if not public_deployment_performed
+        else [],
     }
     REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
     REPORT_PATH.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")

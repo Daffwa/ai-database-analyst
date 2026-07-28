@@ -25,12 +25,14 @@ The implemented portfolio includes:
 
 ## Current Status
 
-Tahap 9 and the Tahap 10 local release gate are complete.
+Tahap 9 and the Tahap 10 repository release gate are complete.
 The PostgreSQL/FastAPI boundary is packaged as pinned, non-root API and frontend
 images behind a four-service Compose stack. The deterministic Tahap 7 baseline
-is 100/100 and the live PostgreSQL gate is 4/4. Public GitHub publication and
-deployment are not yet claimed: GitHub publication/hosted CI, hosting,
-authentication, and any paid resource still require verification or explicit choices.
+is 100/100 and the live PostgreSQL gate is 4/4. The MIT-licensed source is
+published at [Daffwa/ai-database-analyst](https://github.com/Daffwa/ai-database-analyst),
+and CI, Docker, Security, and Evaluation have passed on GitHub-hosted runners.
+No public application deployment is claimed: hosting, authentication, and any
+paid resource still require explicit choices and verification.
 
 See `PROJECT_STATUS.md` for the active quality gate,
 `docs/evaluation.md` for metric definitions and regression boundaries, and
@@ -325,12 +327,13 @@ rate limiting, and deployment hardening remain later-stage gates.
   authorization and is intentionally bound to loopback.
 - Metrics and some UI history are process-local; production needs durable,
   access-controlled observability with an approved retention policy.
-- No public deployment, hosted CI run, or GitHub remote is currently verified.
+- No public application deployment, authentication boundary, managed secret
+  store/database, or production monitoring is currently verified.
 
-The MIT license and public GitHub target are selected. Remaining roadmap items
-are hosted-CI verification, a cost/data-policy-based hosting choice,
-authentication and rate limiting, managed secrets/PostgreSQL, and an opt-in
-real-provider adapter with a separate evaluation baseline.
+The MIT license, public GitHub repository, and hosted CI are verified. Remaining
+roadmap items are a cost/data-policy-based hosting choice, authentication and
+rate limiting, managed secrets/PostgreSQL, and an opt-in real-provider adapter
+with a separate evaluation baseline.
 
 ## Documentation
 
@@ -361,7 +364,9 @@ Tahap 9 evidence is recorded in `reports/evaluation/stage-9-readiness.json`,
 `reports/test-results/stage-9-summary.md`.
 Tahap 10 local release evidence is recorded in
 `reports/evaluation/stage-10-readiness.json` and
-`reports/test-results/stage-10-summary.md`.
+`reports/test-results/stage-10-summary.md`. The source-backed GitHub repository
+and hosted-run attestations are recorded separately in
+`reports/evaluation/stage-10-external-evidence.json`.
 
 ## License
 
