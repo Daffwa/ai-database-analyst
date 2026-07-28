@@ -1,18 +1,7 @@
 {
-  "blockers": [],
-  "broken_local_links": [],
-  "checked_at": "2026-07-28T06:47:57.755443+00:00",
-  "deployment_required_for_local_gate": false,
-  "deployment_required_for_stage_gate": false,
-  "external_checks": {
-    "github_remote_verified": true,
-    "hosted_actions_verified": true,
-    "project_license_selected": true,
-    "public_deployment_performed": false
-  },
-  "external_evidence_path": "reports/evaluation/stage-10-external-evidence.json",
-  "github_remote": "https://github.com/Daffwa/ai-database-analyst.git",
-  "hosted_actions_evidence": {
+  "checked_at": "2026-07-28T06:40:11Z",
+  "evidence_version": "stage-10-external-v1",
+  "hosted_actions": {
     "required_workflows": {
       "CI": {
         "conclusion": "success",
@@ -45,22 +34,7 @@
     },
     "verified_commit": "6002469142631a9b10f02c2eaa233bbe2f144fbf"
   },
-  "local_checks": {
-    "clean_checkout_gate_verified": true,
-    "compose_gate_verified": true,
-    "dataset_source_and_license_documented": true,
-    "fake_provider_limitation_disclosed": true,
-    "local_markdown_links_resolve": true,
-    "readme_commands_are_supported": true,
-    "required_release_documents_present": true,
-    "reviewed_screenshots_present": true,
-    "security_gate_verified": true,
-    "stage7_evaluation_preserved": true,
-    "stage8_gate_preserved": true,
-    "stage9_gate_preserved": true
-  },
-  "local_release_gate_passed": true,
-  "public_deployment_evidence": {
+  "public_deployment": {
     "blocker": "Awaiting a user-selected platform/account, region, budget, and authentication design.",
     "controls": {
       "authentication": false,
@@ -77,20 +51,9 @@
     "platform": null,
     "public_url": null
   },
-  "remaining_external_actions": [
-    "Select and verify a public deployment platform, authentication, HTTPS, rate limiting, managed secrets/PostgreSQL, monitoring, smoke tests, and rollback."
-  ],
-  "report_version": "stage-10-readiness-v2",
-  "screenshot_dimensions": {
-    "stage-9-ui-details.jpg": [
-      1280,
-      720
-    ],
-    "stage-9-ui-result.jpg": [
-      1280,
-      720
-    ]
-  },
-  "stage_gate_passed": true,
-  "unknown_readme_commands": []
+  "repository": {
+    "default_branch": "main",
+    "url": "https://github.com/Daffwa/ai-database-analyst",
+    "visibility": "public"
+  }
 }

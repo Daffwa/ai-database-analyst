@@ -1,9 +1,10 @@
-# Tahap 10 Local Release Audit
+# Tahap 10 Repository Release Audit
 
-- Audit date: 2026-07-21 (Asia/Bangkok)
-- Outcome: **local release gate passed**
-- Full Tahap 10 outcome: **pending external release decisions**
+- Audit date: 2026-07-28 (Asia/Bangkok)
+- Outcome: **repository release gate passed**
+- Public application deployment: **pending platform and security decisions**
 - Machine report: `reports/evaluation/stage-10-readiness.json`
+- Hosted evidence: `reports/evaluation/stage-10-external-evidence.json`
 
 ## Release work completed
 
@@ -22,6 +23,12 @@
   content-addressed corpus required by that demo path.
 - Restricted the Gitleaks local allowlist to exact ignored `.env` and
   `.env.compose` files; `.example` files remain scanned.
+- Published the MIT-licensed repository publicly under `Daffwa`, verified CI,
+  Docker, Security, and Evaluation on GitHub-hosted runners, and recorded their
+  immutable run IDs against one commit.
+- Patched the transitive GitPython vulnerability, refreshed Streamlit, NumPy,
+  sqlglot, setuptools, CodeQL, setup-uv, and checkout, and closed every
+  Dependabot pull request only after its relevant hosted gates passed.
 
 ## Browser QA
 
@@ -63,11 +70,11 @@ Evidence:
 | Clean checkout | `uv run python scripts/dev.py test-clean-checkout` | Passed on Python 3.11 and 3.12 |
 | README commands/links/screenshots | `evaluate-stage10` | All local checks passed; no broken local links |
 
-The structured Codex Security repository scan was not claimed: its preflight
-could not verify the active multi-agent runtime version/capacity. The complete
-project-owned automated security gate above did run and pass. Because the main
-repository has no commit, Git-history secret scanning is not applicable yet;
-Gitleaks scanned the complete current directory source instead.
+The complete project-owned security gate and GitHub-hosted Security workflow
+both pass. Gitleaks scans the complete current checkout with the reviewed
+allowlist; no Git-history scan is claimed. Pip-audit reports no known
+installed-package vulnerabilities, and the hosted container/configuration scans
+pass on the recorded release commit.
 
 ## Definition of Done
 
@@ -79,11 +86,11 @@ Gitleaks scanned the complete current directory source instead.
 - [x] Current source, examples, reports, images, and containers pass secret and
   vulnerability checks.
 - [x] Project license selected: MIT.
-- [ ] Git identity, authorized GitHub owner/name/visibility, remote, and hosted
-  Actions verified.
+- [x] Git identity, authorized GitHub owner/name/visibility, public remote, and
+  hosted Actions verified.
 - [ ] Public platform, cost approval, authentication/rate limiting, managed
   PostgreSQL/secrets, HTTPS, smoke tests, logs, and rollback verified if a
   public demo is requested.
 
-No project history, GitHub remote, hosted workflow, paid resource, public URL,
-or real LLM credential was created during this audit.
+No paid resource, public application URL, cloud secret, managed production
+database, or real LLM credential was created during this audit.

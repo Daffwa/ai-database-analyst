@@ -1,8 +1,8 @@
 # Architecture — Release Candidate Boundary
 
-- Status: Tahap 9 implemented; Tahap 10 local release audit in progress
+- Status: Tahap 10 repository release gate passed; public deployment pending
 - Version: 0.1.0 local release candidate
-- Date: 2026-07-21
+- Date: 2026-07-28
 
 ## 1. Architecture Goals
 
@@ -363,9 +363,9 @@ reporting and public-exposure boundary; `deployment.md` defines managed
 database, secret, TLS, authentication, rate-limit, migration, smoke-test, and
 rollback requirements.
 
-No public cloud resource, hostname, registry, real-provider credential, or
-GitHub remote is part of the current evidence. Those are external release
-decisions, not inferred implementation details. A future deployment may claim
-completion only when its exact platform, cost approval, identities, secret
-manager, HTTPS route, authentication/authorization, rate limits, health/log
-evidence, and rollback result are recorded.
+The authorized public GitHub remote and hosted workflow runs are part of the
+current evidence. No public cloud resource, application hostname, registry, or
+real-provider credential is. A future deployment may claim completion only
+when its exact platform, cost approval, identities, secret manager, HTTPS route,
+authentication/authorization, rate limits, health/log evidence, and rollback
+result are recorded.

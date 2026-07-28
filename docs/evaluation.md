@@ -281,6 +281,9 @@ uv run python scripts/dev.py security-stage9
 uv run python scripts/dev.py evaluate-stage9
 ```
 
-GitHub-hosted workflow execution can begin only after an authorized commit and
-publication in Tahap 10. Until then, the same commands are run locally and the
-workflow contracts are validated by tests; no hosted-run claim is made.
+GitHub-hosted execution is verified for the authorized public repository. The
+exact commit, workflow run IDs, conclusions, and URLs for CI, Docker, Security,
+and the manually dispatched Evaluation workflow are recorded in
+`reports/evaluation/stage-10-external-evidence.json`. The Tahap 10 evaluator
+validates that offline attestation; it does not infer hosted success from
+workflow-file inspection.

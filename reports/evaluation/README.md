@@ -50,7 +50,8 @@ stage gate can pass.
 
 Tahap 10 adds `stage-10-readiness.json`. It verifies release documents, README
 commands, local Markdown links, reviewed screenshot dimensions, prior evaluation and
-external local gates, and the clean-checkout report. It reports the local
-release gate separately from project-license, GitHub/hosted-CI, and optional
-public-deployment decisions; missing external authorization must remain visible
-rather than being counted as a local pass.
+external local gates, and the clean-checkout report. The separate
+`stage-10-external-evidence.json` records the authorized public repository and
+successful hosted CI, Docker, Security, and Evaluation runs. Public deployment
+remains a separate decision and cannot be inferred from repository or workflow
+success.

@@ -1,10 +1,10 @@
 # Project Status — AI Database Analyst
 
 - Project version: `0.1.0`
-- Last updated: 2026-07-21 (Asia/Bangkok)
+- Last updated: 2026-07-28 (Asia/Bangkok)
 - Active work package: Work Package 4 — Portfolio Release
-- Active phase: Tahap 10 — external release decisions pending
-- Overall status: Tahap 10 local release gate passed; full release is not yet published or deployed
+- Active phase: Tahap 10 — public deployment decision pending
+- Overall status: public repository and hosted release gate passed; application is not publicly deployed
 - Repository path: `D:\Capstone\AI Database Analyst Project\ai-database-analyst`
 
 ## Phase Status
@@ -21,7 +21,7 @@
 | Tahap 7 — Evaluation | Completed | Passed on 2026-07-20 |
 | Tahap 8 — PostgreSQL and FastAPI | Completed | Passed on 2026-07-21 |
 | Tahap 9 — Docker and CI/CD | Completed | Passed on 2026-07-21 |
-| Tahap 10 — Release | In progress | Local gate passed; external publication pending |
+| Tahap 10 — Release | In progress | Repository/hosted gate passed; public deployment pending |
 
 ## Completed in Tahap 0
 
@@ -255,14 +255,14 @@
   the final no-cache whole-stack gate, complete security scanning, all 14 Tahap
   9 readiness checks, and the preserved Tahap 8 live gate.
 
-## Completed Locally in Tahap 10
+## Completed in Tahap 10
 
 - Added the final README narrative, reviewed screenshots, `SECURITY.md`, API
   reference, deployment/rollback guide, demo script, and release-candidate
   architecture/threat-model updates.
 - Added the Tahap 10 readiness evaluator, which passes every local document,
   command, link, screenshot, evaluation, Compose, security, and clean-checkout
-  check while keeping GitHub/hosted-CI state false until publication evidence exists.
+  check and validates separately recorded GitHub-hosted evidence.
 - Ran browser QA for success, clarification, destructive blocked, Database
   Explorer, Query History, and System Info states with no console errors.
 - Fixed the final API fake runtime so all ten adversarial Tahap 7 prompts reach
@@ -270,6 +270,11 @@
   visibly blocked with no executed SQL.
 - Re-ran the full offline gate, live PostgreSQL 4/4, no-cache Compose, complete
   security scan, and clean-checkout matrix on the exact updated source.
+- Published the MIT-licensed repository publicly as
+  `Daffwa/ai-database-analyst` and verified CI, Docker, Security, CodeQL, and
+  scheduled/manual Evaluation on GitHub-hosted runners.
+- Resolved the GitPython advisory chain and merged reviewed dependency/action
+  updates only after their hosted gates passed; no Dependabot PR remains open.
 
 ## Primary Files Created
 
@@ -406,14 +411,13 @@
 | Python | System 3.12.10; verified project environment 3.12.13; 3.11 not locally installed |
 | Git | 2.54.0 available |
 | uv | 0.11.14; lock and sync verified |
-| Docker | Desktop 4.82; Engine/CLI 29.6.1; Compose 5.3.0; WSL2 healthy |
+| Docker | Desktop/CLI installed; local engine unavailable during the 2026-07-28 follow-up; hosted Docker/Security gates passed |
 | GitHub CLI | 2.96.0; authenticated as `Daffwa` |
-| Git repository | Initialized on `main`; no commit because Git identity is unset |
+| Git repository | Public `Daffwa/ai-database-analyst`; `main` published and synchronized |
 
-The missing Git identity prevents a repository commit but does not prevent
-local verification. The clean-checkout gate uses an isolated temporary commit;
-no project history was created. GitHub-hosted workflow evidence remains pending
-authorized publication in Tahap 10.
+The repository has real history, an authorized public GitHub remote, and hosted
+workflow evidence. The clean-checkout gate remains an independent reproduction
+check rather than a substitute for hosted CI.
 
 ## Last Verification
 
@@ -450,8 +454,8 @@ authorized publication in Tahap 10.
   History, and System Info passed at 1280×720; no console errors
 - Ruff format: passed
 - Ruff lint: passed
-- Mypy strict: passed, 144 source files checked
-- Pytest offline suite: 301 passed, 4 environment-gated PostgreSQL tests skipped
+- Mypy strict: passed, 145 source files checked
+- Pytest offline suite: 303 passed, 4 environment-gated PostgreSQL tests skipped
 - Pytest actual PostgreSQL suite: 4 passed
 - Branch coverage: 92%, required minimum 90%
 - Lockfile check: passed
@@ -464,6 +468,8 @@ authorized publication in Tahap 10.
   and configuration checks all passed
 - Tahap 9 clean checkout: Python 3.11 and 3.12 full verification passed from an
   isolated temporary commit and clone
+- GitHub-hosted release evidence: CI, Docker, Security, CodeQL, and manually
+  dispatched Evaluation passed against commit `6002469`
 - Detailed evidence: `reports/test-results/stage-3-summary.md`
 - Tahap 4 evidence: `reports/test-results/stage-4-summary.md`
 - Tahap 5 evidence: `reports/test-results/stage-5-summary.md`
@@ -476,8 +482,9 @@ authorized publication in Tahap 10.
   `reports/test-results/stage-9-compose.json`,
   `reports/test-results/stage-9-clean-checkout.json`, and
   `reports/security/stage-9-security.json`
-- Tahap 10 local evidence: `reports/test-results/stage-10-summary.md` and
-  `reports/evaluation/stage-10-readiness.json`
+- Tahap 10 evidence: `reports/test-results/stage-10-summary.md`,
+  `reports/evaluation/stage-10-readiness.json`, and
+  `reports/evaluation/stage-10-external-evidence.json`
 
 ## Tahap 0 Quality Gate
 
@@ -680,16 +687,16 @@ authorized publication in Tahap 10.
   checkout on Python 3.11/3.12 pass on the final source.
 - [x] The machine report separates local readiness from external decisions.
 - [x] Project license selected: MIT.
-- [ ] Authorized GitHub remote and hosted Actions verified.
+- [x] Authorized public GitHub remote and hosted Actions verified.
 - [ ] Deployment smoke, logs, authentication, HTTPS, rate limit, managed
   secrets/database, and rollback verified if a public demo is selected.
 
 ## Open Issues
 
-1. GitHub publication and hosted workflow evidence are being completed on the
-   authorized public repository.
-2. The LLM provider and production deployment platform remain deliberately
-   undecided until their current capabilities, costs, and data policies are
+1. The public application deployment platform and authentication design remain
+   unselected.
+2. The real LLM provider remains deliberately
+   undecided until its current capabilities, costs, and data policies are
    reviewed.
 
 ## Current Risks
@@ -713,9 +720,9 @@ The MIT license, public visibility, owner `Daffwa`, and repository name
 
 ## Next Step
 
-Create the authorized initial commit, publish `main` to the public GitHub
-repository, and verify hosted Actions. A public deployment remains optional
-and requires a separate platform/budget, authentication, TLS, rate-limit,
-managed secret/database, monitoring, and rollback decision. Preserve `verify`,
-live `test-postgres`, no-cache `docker-smoke`, `security-stage9`, clean-checkout,
-and `evaluate-stage10` as mandatory release gates.
+Select the public deployment platform/account, region and budget, plus the
+authentication approach. Then provision HTTPS, rate limits, managed
+secrets/PostgreSQL, monitoring, smoke tests, and a tested rollback before
+recording any deployed URL. Preserve `verify`, live `test-postgres`, no-cache
+`docker-smoke`, `security-stage9`, clean-checkout, and `evaluate-stage10` as
+mandatory release gates.

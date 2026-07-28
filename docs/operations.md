@@ -173,3 +173,7 @@ Then verify local documentation links and screenshots, review the reports for
 sensitive data, and record whether GitHub publication and deployment were
 performed or are intentionally not applicable. Never mark a hosted workflow or
 public smoke test as passed from local workflow-file inspection alone.
+
+For the current repository release, the immutable hosted run IDs and verified
+commit are recorded in `reports/evaluation/stage-10-external-evidence.json`.
+Public application smoke tests remain unclaimed until a platform is selected.
