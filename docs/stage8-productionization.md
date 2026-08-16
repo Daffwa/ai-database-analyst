@@ -62,6 +62,8 @@ Alembic revision `20260720_0001` creates:
 - `query_requests`, `query_attempts`, and `query_feedback`;
 - `evaluation_cases`, `evaluation_runs`, and `evaluation_results`;
 - `usage_events`.
+- `agent_continuations` (added by revision `20260816_0002`; digest and safe
+  canonical continuation metadata only).
 
 Indexes cover source/schema identity, request status/time, feedback, evaluation
 lookup, and usage time series. The schema deliberately has no `raw_question`,
@@ -76,6 +78,9 @@ The application factory exposes:
 
 - `GET /api/v1/health`;
 - `POST /api/v1/query`;
+- `POST /api/v1/agent/query`;
+- `POST /api/v1/agent/continue`;
+- `POST /api/v1/agent/cancel`;
 - `GET /api/v1/schema`;
 - `GET /api/v1/history`;
 - `POST /api/v1/feedback`;

@@ -49,6 +49,9 @@ snapshot recovery, and distinct database roles.
    deletion terms before setting `LLM_PROVIDER` to anything other than `fake`.
 8. Back up the target database and record the rollback image and migration
    revision.
+9. Apply Alembic through revision `20260816_0002` (or current `head`) before
+   enabling `/api/v1/agent/*`; verify that only privacy-minimized continuation
+   metadata is retained.
 
 ## Safe release procedure
 

@@ -18,6 +18,7 @@ ROOT = Path(__file__).resolve().parents[1]
 REPORT_PATH = ROOT / "reports" / "evaluation" / "stage-8-readiness.json"
 POSTGRES_REPORT_PATH = ROOT / "reports" / "test-results" / "stage-8-postgres.json"
 EXPECTED_METADATA_TABLES = {
+    "agent_continuations",
     "data_sources",
     "schema_snapshots",
     "verified_queries",
@@ -62,14 +63,22 @@ def main() -> int:
             {table.name for table in Base.metadata.sorted_tables} == EXPECTED_METADATA_TABLES
         ),
         "metadata_omits_raw_sensitive_payloads": not {
+            "prompt",
+            "question",
             "raw_question",
             "raw_sql",
             "result_rows",
+            "rows",
+            "sql",
         }
         & columns,
-        "alembic_revision_present": (
-            ROOT / "alembic" / "versions" / "20260720_0001_stage8_metadata.py"
-        ).is_file(),
+        "alembic_revisions_present": all(
+            (ROOT / "alembic" / "versions" / revision).is_file()
+            for revision in (
+                "20260720_0001_stage8_metadata.py",
+                "20260816_0002_agent_continuations.py",
+            )
+        ),
         "fastapi_factory_present": (ROOT / "backend" / "api" / "app.py").is_file(),
         "frontend_uses_api_client": (
             "AnalystAPIClient" in frontend_source

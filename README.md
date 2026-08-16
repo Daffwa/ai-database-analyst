@@ -20,6 +20,8 @@ The implemented portfolio includes:
 - exact PostgreSQL least-privilege roles and read-only transactions;
 - database-grounded tables, KPI/charts, explanations, sources, and CSV export;
 - privacy-minimized history, feedback, logs, metrics, and request correlation;
+- a typed, state-authorized bounded agent with one-use validation handles,
+  bounded repair, and durable canonical clarification continuation;
 - FastAPI, Streamlit, Docker Compose, GitHub Actions definitions, and
   reproducible evaluation/security gates.
 
@@ -33,6 +35,13 @@ published at [Daffwa/ai-database-analyst](https://github.com/Daffwa/ai-database-
 and CI, Docker, Security, and Evaluation have passed on GitHub-hosted runners.
 No public application deployment is claimed: hosting, authentication, and any
 paid resource still require explicit choices and verification.
+
+Roadmap Points 6 and 7 are implemented as `bounded-agent-v1` while Point 5
+remains blocked. This separation is deliberate: the tool authority and loop
+architecture can be verified offline, but the failed real-model quality gate
+still prevents a model-qualification or holdout claim. See
+[`docs/bounded-agent.md`](docs/bounded-agent.md) for tools, states, budgets,
+continuation storage, and API contracts.
 
 The Gemini/Gemma adapter and its offline security matrix are implemented. The
 point-5 real-model gate is blocked on model quality. After the first 26B

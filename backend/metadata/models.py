@@ -138,6 +138,27 @@ class QueryFeedbackRecord(TimestampMixin, Base):
     rating: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
 
 
+class AgentContinuationRecord(TimestampMixin, Base):
+    """Restart-safe clarification state without question text, SQL, prompts, or rows."""
+
+    __tablename__ = "agent_continuations"
+    __table_args__ = (Index("ix_agent_continuations_expiry", "expires_at"),)
+
+    continuation_id: Mapped[str] = mapped_column(String(200), primary_key=True)
+    request_id: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    question_digest: Mapped[str] = mapped_column(String(64), nullable=False)
+    rule_id: Mapped[str] = mapped_column(String(100), nullable=False)
+    option_ids: Mapped[list[str]] = mapped_column(JSON, nullable=False)
+    semantic_version: Mapped[str] = mapped_column(String(64), nullable=False)
+    semantic_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    language: Mapped[str] = mapped_column(String(8), nullable=False)
+    steps_used: Mapped[int] = mapped_column(Integer, nullable=False)
+    clarification_rounds: Mapped[int] = mapped_column(Integer, nullable=False)
+    elapsed_ms: Mapped[float] = mapped_column(Float, nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    claimed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
 class EvaluationCaseRecord(TimestampMixin, Base):
     __tablename__ = "evaluation_cases"
     __table_args__ = (Index("ix_evaluation_cases_dataset_category", "dataset_version", "category"),)

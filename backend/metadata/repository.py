@@ -9,8 +9,10 @@ from sqlalchemy import select
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
+from backend.agent.session import PersistedContinuation
 from backend.core.errors import DatabaseUnavailableError, InvalidRequestError
 from backend.metadata.models import (
+    AgentContinuationRecord,
     DataSourceRecord,
     QueryAttemptRecord,
     QueryFeedbackRecord,
@@ -226,6 +228,99 @@ class MetadataRepository:
             created_at=created_at.isoformat(),
         )
 
+    def save_continuation(self, record: PersistedContinuation) -> None:
+        """Upsert only privacy-minimized clarification state."""
+
+        try:
+            with Session(self._engine) as session, session.begin():
+                stored = session.get(AgentContinuationRecord, record.continuation_id)
+                values = {
+                    "request_id": record.request_id,
+                    "question_digest": record.question_digest,
+                    "rule_id": record.rule_id,
+                    "option_ids": list(record.option_ids),
+                    "semantic_version": record.semantic_version,
+                    "semantic_hash": record.semantic_hash,
+                    "language": record.language,
+                    "steps_used": record.steps_used,
+                    "clarification_rounds": record.clarification_rounds,
+                    "elapsed_ms": record.elapsed_ms,
+                    "expires_at": record.expires_at,
+                    "claimed_at": None,
+                }
+                if stored is None:
+                    session.add(
+                        AgentContinuationRecord(
+                            continuation_id=record.continuation_id,
+                            **values,
+                        )
+                    )
+                else:
+                    for field_name, value in values.items():
+                        setattr(stored, field_name, value)
+        except Exception as exc:
+            raise DatabaseUnavailableError("The metadata database is unavailable.") from exc
+
+    def claim_continuation(self, continuation_id: str) -> PersistedContinuation | None:
+        """Atomically lease one unexpired continuation to prevent duplicate execution."""
+
+        now = datetime.now(UTC)
+        try:
+            with Session(self._engine) as session, session.begin():
+                stored = session.scalar(
+                    select(AgentContinuationRecord)
+                    .where(AgentContinuationRecord.continuation_id == continuation_id)
+                    .with_for_update()
+                )
+                if stored is None:
+                    return None
+                if _utc_datetime(stored.expires_at) <= now:
+                    session.delete(stored)
+                    return None
+                if stored.claimed_at is not None:
+                    return None
+                stored.claimed_at = now
+                return _continuation_from_record(stored)
+        except Exception as exc:
+            raise DatabaseUnavailableError("The metadata database is unavailable.") from exc
+
+    def release_continuation(self, continuation_id: str, *, retain: bool) -> None:
+        """Release an invalid choice for retry, or consume a completed continuation."""
+
+        try:
+            with Session(self._engine) as session, session.begin():
+                stored = session.get(AgentContinuationRecord, continuation_id)
+                if stored is None:
+                    return
+                if retain:
+                    stored.claimed_at = None
+                else:
+                    session.delete(stored)
+        except Exception as exc:
+            raise DatabaseUnavailableError("The metadata database is unavailable.") from exc
+
+    def cancel_continuation(self, continuation_id: str) -> PersistedContinuation | None:
+        """Atomically remove an unclaimed continuation."""
+
+        now = datetime.now(UTC)
+        try:
+            with Session(self._engine) as session, session.begin():
+                stored = session.scalar(
+                    select(AgentContinuationRecord)
+                    .where(AgentContinuationRecord.continuation_id == continuation_id)
+                    .with_for_update()
+                )
+                if stored is None or stored.claimed_at is not None:
+                    return None
+                if _utc_datetime(stored.expires_at) <= now:
+                    session.delete(stored)
+                    return None
+                result = _continuation_from_record(stored)
+                session.delete(stored)
+                return result
+        except Exception as exc:
+            raise DatabaseUnavailableError("The metadata database is unavailable.") from exc
+
     def ping(self) -> bool:
         """Return dependency readiness without exposing connection details."""
 
@@ -235,3 +330,24 @@ class MetadataRepository:
         except Exception:
             return False
         return True
+
+
+def _continuation_from_record(record: AgentContinuationRecord) -> PersistedContinuation:
+    return PersistedContinuation(
+        continuation_id=record.continuation_id,
+        request_id=record.request_id,
+        question_digest=record.question_digest,
+        rule_id=record.rule_id,
+        option_ids=tuple(record.option_ids),
+        semantic_version=record.semantic_version,
+        semantic_hash=record.semantic_hash,
+        language=record.language,
+        steps_used=record.steps_used,
+        clarification_rounds=record.clarification_rounds,
+        elapsed_ms=record.elapsed_ms,
+        expires_at=_utc_datetime(record.expires_at),
+    )
+
+
+def _utc_datetime(value: datetime) -> datetime:
+    return value if value.tzinfo is not None else value.replace(tzinfo=UTC)

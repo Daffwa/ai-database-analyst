@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 
-from backend.core.errors import SemanticLayerError
+from backend.core.errors import InvalidRequestError, SemanticLayerError
 from backend.schemas.llm import LanguageCode
 from backend.schemas.semantic import (
     ApprovalStatus,
@@ -97,6 +97,61 @@ class SemanticService:
             approved_joins=joins,
             verified_queries=queries,
             assumptions=assumptions,
+        )
+        return self._bound_resolution(resolution)
+
+    def resolve_choice(
+        self,
+        question: str,
+        *,
+        rule_id: str,
+        option_id: str,
+    ) -> SemanticResolution:
+        """Resolve an earlier ambiguity from canonical IDs, never free-form instructions."""
+
+        initial = self.resolve(question)
+        decision = initial.clarification
+        if decision is None or decision.rule_id != rule_id:
+            raise InvalidRequestError("The clarification no longer matches this question.")
+        rule = next(
+            (
+                term.ambiguity
+                for term in initial.matched_terms
+                if term.ambiguity is not None and term.ambiguity.rule_id == rule_id
+            ),
+            None,
+        )
+        if rule is None:
+            raise InvalidRequestError("The clarification rule is unavailable.")
+        option = next((item for item in rule.options if item.option_id == option_id), None)
+        if option is None:
+            raise InvalidRequestError("The clarification choice is invalid.")
+
+        metrics = self._metrics_for_ids(initial.matched_metrics, option.metric_ids)
+        queries = self._verified_queries.retrieve(
+            question,
+            initial.language,
+            metric_ids=tuple(metric.metric_id for metric in metrics),
+        )
+        metrics = self._metrics_for_queries(
+            metrics,
+            queries,
+            question=question,
+            language=initial.language,
+        )
+        resolution = SemanticResolution(
+            semantic_version=initial.semantic_version,
+            content_hash=initial.content_hash,
+            language=initial.language,
+            matched_terms=initial.matched_terms,
+            matched_metrics=metrics,
+            approved_joins=self._approved_joins_for(queries),
+            verified_queries=queries,
+            assumptions=tuple(
+                dict.fromkeys(
+                    (*initial.assumptions, option.assumption.for_language(initial.language))
+                )
+            ),
         )
         return self._bound_resolution(resolution)
 

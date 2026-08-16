@@ -44,6 +44,7 @@ def test_migration_upgrades_from_empty_and_creates_all_metadata_models() -> None
     finally:
         engine.dispose()
     assert tables == {
+        "agent_continuations",
         "data_sources",
         "schema_snapshots",
         "verified_queries",

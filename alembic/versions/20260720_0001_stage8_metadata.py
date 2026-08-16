@@ -14,7 +14,9 @@ depends_on = None
 def upgrade() -> None:
     connection = op.get_bind()
     op.execute(f"CREATE SCHEMA IF NOT EXISTS {METADATA_SCHEMA} AUTHORIZATION migration_user")
-    Base.metadata.create_all(bind=connection, checkfirst=False)
+    # ``Base`` is shared with later revisions, so clean installs may already
+    # include newer tables. Keep this historical migration idempotent.
+    Base.metadata.create_all(bind=connection, checkfirst=True)
     op.execute(f"REVOKE ALL ON SCHEMA {METADATA_SCHEMA} FROM PUBLIC")
     op.execute(f"GRANT USAGE ON SCHEMA {METADATA_SCHEMA} TO app_metadata_user")
     op.execute(
@@ -36,5 +38,5 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     connection = op.get_bind()
-    Base.metadata.drop_all(bind=connection, checkfirst=False)
+    Base.metadata.drop_all(bind=connection, checkfirst=True)
     op.execute(f"DROP SCHEMA IF EXISTS {METADATA_SCHEMA}")

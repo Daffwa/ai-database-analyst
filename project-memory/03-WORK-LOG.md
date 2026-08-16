@@ -3,6 +3,52 @@
 Append new entries at the top so the latest handoff is easy to find. Never store
 secrets or raw sensitive payloads.
 
+## 2026-08-16 - PR #27 stale Tahap 8 gate expectations corrected
+
+### Outcome
+
+- The first hosted PR #27 run proved that both Alembic revisions upgraded a
+  clean PostgreSQL database, then failed because two exact expected-table sets
+  still described only the Tahap 8 schema.
+- Added `agent_continuations` to the deterministic readiness evaluator and
+  PostgreSQL integration expectation, required both migration files, and
+  retained an explicit denylist for raw question, prompt, SQL, and result-row
+  column names.
+- Full local verification passed again: 447 tests, 4 PostgreSQL/Docker skips,
+  90.69% coverage, Ruff format/lint, and strict Mypy on 176 files.
+- The corrective hosted runs all passed: CI `31942701362`, Docker
+  `31942701282`, and Security `31942701256`. This covers real PostgreSQL,
+  Python 3.11/3.12, clean Compose, source/container scans, and CodeQL. PR #27
+  was moved from draft to ready for review.
+
+## 2026-08-16 - Points 6-7 bounded agent implemented without model promotion
+
+### Outcome
+
+- Merged PR #26 into `main` as `42ba532`, then created
+  `agent/bounded-agent-points-6-7` from the clean merged source.
+- Added eight typed/versioned tools behind a static per-state registry. The
+  executor accepts only request-bound, one-use validation capabilities; result
+  formatting uses a separate one-use capability. Unknown, disallowed, forged,
+  duplicated, or malformed calls fail closed.
+- Added an 8-step/2-repair/30-second decide-act-observe loop with distinct
+  terminal outcomes, provider/query/deadline handling, optional token/cost
+  stops, repairable-only `SQLRepairCoordinator`, and privacy-safe audit events.
+- Added canonical clarification query/continue/cancel API contracts and
+  Streamlit controls. Alembic `20260816_0002` persists restart-safe state using
+  only question digest, semantic rule/option/version/hash, counters, and expiry;
+  claim is atomic and raw question/SQL/prompt/rows are not stored.
+- Preserved `/api/v1/query` as the deterministic compatibility path and kept
+  `fake` / `fake-deterministic` as the default.
+
+### Verification and boundary
+
+- Local full gate: 447 passed, 4 PostgreSQL/Docker skips, 90.69% coverage;
+  Ruff format/lint, strict Mypy on 176 files, and diff-check passed.
+- No live provider request was made. Points 6-7 are complete as architecture
+  and offline evidence, but Point 5 remains `Terblokir`; no candidate, model
+  qualification, holdout, or public deployment claim follows from this work.
+
 ## 2026-08-16 - Security restored; Phase N passed 5/6 and stopped before promotion
 
 ### Outcome
