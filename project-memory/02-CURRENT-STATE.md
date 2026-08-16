@@ -3,6 +3,10 @@
 - Last updated: 2026-08-16
 - Last known commit before current documentation work:
   `c27b15b Record Stage 10 hosted release evidence (#12)`
+- Current working branch/implementation commit:
+  `agent/complete-real-llm-point5` / `9c54425 Implement secure real-model evaluation through Phase N`
+- Draft review: GitHub PR `#26`; all nine reported hosted checks passed on the
+  implementation commit.
 - Active goal: implement the real LLM and bounded-agent roadmap
 - Active plan: `docs/real-llm-agent-implementation-plan.md`
 - Default implementation provider: `fake` / `fake-deterministic`
@@ -81,8 +85,11 @@ The following memory/plan work was created on 2026-08-07. Always verify with
   when the first preflight accidentally made one free 26B request; that call
   failed on truncated JSON, did not access holdout, and produced no report.
 - GitPython is pinned at 3.1.58. `pip-audit` reports no known vulnerabilities;
-  the focused security/provider suite passed 51 tests. Hosted secret/container
-  evidence is still required because the local Docker engine was unavailable.
+  the focused security/provider suite passed 51 tests. GitHub PR #26 then
+  passed all nine reported checks, including source security, container
+  security/Trivy, CodeQL, Docker Compose, PostgreSQL, and both Python quality
+  jobs. This closes the Docker evidence gap left by the unavailable local
+  engine.
 - Phase M completed all 18 selected Phase-L development failures using 19/36
   requests and improved the same cases from 0/18 to 12/18. Structured validity
   was 17/18 (94.44%); all 17 analytical outcomes had valid SQL and successful

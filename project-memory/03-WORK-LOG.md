@@ -9,7 +9,9 @@ secrets or raw sensitive payloads.
 
 - Pinned GitPython 3.1.58, clearing all seven installed-package advisories;
   focused security/provider tests passed 51/51. Local Docker was unavailable,
-  so hosted secret/container scans remain the closing evidence.
+  so hosted scans supplied the closing evidence: all nine PR checks passed,
+  including source security, container security/Trivy, CodeQL, Docker Compose,
+  PostgreSQL, and Python 3.11/3.12 quality.
 - Corrected `scripts/dev.py verify` so it always forces `fake` /
   `fake-deterministic` and an empty child credential. The complete offline
   gate passed 411 tests with four PostgreSQL skips, 90.10% coverage, Ruff,
@@ -31,6 +33,8 @@ secrets or raw sensitive payloads.
   combined summary was created. Point 5 is `Terblokir`; points 6-7 remain
   closed pending an explicit product cardinality/projection policy and a new
   independently curated sealed holdout.
+- Consolidated the 146-file Point 1-5 implementation/evidence scope into commit
+  `9c54425`, pushed `agent/complete-real-llm-point5`, and opened draft PR #26.
 
 ## 2026-08-08 - Phase M improved failures to 12/18; Phase-N source prepared offline
 
