@@ -105,6 +105,14 @@ def test_parser_accepts_json_object_and_rejects_free_text_and_oversize() -> None
         StructuredOutputParser(max_characters=0)
 
 
+def test_parser_rejects_missing_required_structured_field() -> None:
+    payload = _analysis_payload()
+    del payload["reasoning_summary"]
+
+    with pytest.raises(LLMOutputError):
+        StructuredOutputParser().parse(json.dumps(payload))
+
+
 def test_declared_schema_requires_allowed_qualified_sources_in_prompt_context() -> None:
     snapshot = load_schema_snapshot(ROOT / "data" / "schemas" / "chinook-v1.4.5.json")
     allowlist = SchemaAllowlist.from_snapshot(snapshot)

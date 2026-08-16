@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from enum import StrEnum
-from typing import Self
+from typing import Any, Self
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -99,6 +99,30 @@ class AdapterRequest(BaseModel):
     question: str
     system_prompt: str
     user_prompt: str
+    response_schema: dict[str, Any] | None = None
+    enforce_response_schema: bool = True
+
+
+class LLMTokenUsage(BaseModel):
+    """Provider-reported token counts without retaining prompt or response text."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    input_tokens: int | None = Field(default=None, ge=0)
+    output_tokens: int | None = Field(default=None, ge=0)
+    reasoning_tokens: int | None = Field(default=None, ge=0)
+    cached_input_tokens: int | None = Field(default=None, ge=0)
+    total_tokens: int | None = Field(default=None, ge=0)
+
+
+class AdapterGeneration(BaseModel):
+    """Raw model content plus privacy-safe provider usage metadata."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    content: str
+    usage: LLMTokenUsage | None = None
+    finish_reason: str | None = Field(default=None, max_length=100)
 
 
 class PipelineStage(StrEnum):
@@ -112,6 +136,11 @@ class PipelineStage(StrEnum):
     AMBIGUITY_CHECKED = "ambiguity_checked"
     PROMPT_BUILT = "prompt_built"
     LLM_INVOKED = "llm_invoked"
+    ANALYSIS_PLAN_GENERATED = "analysis_plan_generated"
+    ANALYSIS_PLAN_GROUNDED = "analysis_plan_grounded"
+    ANALYSIS_PLAN_REPAIRED = "analysis_plan_repaired"
+    SQL_COMPILED = "sql_compiled"
+    PLAN_SQL_ALIGNED = "plan_sql_aligned"
     OUTPUT_VALIDATED = "output_validated"
     AWAITING_SECURITY_VALIDATION = "awaiting_security_validation"
     SECURITY_VALIDATED = "security_validated"
@@ -156,6 +185,11 @@ class GenerationResult(BaseModel):
     provider: str
     model: str
     llm_latency_ms: float = Field(ge=0)
+    llm_token_usage: LLMTokenUsage | None = None
+    llm_request_count: int = Field(default=1, ge=1, le=10)
+    repair_attempts: int = Field(default=0, ge=0, le=5)
+    repair_succeeded: bool | None = None
+    generation_events: tuple[PipelineEvent, ...] = ()
 
 
 class QueryResponse(BaseModel):
@@ -186,6 +220,10 @@ class QueryResponse(BaseModel):
     provider: str
     model: str
     llm_latency_ms: float = Field(ge=0)
+    llm_token_usage: LLMTokenUsage | None = None
+    llm_request_count: int = Field(default=0, ge=0, le=10)
+    repair_attempts: int = Field(default=0, ge=0, le=5)
+    repair_succeeded: bool | None = None
     database_latency_ms: float | None = Field(default=None, ge=0)
     pipeline: tuple[PipelineEvent, ...]
     warnings: tuple[str, ...]

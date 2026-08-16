@@ -67,6 +67,59 @@ def test_all_twenty_existing_baselines_have_zero_false_clarifications(
     )
 
 
+def test_invoice_line_sales_selects_the_specific_reviewed_metric(
+    semantic_service: SemanticService,
+) -> None:
+    resolution = semantic_service.resolve(
+        "Hitung nilai penjualan baris invoice per negara penagihan."
+    )
+
+    assert tuple(term.term_id for term in resolution.matched_terms) == ("sales",)
+    assert tuple(metric.metric_id for metric in resolution.matched_metrics) == (
+        "product_sales_value",
+    )
+
+
+def test_resolved_ambiguity_keeps_only_the_selected_metric(
+    semantic_service: SemanticService,
+) -> None:
+    resolution = semantic_service.resolve("Apa penjualan terbesar berdasarkan jumlah unit?")
+
+    assert resolution.clarification is None
+    assert tuple(metric.metric_id for metric in resolution.matched_metrics) == ("units_sold",)
+
+
+@pytest.mark.parametrize(
+    ("question", "expected_metric_ids"),
+    [
+        ("Count all invoices.", ("invoice_count",)),
+        ("Count tracks for each genre ID.", ("track_count",)),
+        ("Count invoices for five customers by customer ID.", ("invoice_count",)),
+        ("Show five customers with the most invoices.", ("invoice_count",)),
+        ("Show five albums with the highest track counts.", ("track_count",)),
+        ("Show five invoice lines with their invoice totals.", ()),
+    ],
+)
+def test_compositional_count_binding_uses_the_counted_entity(
+    semantic_service: SemanticService,
+    question: str,
+    expected_metric_ids: tuple[str, ...],
+) -> None:
+    resolution = semantic_service.resolve(question)
+
+    assert tuple(metric.metric_id for metric in resolution.matched_metrics) == (expected_metric_ids)
+
+
+def test_generic_ranking_words_do_not_retrieve_a_different_entity_example(
+    semantic_service: SemanticService,
+) -> None:
+    resolution = semantic_service.resolve("Tampilkan tipe media dengan jumlah track terbanyak.")
+
+    assert "artist_with_most_tracks" not in {
+        query.query_id for query in resolution.verified_queries
+    }
+
+
 def test_each_valid_verified_query_is_retrieved_for_its_exact_question(
     semantic_service: SemanticService,
     semantic_bundle: SemanticLayerBundle,

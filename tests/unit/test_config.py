@@ -22,6 +22,8 @@ def test_safe_defaults_require_no_provider_secret() -> None:
     assert settings.llm_provider == "fake"
     assert settings.llm_model == "fake-deterministic"
     assert settings.llm_api_key is None
+    assert settings.llm_max_output_tokens == 4_096
+    assert settings.llm_thinking_level == "minimal"
     assert settings.llm_max_output_characters == 20_000
     assert settings.has_llm_credentials is False
     assert settings.question_max_characters == 2_000

@@ -938,11 +938,546 @@ resources or infer license and visibility.
 - Publication or deployment requires a fresh decision and post-action smoke
   evidence.
 
+## ADR-0035 — Use Hosted Gemma 4 for the First Real-Provider Baseline
+
+- Date: 2026-08-07
+- Status: Accepted
+
+### Context
+
+The deterministic fake provider proves pipeline and security mechanics but not
+real-model generalization. The first live candidate must support strict
+structured output, later client-defined tool calls, pinned evaluation, bounded
+cost, and an acceptable data policy without changing the SQL trust boundary.
+Current official documentation and the project-specific comparison are recorded
+in `docs/llm-provider-decision.md`.
+
+### Decision
+
+Use Google Gemini Developer API with hosted model `gemma-4-26b-a4b-it` through
+`models.generateContent` for the first real-provider baseline. Start with
+thinking level `minimal`, JSON Schema output, `store: false`, and an output cap
+of 4,096 tokens. Allow only synthetic Chinook questions and bounded
+schema/semantic context, keep automatic provider fallback disabled, and
+preserve `FakeLLMAdapter` as the offline default.
+
+The owner explicitly selected Google Gemini and Gemma 4, replacing the earlier
+unaccepted OpenAI proposal. Current official pricing lists hosted Gemma 4 as
+free-only, so the paid budget is USD 0. Free-tier content may be used to improve
+Google products; therefore non-public or sensitive data remains prohibited.
+
+### Consequences
+
+- Hosted Gemma 4 can be tested without authorizing a paid resource.
+- `gemma-4-26b-a4b-it` is the explicit evaluation identifier; the 31B variant
+  requires a separate recorded comparison before use.
+- Real SQL/Bahasa Indonesia quality remains an evaluation question, not an
+  assumption.
+- Provider errors fail safely instead of silently changing provider or data
+  policy.
+- A separate review is required before sending non-synthetic or sensitive data.
+- A key pasted into chat on the decision date is treated as compromised and
+  must be rotated before any live smoke test.
+
+The first replacement enabled one successful synthetic structured smoke on
+2026-08-07. A subsequent point 3 audit found a credential-like value in the
+tracked Compose example. The value was removed immediately and a regression
+test was added. A second rotation was verified on 2026-08-08: zero exact matches
+exist in tracked files and one bounded live smoke passed.
+
+## ADR-0036 - Gate Real-Model Holdout on a Frozen Development Candidate
+
+- Date: 2026-08-08
+- Status: Accepted
+
+### Context
+
+The fake Stage 7 baseline proves deterministic mechanics but not model
+generalization. A live evaluation can leak holdout information, drift source or
+prompt configuration during a long run, exceed free-tier quotas, or create a
+misleading comparison if development failures are ignored.
+
+### Decision
+
+Run the immutable `stage-7-v1` corpus as isolated development and holdout
+splits. Require explicit live confirmation, exact provider-call caps, USD 0 paid
+spend, temperature 0, no automatic retry, privacy-minimized checkpoints and
+reports, and a hash of evaluator source. Freeze provider, model, prompt,
+semantic/schema identity, output limit, thresholds, and the passing development
+report hash before any holdout call. Reject holdout when development fails.
+
+The initial `gemma-4-26b-a4b-it` v3 development calibration failed: 50%
+structured-output validity and 25% execution accuracy versus required 99% and
+85%. Therefore no candidate was frozen and no holdout request was made.
+
+### Consequences
+
+- Point 5 is blocked rather than reported as a successful baseline.
+- The fake 100/100 baseline remains separate and is not presented as an
+  equivalent model-quality comparison.
+- Unblocking requires an owner-approved alternate model or a new versioned
+  protocol with explicitly revised thresholds/retry budget.
+- Points 6-7 cannot depend on this model as a qualified baseline yet.
+
+## ADR-0037 - Reject Gemma 4 31B at the Formal Development Gate
+
+- Date: 2026-08-08
+- Status: Accepted
+
+### Context
+
+After the 26B candidate failed development calibration, the owner authorized
+the recommended `gemma-4-31b-it` candidate. The frozen quality/security
+thresholds, USD 0 paid budget, no-retry rule, development/holdout isolation, and
+read-only execution boundary were left unchanged. Eight development-only
+calibration requests produced prompt v4 before the complete development run.
+
+### Decision
+
+Do not promote or freeze the `gemma-4-31b-it` / prompt-v4 candidate. Its formal
+development run used 68 provider requests across 70 cases and achieved 97.06%
+structured-output validity and 29.51% execution accuracy, below the required
+99% and 85%. It did achieve 100% clarification accuracy, zero schema
+hallucinations, and 100% known-unsafe protection with zero security bypasses,
+but passing security metrics do not override the failed quality gate.
+
+Keep holdout sealed, preserve both model results, and require a new versioned
+candidate/protocol before another formal attempt. Do not reduce thresholds or
+change the holdout contract implicitly.
+
+### Consequences
+
+- Point 5 remains `Terblokir`; this is a documented failed evaluation, not a
+  qualified real-model baseline.
+- No 31B candidate manifest is frozen and holdout provider calls remain zero.
+- Points 6-7 cannot claim this candidate is evaluated and ready.
+- The next owner decision should choose a stronger model or explicitly approve
+  a development-derived output-contract/evaluation-protocol revision.
+- The deterministic fake provider remains the offline regression default.
+
+## ADR-0038 - Version Semantic Result Equivalence Without Weakening Correctness
+
+- Date: 2026-08-08
+- Status: Accepted
+
+### Context
+
+The failed 31B development report classified 29 cases as column differences.
+The strict-v1 comparator required exact column names and order even when the
+executed relation could be presentation-equivalent. However, loosening result
+comparison can conceal mislabeled values, missing dimensions, or wrong business
+answers. The privacy-safe report deliberately retained neither SQL nor result
+rows, so the old evidence cannot be reliably rescored.
+
+### Decision
+
+Keep `strict-v1` for legacy reproducibility and add an explicit
+`semantic-v2` policy for future runs. Semantic-v2 requires identical column and
+row counts. It accepts normalized case/spacing/punctuation and column order, or
+an otherwise unique one-to-one alignment proven by returned values. Shared
+normalized names are locked to prevent misleading remapping. It preserves
+numeric tolerance, NULL/type rules, and the corpus `order_sensitive` flag.
+
+Fail closed on extra/missing columns, ambiguous mappings, changed values or row
+counts, inconsistent result shapes, and required-order changes. Record the
+policy in checkpoint identity, evaluator provenance, candidate manifests,
+holdout validation, and summaries. Keep all frozen quality/security thresholds
+unchanged and do not retrospectively alter the failed v2 report.
+
+### Consequences
+
+- The deterministic development-only audit must pass before any new live run.
+- A candidate cannot mix comparison policies between development and holdout.
+- The audit proves comparator invariants, not model quality; a fresh provider
+  run remains necessary to measure execution accuracy.
+- Old checkpoints cannot be resumed under semantic-v2.
+- Holdout remains sealed and points 6-7 remain blocked until a complete
+  semantic-v2 development run passes and is frozen.
+
+## ADR-0039 - Reject the 31B Semantic-v2 Development Candidate
+
+- Date: 2026-08-08
+- Status: Accepted
+
+### Context
+
+After ADR-0038's deterministic comparator audit passed, the owner authorized a
+fresh 68-request development run of `gemma-4-31b-it`, prompt v4, and
+`semantic-v2`. The frozen quality/security thresholds, USD 0 paid budget,
+no-retry rule, immutable development corpus, and holdout isolation remained
+unchanged.
+
+### Decision
+
+Do not promote or freeze this candidate. Across 70 development cases, 37
+passed. Semantic-v2 accepted 10 presentation-equivalent results and observed
+execution accuracy reached 28/61 (45.90%), but the required threshold is 85%.
+Structured-output validity remained 66/68 (97.06%) against the required 99%.
+
+Clarification accuracy was 2/2, schema hallucination was 0/61, known-unsafe
+protection was 7/7, and no security bypass occurred. These passing safety
+metrics do not override the failed quality gates. Keep the holdout sealed and
+require an explicitly versioned new model, prompt, or bounded runtime candidate
+before another formal attempt.
+
+### Consequences
+
+- Point 5 remains `Terblokir`; points 6-7 cannot claim this model is qualified.
+- No candidate manifest is frozen and holdout cases scored remain zero.
+- Semantic-v2 remains the audited comparator for future explicitly versioned
+  runs; its 10 accepted presentation-equivalent cases do not justify further
+  loosening.
+- The next owner decision must select a new candidate while preserving the
+  quality thresholds and holdout contract unless a separate protocol change is
+  explicitly approved.
+- The deterministic fake provider remains the offline regression default.
+
+## ADR-0040 - Evaluate a Gemma-Only Plan-Compiled Runtime Candidate
+
+- Date: 2026-08-08
+- Status: Accepted
+
+### Context
+
+The `gemma-4-31b-it` prompt-v4 development run was safe but reached only
+45.90% execution accuracy. The owner explicitly requested retaining Gemma,
+implementing the recommended accuracy improvements, permitting new algorithms,
+and excluding FakeLLM from the new runtime path.
+
+### Decision
+
+Introduce versioned runtime `v5-plan`. Gemma emits a strict AnalysisPlan rather
+than SQL. Deterministic services ground identifiers, retrieve reviewed examples
+with a hybrid lexical/metric/schema score, derive unique approved shortest join
+paths, compile every SQL token, verify plan/SQL alignment, and pass the result
+through the existing AST security and read-only execution boundaries. Permit at
+most one repair using a sanitized plan error code. Meter every actual Gemini
+call—including repair—at the adapter boundary.
+
+Authorize protocol v4 development-only evaluation: a one-case compatibility
+smoke capped at 2 requests, followed on success by a 12-case hard pilot capped
+at 24 requests. Paid budget remains USD 0 and holdout authorization remains
+zero.
+
+### Consequences
+
+- The new path cannot instantiate or fall back to FakeLLMAdapter.
+- Existing fake behavior remains available for legacy offline regression.
+- SQL security violations are terminal and never enter plan repair.
+- Pilot improvement must be reported against the same-case 0/12 baseline and
+  cannot qualify the formal candidate or unlock holdout by itself.
+- The complete development split and unchanged thresholds remain mandatory
+  before candidate freezing.
+- Phase A11 proved the JSON-MIME/strict-local-contract design can complete plan
+  validation, deterministic compilation, security validation, execution, and
+  comparison in one provider request. It still failed the compatibility case
+  because the result relation had too few columns.
+- Phase A12 may adjust only general unrelated detail-shape guidance and
+  privacy-safe column-count telemetry. The hard pilot remains closed until the
+  compatibility case passes; holdout authorization remains zero.
+- A12 improved the observed result from one to two of three columns but did not
+  pass. A13 may add a narrow deterministic pre-compilation invariant for a
+  bounded single-table list filtered by one non-primary ID. Incomplete plans
+  use the existing sanitized one-repair path; the runtime must not synthesize
+  or silently add projection columns.
+- A13 proved the invariant fails closed, but its generic repair code did not
+  correct the plan in one attempt. A14 may expose only the missing semantic role
+  (primary identifier, display, or filtering identifier) to the repair prompt;
+  physical identifiers remain confined to the existing schema context and are
+  not added to reports.
+- A14 passed the compatibility case with one bounded repair and exact 3/3
+  result columns. This satisfies ADR-0040's prerequisite for the frozen
+  12-case development hard pilot, but does not authorize holdout access,
+  candidate freezing, or points 6-7.
+- The frozen hard pilot v1 passed 2/12 versus its 0/12 same-case baseline and
+  had zero hallucination/security bypass, but missed the 8/12 engineering
+  target. Continue development-only work with deterministic alias and benchmark
+  normalization; do not promote this result or open holdout.
+- C1 removed alias/benchmark contract failures but both selected cases remained
+  2/3-column mismatches. C2 may require bounded detail-output roles derived
+  solely from schema metadata and explicit question mentions, using rejection
+  plus one repair rather than runtime projection synthesis.
+- C2 made two of four selected failures correct, but Gemma repeatedly omitted
+  an unspoken base-table relationship ID. C3 may deterministically complete and
+  canonically order only trusted base-detail roles from the schema snapshot.
+  It must not synthesize related displays, filters, joins, aggregates, values,
+  limits, ordering, or free-form SQL, and all existing validators remain
+  mandatory.
+- C3 made the benchmark Invoice case exact, while the filtered Invoice case
+  retained one unnecessary non-ID filter column. C4 may prune only such a
+  presentation field when it is neither explicitly named nor ordered; it must
+  never remove or modify the underlying predicate.
+- C4 passed the remaining filtered Invoice case exactly. Run hard pilot v2 on
+  the exact frozen source and compare with both prior baselines. Subset success
+  still cannot authorize holdout access or candidate freezing.
+- Hard pilot v2 reached 6/12 with zero hallucination/bypass, materially above
+  both prior baselines but below the 8/12 engineering target. Phase E may skip
+  a related display when the question/filter explicitly asks for that entity's
+  ID, and may complete grouped base identity/display dimensions for bounded
+  aggregate rankings. Holdout remains sealed.
+- Phase E passed both targeted cases with safe execution. Authorize only the
+  same-case hard pilot v3 under the existing 24-call maximum; all formal and
+  holdout boundaries remain unchanged.
+- Hard pilot v3 met its engineering target at 8/12 and proved a same-case
+  increase from 0% to 66.67%, with zero hallucination/bypass. Do not promote it:
+  structured validity was 83.33% and execution accuracy 66.67%, below formal
+  99%/85% gates. A max-136 complete development run requires a new explicit
+  authorization; holdout and points 6-7 remain closed.
+
+## ADR-0041 - Ground Unambiguous Metrics and Benchmark Shapes Deterministically
+
+- Date: 2026-08-08
+- Status: Accepted
+
+### Context
+
+Hard pilot v3 left four development failures: one transient provider error,
+one bounded detail-grain/order mismatch, one invoice-line sales metric mismatch,
+and one grouped-average benchmark contract failure. The owner authorized the
+first correction stage while retaining Gemma, excluding FakeLLM from the live
+`v5-plan` path, and preserving all quality/security thresholds.
+
+### Decision
+
+Keep the maximum of two actual provider requests per case and share the second
+slot between one transient-provider retry and the existing single plan repair.
+When semantic resolution selects exactly one `project_verified` metric and the
+plan contains exactly one measure, bind that measure to the reviewed metric
+while preserving its output alias. For questions without an explicit order,
+derive stable project defaults: base primary ID ascending for bounded detail
+lists, or measure descending plus dimensions ascending for non-time grouped
+results. Resolve the bounded-list base grain from the first explicitly named
+schema entity.
+
+Normalize only structurally equivalent benchmark shapes: `values=null` becomes
+empty only where literals are semantically forbidden, a singleton string
+`group_by` list becomes its sole string, and a recognized average benchmark
+with a validated grouping string becomes `group_average`. Other shapes fail
+closed and may receive one sanitized role-specific repair instruction. Continue
+to derive joins, compile SQL, validate alignment/AST policy, and execute through
+the read-only boundary deterministically.
+
+### Consequences
+
+- The new provider retry does not increase the existing two-request-per-case
+  cap and cannot bypass adapter-level metering.
+- The live Stage-1 smoke passed `FLT-003`, `JON-003`, and `JON-011` at 3/4;
+  the final benchmark correction then passed `SUB-004` exactly at 1/1.
+- Each final passing outcome used one request. The failed `SUB-004` attempts in
+  Phases G and H used four additional requests, so the correction cycle used 8
+  total. No FakeLLM, schema hallucination, security bypass, paid cost, or
+  holdout call occurred.
+- These were targeted runs on successive source freezes. They do not prove a
+  12/12 same-source hard-pilot result and do not qualify the formal candidate.
+- Before the 136-request complete-development decision, rerun the same 12 hard
+  development cases on the exact final Stage-1 source with a maximum of 24 requests.
+  That rerun requires a separate owner authorization. Holdout and points 6-7
+  remain closed.
+
+## ADR-0042 - Reject Promotion After the Exact Final Stage-1 Hard Pilot
+
+- Date: 2026-08-08
+- Status: Accepted
+
+### Context
+
+The owner authorized the same 12 hard development cases on one exact final
+Stage-1 source freeze with a maximum of 24 provider requests. This run tests
+whether the four targeted corrections generalize together with the eight prior
+passes; it is still a development subset and cannot qualify holdout by itself.
+
+### Decision
+
+Record the result as a measured improvement but do not freeze or promote the
+candidate. The run passed 10/12 with 12/24 requests and no repair. Structured
+plan validity, valid SQL, and read-only execution success were all 12/12, but
+execution accuracy was 83.33%, below the unchanged 85% threshold. `RNK-004`
+and `SUB-001` produced safe three-column results whose row values or required
+ordering differed under `semantic-v2`.
+
+Keep the maximum-136 complete development run, candidate freeze, holdout, and
+points 6-7 closed until the owner authorizes the next bounded development
+action. Do not lower the threshold or loosen semantic comparison to convert
+the two substantive mismatches into passes.
+
+### Consequences
+
+- Same-case accuracy progressed 0/12 -> 2/12 -> 6/12 -> 8/12 -> 10/12 while
+  provider requests fell to 12/24 and structured validity reached 100%.
+- Source hash remained stable before and after the run; no source drift was
+  detected.
+- Schema hallucination, security bypass, measured paid cost, and holdout calls
+  remained zero; these safety results do not override the failed quality gate.
+- The next bounded work should analyze or correct `RNK-004` and `SUB-001`
+  without accessing holdout or weakening the deterministic security boundary.
+
+## ADR-0043 - Canonicalize Bounded Superlative and Benchmark Ordering
+
+- Date: 2026-08-08
+- Status: Accepted
+
+### Context
+
+The exact final Stage-1 hard pilot produced valid plans, valid SQL, successful
+read-only execution, and the expected three-column relation for `RNK-004` and
+`SUB-001`, but selected or ordered the wrong rows. Source inspection showed
+that the Stage-1 fallback ordering did not recognize `longest` as explicit
+ranking intent and replaced the natural ordering of a bounded above-average
+detail query with primary-key ascending.
+
+### Decision
+
+For a bounded detail query with explicit superlative ranking, preserve the
+grounded model order and append the projected base primary key ascending as a
+deterministic tie-breaker. For a bounded detail query with exactly one global-
+average comparison, derive the ordering from its projected comparison column:
+descending for `>`/`>=`, ascending for `<`/`<=`, then projected base primary
+key ascending.
+
+Apply the policy only to grounded physical columns and typed benchmark
+operators. Do not inspect evaluation case IDs, expected SQL, or expected rows;
+do not alter metrics, filters, joins, limits, comparison rules, AST security,
+or read-only execution.
+
+### Consequences
+
+- Offline regression passed 390 tests with four PostgreSQL skips and 90.26%
+  coverage; 73 focused security/evaluator tests, Ruff, strict Mypy on 164
+  files, and `git diff --check` passed.
+- Phase K passed both corrected development cases exactly using 2/4 maximum
+  provider requests and no repair. Source hash was stable, and hallucination,
+  security bypass, measured paid cost, and holdout calls remained zero.
+- The passing two-case smoke is staged evidence. The maximum-136 complete
+  development run requires a separate owner authorization; candidate freeze,
+  holdout, and points 6-7 remain closed.
+
+## ADR-0044 - Reject v5-plan Promotion After Complete Development
+
+- Date: 2026-08-08
+- Status: Accepted
+
+### Context
+
+The owner authorized all remaining Point-5 steps, conditional on each frozen
+gate. Phase L evaluated the complete 70-case development split on the formatted
+Phase-K source using the Gemma-only `v5-plan` runtime, `semantic-v2`, and a hard
+maximum of 136 provider requests.
+
+### Decision
+
+Reject candidate promotion and stop before holdout. Phase L passed 52/70 cases
+using 74 requests. Structured validity was 64/68 (94.12%) against 99%,
+execution accuracy was 44/61 (72.13%) against 85%, and known-unsafe blocking
+was 6/7 (85.71%) against the mandatory 100%. These three failures are terminal
+for this candidate under the pre-registered protocol.
+
+Do not create a candidate manifest, calculate or run the holdout split, or
+generate a combined development/holdout summary. Keep Point 5 blocked and
+require any continuation to use a new explicitly versioned development-only
+candidate without lowering thresholds or loosening `semantic-v2`.
+
+### Consequences
+
+- `v5-plan` materially improved execution accuracy from 45.90% to 72.13% and
+  valid SQL/execution from 86.89% to 95.08% versus the prior complete
+  prompt-v4/semantic-v2 run.
+- Structured reliability regressed from 97.06% to 94.12%, and known-unsafe
+  blocking regressed from 100% to 85.71%; the accuracy gains cannot override
+  these failures.
+- The missed unsafe case failed closed at strict plan validation and never
+  compiled or executed SQL, so no security bypass occurred, but it still
+  failed the required unsupported-classification contract.
+- Clarification remained 2/2, schema hallucination and false blocking remained
+  zero, measured paid cost was USD 0, and holdout calls remained zero.
+- No candidate, holdout report, or combined summary exists. Points 6-7 remain
+  closed because Point 5 has not qualified a real-model candidate.
+
+## ADR-0045 - Keep Phase M Development-Only and Prepare a New Offline Candidate
+
+- Date: 2026-08-08
+- Status: Accepted
+
+### Context
+
+Phase L left 18 development failures. The owner authorized a new bounded
+development candidate targeting those failures without opening holdout or
+lowering the formal thresholds. Phase M froze source hash `084ca023...`, used
+the Gemma-only `v5-plan` path, and reserved at most 36 provider requests.
+
+### Decision
+
+Do not promote Phase M. It improved the same-case result from 0/18 to 12/18
+using 19 requests, with 17/18 structured outcomes and 17/17 valid SQL/read-only
+executions, but it missed the pre-registered 15/18 diagnostic target and again
+missed the required unsafe classification.
+
+Permit offline implementation of generic corrections for the five remaining
+explainable patterns: an implicit ordered-detail sample, a named direct-
+relationship display pair, grouped foreign-key entity grain, an unnumbered
+display ranking, and a provider unsupported marker. Do not encode the
+`AGG-007` 20-row expectation without a separately approved product
+cardinality policy. Runtime code must remain independent of case IDs, expected
+SQL, expected columns, and expected rows.
+
+### Consequences
+
+- The new offline source hash is `126c6ecdbc146098...`; it passes 409 tests
+  with four PostgreSQL skips and 90.10% coverage, Ruff/format, strict Mypy on
+  164 files, and `git diff --check`.
+- This new source has made zero provider calls. Phase-M evidence remains bound
+  to its original hash and is not retroactively reinterpreted.
+- A six-case Phase-N development rerun would have an exact maximum of 12
+  requests and requires separate owner authorization.
+- A local diagnostic accidentally exposed records outside development. No
+  holdout call or scoring occurred, but `stage-7-v1` is disqualified as an
+  unseen final holdout. A replacement must be independently curated and sealed
+  without this agent inspecting it.
+- No candidate is frozen; holdout, combined summary, and points 6-7 remain
+  closed.
+
+## ADR-0046 - Stop Phase N Before Candidate Promotion
+
+- Date: 2026-08-16
+- Status: Accepted
+
+### Context
+
+The owner authorized a six-case development-only Phase N after generic offline
+corrections for five of the six remaining Phase-M failures. The source was
+frozen at `126c6ecdbc146098...`; the run used Gemma 4 31B, prompt `v5-plan`,
+`semantic-v2`, and a hard maximum of 12 provider requests. `AGG-007` was known
+to encode a 20-row expectation without an approved product cardinality policy.
+
+### Decision
+
+Do not promote or retry Phase N in place. It passed 5/6 cases using 7 requests,
+with 6/6 structured outcomes, 5/5 valid SQL/read-only executions, 4/5 execution
+accuracy, and 1/1 unsafe blocking. `AGG-007` alone failed because the returned
+safe relation had three columns while the expected relation has two; the
+question itself does not establish the expected 20-row boundary.
+
+Do not hard-code the case ID, expected columns, rows, or SQL. A continuation
+requires an explicit product decision for the default cardinality and
+projection of unbounded analytical lists, followed by a new versioned
+development protocol and exact request authorization.
+
+### Consequences
+
+- Phase N missed its execution-accuracy gate at 80%. No candidate manifest,
+  holdout report, holdout cap, or combined summary was created.
+- Schema hallucination, false blocking, security bypass, measured paid cost,
+  and holdout calls were zero. These safety results do not override the failed
+  quality gate.
+- The existing `stage-7-v1` holdout remains disqualified. Final promotion also
+  requires an independently curated and sealed replacement that this agent
+  does not inspect.
+- Point 5 is `Terblokir`; points 6-7 remain closed.
+
 ## Deferred Decisions
 
 | ID | Decision | Required by | Reason for deferral |
 |---|---|---|---|
-| DD-001 | Real LLM provider and model | Real-provider evaluation | Costs, capabilities, and data policy must be checked at implementation time. |
+| DD-001 | Real LLM provider and model | Resolved 2026-08-07 | ADR-0035 selects Gemini API with `gemma-4-26b-a4b-it`; paid budget USD 0. |
 | DD-002 | Public project license | Resolved 2026-07-21 | MIT selected by the owner. |
 | DD-003 | Deployment platform | Tahap 10 | Availability and pricing are time-sensitive. |
 | DD-004 | Authentication provider | Public production-like demo | Not required for the local portfolio MVP. |

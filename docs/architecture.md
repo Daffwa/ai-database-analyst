@@ -71,6 +71,7 @@ sequenceDiagram
     participant O as Orchestrator
     participant C as Context services
     participant L as LLM adapter
+    participant P as Plan grounder/compiler
     participant V as AST validator
     participant D as Read-only database
     participant R as Result services
@@ -85,7 +86,11 @@ sequenceDiagram
         C-->>O: Relevant metrics, joins, and verified examples
     end
     O->>L: Minimum prompt context
-    L-->>O: Structured output plus proposed SQL
+    L-->>O: Typed AnalysisPlan (v5) or legacy SQL proposal
+    opt Gemma v5-plan path
+        O->>P: Untrusted plan plus trusted schema/semantics
+        P-->>O: Grounded, aligned SQL proposal
+    end
     O->>V: Proposed SQL and active policy
     V-->>O: Allowed rewritten SQL or blocked reason
     O->>D: Read-only query with limits
@@ -152,7 +157,28 @@ outer limit, and fingerprints a literal-redacted AST. SQLite URI `mode=ro` and
 - Converts a versioned prompt request into a structured response.
 - Has no analytics database credentials.
 - Does not execute SQL.
+- On `v5-plan`, returns an AnalysisPlan and never authors executable SQL.
 - Is replaceable without changing the domain contract.
+
+### Gemma Plan Grounder and Compiler
+
+- Normalizes only bounded presentation/benchmark fields before strict Pydantic
+  validation.
+- Grounds every table and column against the schema snapshot.
+- Retrieves reviewed examples and derives only unique approved shortest join
+  paths; model join hints are not authoritative.
+- Binds a measure to the semantic layer only when resolution selects exactly
+  one reviewed metric and the plan exposes exactly one measure.
+- Resolves bounded-list entity grain and stable detail/grouped-result ordering
+  from schema metadata and question structure when the user supplied no order.
+- Completes/prunes only versioned, schema-derived base presentation roles under
+  narrow deterministic rules.
+- Canonicalizes only structurally equivalent benchmark shapes; incompatible or
+  unknown benchmark fields still fail closed.
+- Compiles all SQL tokens from typed primitives and independently checks
+  plan/SQL alignment before the existing AST security boundary.
+- Shares a two-request maximum between one transient-provider retry and at most
+  one plan repair with sanitized role/error feedback; every request is metered.
 
 ### SQL Policy Layer
 
@@ -197,7 +223,8 @@ outer limit, and fingerprints a literal-redacted AST. SQLite URI `mode=ro` and
 Single local Python environment
   Streamlit
     -> in-process orchestration services
-      -> Fake or optional real LLM adapter
+      -> Fake legacy adapter or optional Gemma AnalysisPlan adapter
+      -> deterministic plan grounder/compiler for v5-plan
       -> SQLGlot policy
       -> read-only SQLite Chinook file
 ```

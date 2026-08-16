@@ -240,6 +240,102 @@ The baseline is offline deterministic evidence. It does not measure real-model
 generalization, token usage, cost, or organizational approval of the
 `project_verified` business definitions.
 
+### Opt-in real-model candidate evaluation
+
+The point-5 evaluator is separate from the fake baseline and from `verify`. It
+enforces exact development/holdout request caps, explicit live confirmation,
+sequential calls, privacy-minimized reports, checkpoint identity, source drift
+detection, and a candidate hash that must be frozen before holdout can run.
+
+The first Gemini/Gemma 4 26B development calibration did not qualify. Prompt v3
+scored 1/4 cases, 50% structured-output validity, and 25% execution accuracy.
+The owner then authorized the 31B candidate under an unchanged protocol. Its
+formal v4 development run processed 70 cases using 68 provider requests and
+reached 66/68 (97.06%) structured-output validity, 18/61 (29.51%) execution
+accuracy, 2/2 clarification accuracy, 0% schema hallucination, and 7/7 known-
+unsafe protection. Latency P50/P95 was 5,038.28/9,347.81 ms, token usage was
+66,561/9,895 input/output, and measured paid cost was USD 0.
+
+The frozen quality thresholds require at least 99% structured validity and 85%
+execution accuracy. Therefore the 31B candidate was not frozen, holdout
+provider calls remained zero, and the fake 100/100 baseline remains separate.
+See `reports/evaluation/stage-7-gemini-calibration-analysis.md`,
+`reports/evaluation/stage-7-gemini-31b-development-analysis.md`, and
+`docs/real-model-evaluation-protocol-v2.md`.
+
+The available commands are intentionally opt-in:
+
+```powershell
+uv run python scripts/dev.py evaluate-real-model run --split development --confirm-live --max-requests 68 --request-interval-seconds 6
+uv run python scripts/dev.py evaluate-real-model freeze --holdout-max-requests 27
+uv run python scripts/dev.py evaluate-real-model run --split holdout --confirm-live --max-requests 27 --request-interval-seconds 6
+uv run python scripts/dev.py evaluate-real-model summarize
+```
+
+`freeze` refuses incomplete or failing development evidence, so the holdout
+commands above are documented but currently gated.
+
+#### Semantic comparison policy v2
+
+The owner selected option 3: revise the output/comparison contract without
+lowering any threshold. `semantic-v2` accepts case/spacing/punctuation aliases,
+column reordering, or otherwise provable unique one-to-one value alignment. It
+still rejects extra/missing columns, ambiguous alignments, changed values or row
+counts, internally inconsistent result shapes, and required-order changes. The
+policy ID is frozen in checkpoints, provenance, candidates, and summaries so a
+holdout cannot silently use different rules.
+
+The development-only offline audit passed 61/61 presentation variants, rejected
+122/122 substantive variants and 47/47 required-order changes, and scored zero
+holdout cases. It does not rescore the old 31B report because raw provider rows
+were intentionally not retained. See
+`reports/evaluation/stage-7-comparison-policy-v2-audit.md` and
+`docs/real-model-evaluation-protocol-v3.md`.
+
+The authorized protocol-v3 development rerun completed all 70 cases with 68
+requests. Semantic-v2 accepted 10 presentation-equivalent results, raising the
+new run to 28/61 (45.90%) execution accuracy and 37/70 total passes. Structured
+validity was still 66/68 (97.06%). These miss the unchanged 85% and 99% gates,
+so no candidate was frozen, holdout cases scored remained zero, and point 5 is
+blocked. The complete interpretation is in
+`reports/evaluation/stage-7-gemini-31b-development-semantic-v2-analysis.md`.
+
+Run the offline audit with:
+
+```powershell
+uv run python scripts/dev.py audit-comparison-policy
+```
+
+#### Gemma-only plan-compiled candidate
+
+Runtime `v5-plan` keeps Gemma but removes direct SQL authorship. Gemma returns a
+strict AnalysisPlan; deterministic code normalizes presentation aliases,
+grounds allowlisted identifiers, derives unique approved join paths, completes
+trusted base projection roles, compiles SQL, validates plan/SQL alignment, and
+then uses the existing AST policy and read-only executor. The new runtime path
+requires the real Gemini adapter and has no FakeLLM fallback. Legacy FakeLLM
+remains only for offline regression.
+
+On the same 12 development cases that prompt-v4 passed 0/12, successive frozen
+pilots passed 2/12, 6/12, and finally 8/12. Pilot v3 used 14/24 maximum requests;
+structured validity, valid SQL, and execution success were 10/12, schema
+hallucination/security bypass were zero, and paid cost was USD 0. This meets the
+subset engineering target but not the formal 99% structured-validity and 85%
+execution-accuracy thresholds. No candidate is frozen and holdout cases scored
+remain zero. See `docs/real-model-evaluation-protocol-v4.md` and
+`reports/evaluation/stage-7-gemini-31b-v5-plan-hard-pilot-v3.md`.
+
+The next targeted correction retained that request/security boundary and added
+one shared-slot provider retry, unambiguous reviewed-metric binding, stable
+schema-derived entity grain/order defaults, and structurally equivalent grouped
+benchmark normalization. Phase G passed three of the four pilot-v3 failures
+with 5 requests; after one fail-closed 2-request diagnostic, Phase I passed the
+remaining grouped-benchmark case exactly in 1 request. Hallucination, bypass,
+paid cost, and holdout calls remained zero. Because these were successive
+source freezes, they are not reported as a 12/12 same-source result. The next
+quality step is a separately authorized 12-case hard pilot capped at 24
+requests before considering the max-136 complete-development run.
+
 ## Tahap 8 Readiness Evaluation
 
 `scripts/evaluate_stage8.py` records deterministic implementation evidence and

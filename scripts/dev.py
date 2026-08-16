@@ -7,6 +7,7 @@ example: ``python scripts/dev.py verify``.
 from __future__ import annotations
 
 import argparse
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -67,9 +68,16 @@ COMMANDS: dict[str, list[str]] = {
     "stage6-smoke": [sys.executable, "scripts/stage6_smoke.py"],
     "evaluate-stage6": [sys.executable, "scripts/evaluate_stage6.py"],
     "evaluate-stage7": [sys.executable, "scripts/evaluate_stage7.py"],
+    "audit-comparison-policy": [
+        sys.executable,
+        "scripts/audit_comparison_policy.py",
+        "--force",
+    ],
+    "evaluate-real-model": [sys.executable, "scripts/evaluate_real_model.py"],
     "evaluate-stage8": [sys.executable, "scripts/evaluate_stage8.py"],
     "test-postgres": [sys.executable, "scripts/run_stage8_integration.py"],
     "generate-compose-env": [sys.executable, "scripts/generate_compose_env.py"],
+    "gemini-smoke": [sys.executable, "scripts/gemini_smoke.py"],
     "docker-smoke": [sys.executable, "-m", "scripts.run_stage9_compose"],
     "security-stage9": [sys.executable, "scripts/run_stage9_security.py"],
     "test-clean-checkout": [sys.executable, "scripts/run_stage9_clean_checkout.py"],
@@ -88,6 +96,7 @@ VERIFY_SEQUENCE = (
     "evaluate-stage5",
     "evaluate-stage6",
     "evaluate-stage7",
+    "audit-comparison-policy",
     "evaluate-stage8",
     "evaluate-stage9",
     "evaluate-stage10",
@@ -95,12 +104,23 @@ VERIFY_SEQUENCE = (
 )
 
 
-def run_command(name: str, extra_arguments: tuple[str, ...] = ()) -> int:
+def run_command(
+    name: str,
+    extra_arguments: tuple[str, ...] = (),
+    *,
+    force_offline: bool = False,
+) -> int:
     """Run one named command from the repository root."""
 
     command = [*COMMANDS[name], *extra_arguments]
+    environment = None
+    if force_offline:
+        environment = os.environ.copy()
+        environment["LLM_PROVIDER"] = "fake"
+        environment["LLM_MODEL"] = "fake-deterministic"
+        environment["LLM_API_KEY"] = ""
     print(f"[{name}] {' '.join(command)}", flush=True)
-    completed = subprocess.run(command, cwd=ROOT, check=False)
+    completed = subprocess.run(command, cwd=ROOT, check=False, env=environment)
     return completed.returncode
 
 
@@ -115,7 +135,11 @@ def main() -> int:
     selected = VERIFY_SEQUENCE if args.command == "verify" else (args.command,)
     for name in selected:
         extra_arguments = tuple(args.command_args) if len(selected) == 1 else ()
-        return_code = run_command(name, extra_arguments)
+        return_code = run_command(
+            name,
+            extra_arguments,
+            force_offline=args.command == "verify",
+        )
         if return_code != 0:
             return return_code
     return 0

@@ -39,6 +39,8 @@ class AppSettings(BaseSettings):
     llm_model: str = "fake-deterministic"
     llm_api_key: SecretStr | None = None
     llm_timeout_seconds: int = Field(default=30, ge=1, le=300)
+    llm_max_output_tokens: int = Field(default=4_096, ge=256, le=32_768)
+    llm_thinking_level: Literal["minimal", "high"] = "minimal"
     llm_max_output_characters: int = Field(default=20_000, ge=1_000, le=100_000)
 
     question_max_characters: int = Field(default=2_000, ge=100, le=20_000)

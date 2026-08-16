@@ -59,7 +59,7 @@ class SQLGenerator:
         )
         started = perf_counter()
         try:
-            raw_output = await asyncio.wait_for(
+            adapter_generation = await asyncio.wait_for(
                 self._adapter.generate(adapter_request),
                 timeout=self._timeout_seconds,
             )
@@ -71,7 +71,7 @@ class SQLGenerator:
             raise LLMProviderError() from exc
         latency_ms = (perf_counter() - started) * 1_000
 
-        proposal = self._parser.parse(raw_output)
+        proposal = self._parser.parse(adapter_generation.content)
         validate_declared_schema(
             proposal,
             allowlist,
@@ -83,6 +83,7 @@ class SQLGenerator:
             provider=self._adapter.provider,
             model=self._adapter.model,
             llm_latency_ms=latency_ms,
+            llm_token_usage=adapter_generation.usage,
         )
 
     @property

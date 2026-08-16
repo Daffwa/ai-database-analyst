@@ -1,0 +1,28 @@
+{
+  "report_version": "stage-7-comparison-policy-audit-v1",
+  "dataset_version": "stage-7-v1",
+  "dataset_sha256": "34002b865f657bf12401627b91b88f09ed07d5ffe53b08683015b384960b6542",
+  "split": "development",
+  "comparison_policy": "semantic-v2",
+  "development_case_count": 70,
+  "analytical_case_count": 61,
+  "holdout_cases_scored": 0,
+  "exact_self_matches": 61,
+  "presentation_variants_tested": 61,
+  "presentation_variants_accepted": 61,
+  "strict_policy_presentation_rejections": 61,
+  "substantive_variants_tested": 122,
+  "substantive_variants_rejected": 122,
+  "required_order_variants_tested": 47,
+  "required_order_variants_rejected": 47,
+  "irrelevant_order_variants_tested": 1,
+  "irrelevant_order_variants_accepted": 1,
+  "gate_passed": true,
+  "gate_failures": [],
+  "limitations": [
+    "The audit uses deterministic transformations of development expectations, not new provider outputs.",
+    "Value-aligned aliases pass only when a unique one-to-one mapping is provable.",
+    "Extra or missing columns, ambiguous mappings, changed values, changed row counts, and required-order changes remain failures.",
+    "The audit does not estimate how many prior provider failures semantic-v2 will fix because privacy-safe reports do not retain raw SQL or result rows."
+  ]
+}
