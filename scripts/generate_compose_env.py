@@ -21,6 +21,12 @@ def compose_environment() -> dict[str, str]:
         "STAGE8_METADATA_PASSWORD": secrets.token_urlsafe(32),
         "STAGE8_MIGRATION_PASSWORD": secrets.token_urlsafe(32),
         "EVALUATION_API_TOKEN": secrets.token_urlsafe(32),
+        "LLM_PROVIDER": "fake",
+        "LLM_MODEL": "fake-deterministic",
+        "LLM_API_KEY": "",
+        "LLM_TIMEOUT_SECONDS": "30",
+        "LLM_MAX_OUTPUT_TOKENS": "4096",
+        "LLM_THINKING_LEVEL": "minimal",
         "API_PUBLISHED_PORT": "8000",
         "FRONTEND_PUBLISHED_PORT": "8501",
     }

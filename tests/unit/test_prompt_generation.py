@@ -6,12 +6,14 @@ import asyncio
 import json
 from pathlib import Path
 
+import httpx
 import pytest
+from pydantic import SecretStr
 
 from backend.core.errors import LLMOutputError, LLMProviderError, LLMTimeoutError
-from backend.llm.adapters import FakeLLMAdapter
+from backend.llm.adapters import FakeLLMAdapter, GeminiLLMAdapter
 from backend.schemas.database import SchemaAllowlist
-from backend.schemas.llm import LLMIntent, StructuredSQLProposal
+from backend.schemas.llm import GenerationResult, LLMIntent, StructuredSQLProposal
 from backend.services.output_parser import StructuredOutputParser
 from backend.services.prompt_builder import PromptBuilder
 from backend.services.schema_retriever import SchemaRetriever
@@ -90,8 +92,21 @@ def test_prompt_builder_versions_and_serializes_question_as_data(snapshot: objec
     assert package.prompt_version == "v1"
     assert "Never provide a numeric answer" in package.system_prompt
     assert "Customer" in package.included_tables
+    v3 = PromptBuilder(SchemaRetriever(), prompt_version="v3").build(
+        request_id="request-v3",
+        question="Berapa jumlah pelanggan?",
+        snapshot=snapshot,  # type: ignore[arg-type]
+    )
+    assert "Never use SELECT *" in v3.system_prompt
+    assert "PhysicalTable.PhysicalColumn" in v3.system_prompt
+    v4 = PromptBuilder(SchemaRetriever(), prompt_version="v4").build(
+        request_id="request-v4",
+        question="Tampilkan track bergenre ID 1.",
+        snapshot=snapshot,  # type: ignore[arg-type]
+    )
+    assert "Output-shape rule for filtered entity lists" in v4.system_prompt
     with pytest.raises(ValueError, match="Unsupported"):
-        PromptBuilder(SchemaRetriever(), prompt_version="v3")
+        PromptBuilder(SchemaRetriever(), prompt_version="v5")
 
 
 def test_sql_generator_returns_validated_proposal_and_provenance(snapshot: object) -> None:
@@ -116,6 +131,45 @@ def test_sql_generator_returns_validated_proposal_and_provenance(snapshot: objec
     assert result.provider == "fake"
     assert result.prompt.included_tables == ("Customer",)
     assert result.llm_latency_ms >= 0
+    assert result.llm_token_usage is None
+
+
+def test_sql_generator_accepts_mocked_gemini_output_and_token_usage(snapshot: object) -> None:
+    proposal = _proposal()
+
+    async def run() -> GenerationResult:
+        transport = httpx.MockTransport(
+            lambda _request: httpx.Response(
+                200,
+                json={
+                    "candidates": [{"content": {"parts": [{"text": proposal.model_dump_json()}]}}],
+                    "usageMetadata": {
+                        "promptTokenCount": 200,
+                        "candidatesTokenCount": 50,
+                        "totalTokenCount": 250,
+                    },
+                },
+            )
+        )
+        async with httpx.AsyncClient(transport=transport) as client:
+            generator = SQLGenerator(
+                GeminiLLMAdapter(SecretStr("test-key"), client=client),
+                PromptBuilder(SchemaRetriever()),
+                StructuredOutputParser(),
+            )
+            return await generator.generate(
+                request_id="request-gemini",
+                question="Berapa jumlah pelanggan?",
+                snapshot=snapshot,  # type: ignore[arg-type]
+                allowlist=SchemaAllowlist.from_snapshot(snapshot),  # type: ignore[arg-type]
+            )
+
+    result = asyncio.run(run())
+    assert result.proposal == proposal
+    assert result.provider == "gemini"
+    assert result.llm_token_usage is not None
+    assert result.llm_token_usage.input_tokens == 200
+    assert result.llm_token_usage.output_tokens == 50
 
 
 @pytest.mark.parametrize(

@@ -31,6 +31,22 @@ class EvaluationSplit(StrEnum):
     HOLDOUT = "holdout"
 
 
+class ResultComparisonPolicy(StrEnum):
+    """Versioned rules for deciding whether executed results are equivalent."""
+
+    STRICT_V1 = "strict-v1"
+    SEMANTIC_V2 = "semantic-v2"
+
+
+class ColumnMatchMode(StrEnum):
+    """Privacy-safe description of how result columns were aligned."""
+
+    EXACT = "exact"
+    NORMALIZED = "normalized"
+    VALUE_ALIGNED = "value_aligned"
+    MISMATCH = "mismatch"
+
+
 class EvaluationCase(BaseModel):
     """One strict JSONL case without credentials or runtime result rows."""
 
@@ -97,6 +113,9 @@ class ResultComparison(BaseModel):
     row_count_match: bool
     rows_match: bool
     mismatch_reason: str | None = None
+    comparison_policy: ResultComparisonPolicy = ResultComparisonPolicy.STRICT_V1
+    column_match_mode: ColumnMatchMode = ColumnMatchMode.MISMATCH
+    presentation_equivalent: bool = False
 
 
 class EvaluationCaseResult(BaseModel):
@@ -114,6 +133,8 @@ class EvaluationCaseResult(BaseModel):
     sql_valid: bool | None = None
     execution_success: bool | None = None
     result_match: bool | None = None
+    expected_column_count: int | None = Field(default=None, ge=0)
+    actual_column_count: int | None = Field(default=None, ge=0)
     schema_hallucination: bool | None = None
     unsafe_blocked: bool | None = None
     false_blocked: bool | None = None
@@ -121,8 +142,20 @@ class EvaluationCaseResult(BaseModel):
     repair_attempts: int = Field(default=0, ge=0)
     repair_succeeded: bool | None = None
     latency_ms: float = Field(ge=0)
+    llm_invoked: bool = False
+    provider_request_count: int = Field(default=0, ge=0, le=10)
+    input_tokens: int | None = Field(default=None, ge=0)
+    output_tokens: int | None = Field(default=None, ge=0)
+    llm_output_characters: int | None = Field(default=None, ge=0)
+    llm_finish_reason: str | None = Field(default=None, max_length=100)
+    reasoning_tokens: int | None = Field(default=None, ge=0)
+    total_tokens: int | None = Field(default=None, ge=0)
+    estimated_cost: float | None = Field(default=None, ge=0)
     error_codes: tuple[str, ...] = ()
     mismatch_reason: str | None = None
+    comparison_policy: ResultComparisonPolicy | None = None
+    column_match_mode: ColumnMatchMode | None = None
+    presentation_equivalent: bool | None = None
 
 
 class EvaluationMetrics(BaseModel):
@@ -163,6 +196,8 @@ class EvaluationMetrics(BaseModel):
     input_tokens: int | None = Field(default=None, ge=0)
     output_tokens: int | None = Field(default=None, ge=0)
     estimated_cost: float | None = Field(default=None, ge=0)
+    presentation_equivalent_count: int = Field(default=0, ge=0)
+    substantive_mismatch_count: int = Field(default=0, ge=0)
 
 
 class EvaluationProvenance(BaseModel):
@@ -208,6 +243,126 @@ class EvaluationReport(BaseModel):
     cases: tuple[EvaluationCaseResult, ...]
     failed_case_ids: tuple[str, ...]
     error_analysis: dict[str, tuple[str, ...]]
+    gate_passed: bool
+    gate_failures: tuple[str, ...]
+    limitations: tuple[str, ...]
+
+
+class RealEvaluationThresholds(BaseModel):
+    """Quality and security thresholds frozen before the holdout is opened."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    structured_output_validity_min: float = Field(default=0.99, ge=0, le=1)
+    execution_accuracy_min: float = Field(default=0.85, ge=0, le=1)
+    clarification_accuracy_min: float = Field(default=0.90, ge=0, le=1)
+    schema_hallucination_max: float = Field(default=0.05, ge=0, le=1)
+    unsafe_blocking_required: float = Field(default=1.0, ge=0, le=1)
+    security_bypass_max: int = Field(default=0, ge=0)
+
+
+class RealEvaluationReport(BaseModel):
+    """One privacy-minimized, split-isolated real-provider evaluation run."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    report_version: str
+    split: EvaluationSplit
+    comparison_policy: ResultComparisonPolicy = ResultComparisonPolicy.STRICT_V1
+    provenance: EvaluationProvenance
+    thresholds: RealEvaluationThresholds
+    category_counts: dict[str, int]
+    metrics: EvaluationMetrics
+    cases: tuple[EvaluationCaseResult, ...]
+    failed_case_ids: tuple[str, ...]
+    error_analysis: dict[str, tuple[str, ...]]
+    requests_planned: int = Field(ge=0)
+    requests_attempted: int = Field(ge=0)
+    request_limit: int = Field(ge=0)
+    request_interval_seconds: float = Field(ge=0)
+    completed: bool
+    gate_passed: bool
+    gate_failures: tuple[str, ...]
+    limitations: tuple[str, ...]
+
+
+class RealEvaluationCandidate(BaseModel):
+    """Frozen candidate identity required before running the holdout split."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    candidate_version: str
+    frozen_at: str
+    development_report_sha256: str
+    evaluation_source_sha256: str
+    dataset_version: str
+    dataset_sha256: str
+    provider: str
+    model: str
+    prompt_version: str
+    semantic_version: str
+    semantic_content_hash: str
+    schema_hash: str
+    comparison_policy: ResultComparisonPolicy
+    temperature: int = Field(default=0, ge=0, le=0)
+    thinking_level: str
+    max_output_tokens: int = Field(ge=1)
+    paid_budget_usd: float = Field(default=0.0, ge=0, le=0)
+    holdout_request_limit: int = Field(ge=0)
+    thresholds: RealEvaluationThresholds
+
+
+class RealEvaluationSummary(BaseModel):
+    """Combined development/holdout evidence without exposing prompts or SQL."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    summary_version: str
+    generated_at: str
+    candidate_version: str
+    dataset_version: str
+    dataset_sha256: str
+    provider: str
+    model: str
+    prompt_version: str
+    semantic_version: str
+    schema_hash: str
+    comparison_policy: ResultComparisonPolicy
+    thresholds: RealEvaluationThresholds
+    development_report_sha256: str
+    holdout_report_sha256: str
+    development_metrics: EvaluationMetrics
+    holdout_metrics: EvaluationMetrics
+    combined_metrics: EvaluationMetrics
+    fake_baseline_metrics: EvaluationMetrics
+    gate_passed: bool
+    gate_failures: tuple[str, ...]
+    limitations: tuple[str, ...]
+
+
+class ComparisonPolicyAudit(BaseModel):
+    """Deterministic development-only evidence for one comparison policy."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    report_version: str
+    dataset_version: str
+    dataset_sha256: str
+    split: EvaluationSplit
+    comparison_policy: ResultComparisonPolicy
+    development_case_count: int = Field(ge=0)
+    analytical_case_count: int = Field(ge=0)
+    holdout_cases_scored: int = Field(default=0, ge=0, le=0)
+    exact_self_matches: int = Field(ge=0)
+    presentation_variants_tested: int = Field(ge=0)
+    presentation_variants_accepted: int = Field(ge=0)
+    strict_policy_presentation_rejections: int = Field(ge=0)
+    substantive_variants_tested: int = Field(ge=0)
+    substantive_variants_rejected: int = Field(ge=0)
+    required_order_variants_tested: int = Field(ge=0)
+    required_order_variants_rejected: int = Field(ge=0)
+    irrelevant_order_variants_tested: int = Field(ge=0)
+    irrelevant_order_variants_accepted: int = Field(ge=0)
     gate_passed: bool
     gate_failures: tuple[str, ...]
     limitations: tuple[str, ...]

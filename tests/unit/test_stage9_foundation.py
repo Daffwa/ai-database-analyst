@@ -37,6 +37,7 @@ def test_compose_has_ready_services_runtime_secrets_and_named_volume() -> None:
         "service_completed_successfully"
     )
     assert "${POSTGRES_ADMIN_PASSWORD:?" in source
+    assert "LLM_API_KEY: ${LLM_API_KEY:-}" in source
     assert "change-me" not in source
 
 
@@ -58,6 +59,23 @@ def test_compose_environment_generation_is_exclusive_and_secret_values_are_not_f
         pass
     else:
         raise AssertionError("Compose credentials must not be overwritten implicitly")
+
+
+def test_tracked_environment_examples_keep_provider_credentials_empty() -> None:
+    for filename in (".env.example", ".env.compose.example"):
+        values = dict(
+            line.split("=", 1)
+            for line in (ROOT / filename).read_text(encoding="utf-8").splitlines()
+            if line and not line.startswith("#") and "=" in line
+        )
+        assert values["LLM_API_KEY"] == ""
+    compose_values = dict(
+        line.split("=", 1)
+        for line in (ROOT / ".env.compose.example").read_text(encoding="utf-8").splitlines()
+        if line and not line.startswith("#") and "=" in line
+    )
+    assert compose_values["LLM_PROVIDER"] == "fake"
+    assert compose_values["LLM_MODEL"] == "fake-deterministic"
 
 
 def test_workflows_use_minimum_permissions_pinned_actions_and_no_secrets() -> None:

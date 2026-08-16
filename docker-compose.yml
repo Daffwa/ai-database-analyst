@@ -10,8 +10,12 @@ x-api-environment: &api-environment
   SQL_DIALECT: postgres
   PROMPT_VERSION: v2
   SEMANTIC_VERSION: v1-postgresql
-  LLM_PROVIDER: fake
-  LLM_MODEL: fake-deterministic
+  LLM_PROVIDER: ${LLM_PROVIDER:-fake}
+  LLM_MODEL: ${LLM_MODEL:-fake-deterministic}
+  LLM_API_KEY: ${LLM_API_KEY:-}
+  LLM_TIMEOUT_SECONDS: ${LLM_TIMEOUT_SECONDS:-30}
+  LLM_MAX_OUTPUT_TOKENS: ${LLM_MAX_OUTPUT_TOKENS:-4096}
+  LLM_THINKING_LEVEL: ${LLM_THINKING_LEVEL:-minimal}
   EVALUATION_API_TOKEN: ${EVALUATION_API_TOKEN:?run generate-compose-env}
   CORS_ALLOWED_ORIGINS: '["http://localhost:${FRONTEND_PUBLISHED_PORT:-8501}"]'
 

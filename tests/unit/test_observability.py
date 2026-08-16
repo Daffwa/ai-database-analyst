@@ -14,6 +14,7 @@ from backend.core.observability import (
 )
 from backend.schemas.llm import (
     LanguageCode,
+    LLMTokenUsage,
     PipelineEvent,
     PipelineStage,
     QueryResponse,
@@ -21,7 +22,11 @@ from backend.schemas.llm import (
 )
 
 
-def _response(status: QueryStatus) -> QueryResponse:
+def _response(
+    status: QueryStatus,
+    *,
+    token_usage: LLMTokenUsage | None = None,
+) -> QueryResponse:
     return QueryResponse(
         request_id=str(UUID(int=3)),
         status=status,
@@ -40,6 +45,7 @@ def _response(status: QueryStatus) -> QueryResponse:
         provider="fake",
         model="fake-deterministic",
         llm_latency_ms=0,
+        llm_token_usage=token_usage,
         pipeline=(PipelineEvent(stage=PipelineStage.COMPLETED),),
         warnings=(),
     )
@@ -91,3 +97,23 @@ def test_operational_metrics_count_states_without_payloads() -> None:
     assert snapshot.input_tokens_total is None
     assert "question" not in snapshot.__dataclass_fields__
     assert "sql" not in snapshot.__dataclass_fields__
+
+
+def test_operational_metrics_aggregate_provider_token_counts() -> None:
+    metrics = OperationalMetrics()
+    metrics.record_query(
+        _response(
+            QueryStatus.SUCCESS,
+            token_usage=LLMTokenUsage(input_tokens=100, output_tokens=25, total_tokens=125),
+        )
+    )
+    metrics.record_query(
+        _response(
+            QueryStatus.BLOCKED,
+            token_usage=LLMTokenUsage(input_tokens=50, output_tokens=10, total_tokens=60),
+        )
+    )
+
+    snapshot = metrics.snapshot()
+    assert snapshot.input_tokens_total == 150
+    assert snapshot.output_tokens_total == 35

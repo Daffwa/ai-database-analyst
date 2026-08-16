@@ -11,6 +11,7 @@ from backend.core.logging import get_logger
 from backend.core.observability import current_request_id
 from backend.schemas.database import SchemaAllowlist, SchemaSnapshot
 from backend.schemas.llm import (
+    GenerationResult,
     LanguageCode,
     LLMIntent,
     PipelineEvent,
@@ -20,7 +21,6 @@ from backend.schemas.llm import (
 )
 from backend.schemas.semantic import SemanticResolution
 from backend.services.semantic_service import SemanticService
-from backend.services.sql_generator import SQLGenerator
 
 STAGE_3_WARNING = "Tahap 3 demo only: generated SQL has not passed the Tahap 4 AST security gate."
 STAGE_5_WARNING = (
@@ -37,12 +37,35 @@ class QueryProcessor(Protocol):
         """Process one natural-language question."""
 
 
+class SQLGenerationService(Protocol):
+    """Common boundary for direct SQL and plan-compiled generation."""
+
+    @property
+    def provider(self) -> str: ...
+
+    @property
+    def model(self) -> str: ...
+
+    @property
+    def prompt_version(self) -> str: ...
+
+    async def generate(
+        self,
+        *,
+        request_id: str,
+        question: str,
+        snapshot: SchemaSnapshot,
+        allowlist: SchemaAllowlist,
+        semantic_resolution: SemanticResolution | None = None,
+    ) -> GenerationResult: ...
+
+
 class QueryOrchestrator:
     """Validate, resolve semantics, generate, and return an auditable proposal."""
 
     def __init__(
         self,
-        generator: SQLGenerator,
+        generator: SQLGenerationService,
         snapshot: SchemaSnapshot,
         *,
         max_question_characters: int = 2_000,
@@ -109,9 +132,10 @@ class QueryOrchestrator:
                     stage=PipelineStage.LLM_INVOKED,
                     latency_ms=generation.llm_latency_ms,
                 ),
-                PipelineEvent(stage=PipelineStage.OUTPUT_VALIDATED),
             )
         )
+        pipeline.extend(generation.generation_events)
+        pipeline.append(PipelineEvent(stage=PipelineStage.OUTPUT_VALIDATED))
         if proposal.intent is LLMIntent.ANALYSIS:
             pipeline.append(PipelineEvent(stage=PipelineStage.AWAITING_SECURITY_VALIDATION))
         pipeline.append(PipelineEvent(stage=PipelineStage.COMPLETED))
@@ -148,6 +172,10 @@ class QueryOrchestrator:
             provider=generation.provider,
             model=generation.model,
             llm_latency_ms=generation.llm_latency_ms,
+            llm_token_usage=generation.llm_token_usage,
+            llm_request_count=generation.llm_request_count,
+            repair_attempts=generation.repair_attempts,
+            repair_succeeded=generation.repair_succeeded,
             pipeline=tuple(pipeline),
             warnings=(STAGE_5_WARNING if semantic_resolution is not None else STAGE_3_WARNING,),
         )

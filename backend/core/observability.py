@@ -91,6 +91,9 @@ class OperationalMetrics:
         self._timeout_count = 0
         self._error_count = 0
         self._repair_attempts = 0
+        self._input_tokens = 0
+        self._output_tokens = 0
+        self._token_usage_observed = False
         self._latency_count = 0
         self._latency_total_ms = 0.0
         self._latency_max_ms = 0.0
@@ -111,6 +114,14 @@ class OperationalMetrics:
             self._analytics_requests += 1
             self._status_counts[response.status.value] += 1
             self._repair_attempts += max(0, repair_attempts)
+            if response.llm_token_usage is not None:
+                usage = response.llm_token_usage
+                if usage.input_tokens is not None:
+                    self._input_tokens += usage.input_tokens
+                    self._token_usage_observed = True
+                if usage.output_tokens is not None:
+                    self._output_tokens += usage.output_tokens
+                    self._token_usage_observed = True
 
     def record_query_error(self, *, timeout: bool) -> None:
         """Count a failed analytics request using only a stable category."""
@@ -163,6 +174,6 @@ class OperationalMetrics:
                 ),
                 max_latency_ms=round(latency_max, 3) if latency_max is not None else None,
                 status_counts=status_counts,
-                input_tokens_total=None,
-                output_tokens_total=None,
+                input_tokens_total=(self._input_tokens if self._token_usage_observed else None),
+                output_tokens_total=(self._output_tokens if self._token_usage_observed else None),
             )

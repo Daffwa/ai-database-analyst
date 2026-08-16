@@ -16,6 +16,8 @@ _SENSITIVE_KEY = re.compile(
 _SENSITIVE_TEXT_PATTERNS = (
     re.compile(r"\bBearer\s+[A-Za-z0-9._~+/=-]+", re.IGNORECASE),
     re.compile(r"\bsk-[A-Za-z0-9_-]{8,}"),
+    re.compile(r"\bAIza[A-Za-z0-9_-]{20,}"),
+    re.compile(r"\bAQ\.[A-Za-z0-9_-]{20,}"),
     re.compile(r"\b(?:postgres(?:ql)?|mysql)://[^\s:@/]+:[^\s@/]+@", re.IGNORECASE),
 )
 _RESERVED_LOG_RECORD_FIELDS = frozenset(logging.makeLogRecord({}).__dict__)

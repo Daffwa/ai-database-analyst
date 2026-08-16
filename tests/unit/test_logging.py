@@ -37,6 +37,8 @@ def _record(message: str, **extra: Any) -> logging.LogRecord:
     [
         "Authorization: Bearer abc.def.ghi",
         "provider key sk-example123456789",
+        "Gemini key AIzaSyntheticKeyValue1234567890",
+        "Gemini key AQ.synthetic_key_value_1234567890",
         "postgresql://user:password@database:5432/app",
     ],
 )

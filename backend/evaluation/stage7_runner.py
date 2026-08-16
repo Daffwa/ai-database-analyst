@@ -6,6 +6,7 @@ import math
 import subprocess
 import sys
 from collections import defaultdict
+from collections.abc import Iterable
 from datetime import UTC, datetime
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
@@ -24,6 +25,7 @@ from backend.schemas.evaluation import (
     EvaluationMetrics,
     EvaluationProvenance,
     EvaluationReport,
+    ResultComparisonPolicy,
 )
 from backend.schemas.llm import LLMIntent, QueryResponse, QueryStatus, StructuredSQLProposal
 from backend.schemas.sql_security import SQLViolationCode
@@ -83,7 +85,7 @@ async def run_stage7_evaluation(
     try:
         results = tuple([await _run_case(runtime, case) for case in dataset.cases])
         completed = datetime.now(UTC)
-        metrics = _calculate_metrics(results)
+        metrics = calculate_evaluation_metrics(results)
         gate_failures = _gate_failures(dataset, metrics, results)
         failures_by_category: defaultdict[str, list[str]] = defaultdict(list)
         for result in results:
@@ -152,6 +154,7 @@ async def _run_case(runtime: Stage6Runtime, case: EvaluationCase) -> EvaluationC
             structured_output_valid=True,
             clarification_correct=correct,
             latency_ms=latency_ms,
+            llm_invoked=False,
             mismatch_reason=None if correct else "clarification status or rule differs",
         )
 
@@ -173,20 +176,25 @@ async def _run_case(runtime: Stage6Runtime, case: EvaluationCase) -> EvaluationC
             sql_valid=False,
             unsafe_blocked=blocked,
             latency_ms=latency_ms,
+            **_usage_fields(response, llm_invoked=True),
             error_codes=tuple(sorted(code.value for code in codes)),
             mismatch_reason=None
             if blocked
             else "unsafe SQL was not blocked with the required code",
         )
 
-    return _analytical_result(case, response, latency_ms)
+    return analytical_evaluation_result(case, response, latency_ms)
 
 
-def _analytical_result(
+def analytical_evaluation_result(
     case: EvaluationCase,
     response: QueryResponse,
     latency_ms: float,
+    *,
+    comparison_policy: ResultComparisonPolicy = ResultComparisonPolicy.STRICT_V1,
 ) -> EvaluationCaseResult:
+    """Score one analytical response by validation, execution, and result identity."""
+
     validation = response.validation
     sql_valid = bool(validation and validation.safe)
     codes = _violation_codes(response)
@@ -194,7 +202,7 @@ def _analytical_result(
     false_blocked = response.status is QueryStatus.BLOCKED
     execution_success = response.status in {QueryStatus.SUCCESS, QueryStatus.EMPTY_RESULT}
     comparison = (
-        compare_result(case, response.result)
+        compare_result(case, response.result, policy=comparison_policy)
         if execution_success and response.result is not None
         else None
     )
@@ -212,10 +220,20 @@ def _analytical_result(
         sql_valid=sql_valid,
         execution_success=execution_success,
         result_match=result_match,
+        expected_column_count=len(case.expected_columns),
+        actual_column_count=(len(response.result.columns) if response.result is not None else None),
         schema_hallucination=hallucination,
         false_blocked=false_blocked,
+        repair_attempts=response.repair_attempts,
+        repair_succeeded=response.repair_succeeded,
         latency_ms=latency_ms,
+        **_usage_fields(response, llm_invoked=True),
         error_codes=tuple(sorted(code.value for code in codes)),
+        comparison_policy=comparison_policy,
+        column_match_mode=comparison.column_match_mode if comparison is not None else None,
+        presentation_equivalent=(
+            comparison.presentation_equivalent if comparison is not None else None
+        ),
         mismatch_reason=(
             None
             if passed
@@ -252,7 +270,11 @@ def _violation_codes(response: QueryResponse) -> set[SQLViolationCode]:
     return {violation.code for violation in response.validation.violations}
 
 
-def _calculate_metrics(results: tuple[EvaluationCaseResult, ...]) -> EvaluationMetrics:
+def calculate_evaluation_metrics(
+    results: tuple[EvaluationCaseResult, ...],
+) -> EvaluationMetrics:
+    """Calculate common fake- and real-provider evaluation metrics."""
+
     analytical = tuple(
         result
         for result in results
@@ -282,6 +304,13 @@ def _calculate_metrics(results: tuple[EvaluationCaseResult, ...]) -> EvaluationM
     true_returned_clarifications = sum(
         result.category is EvaluationCategory.AMBIGUITY and result.clarification_correct is True
         for result in returned_clarifications
+    )
+    input_tokens = _sum_optional(result.input_tokens for result in results)
+    output_tokens = _sum_optional(result.output_tokens for result in results)
+    estimated_cost = _sum_optional(result.estimated_cost for result in results)
+    presentation_equivalent = sum(result.presentation_equivalent is True for result in analytical)
+    substantive_mismatches = sum(
+        result.execution_success is True and result.result_match is False for result in analytical
     )
     return EvaluationMetrics(
         case_count=len(results),
@@ -316,10 +345,28 @@ def _calculate_metrics(results: tuple[EvaluationCaseResult, ...]) -> EvaluationM
         repair_success_rate=(_rate(repair_successes, repair_attempts) if repair_attempts else None),
         latency_p50_ms=_percentile(latencies, 0.50),
         latency_p95_ms=_percentile(latencies, 0.95),
-        input_tokens=None,
-        output_tokens=None,
-        estimated_cost=None,
+        input_tokens=int(input_tokens) if input_tokens is not None else None,
+        output_tokens=int(output_tokens) if output_tokens is not None else None,
+        estimated_cost=estimated_cost,
+        presentation_equivalent_count=presentation_equivalent,
+        substantive_mismatch_count=substantive_mismatches,
     )
+
+
+def _usage_fields(response: QueryResponse, *, llm_invoked: bool) -> dict[str, object]:
+    usage = response.llm_token_usage
+    return {
+        "llm_invoked": llm_invoked,
+        "input_tokens": usage.input_tokens if usage is not None else None,
+        "output_tokens": usage.output_tokens if usage is not None else None,
+        "reasoning_tokens": usage.reasoning_tokens if usage is not None else None,
+        "total_tokens": usage.total_tokens if usage is not None else None,
+    }
+
+
+def _sum_optional(values: Iterable[int | float | None]) -> float | None:
+    observed = [value for value in values if value is not None]
+    return float(sum(observed)) if observed else None
 
 
 def _rate(numerator: int, denominator: int) -> float:

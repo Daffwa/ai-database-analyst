@@ -14,6 +14,7 @@ from backend.core.logging import ensure_logging_configured
 from backend.db.analytics_engine import create_sqlite_read_only_engine
 from backend.evaluation.mini_cases import fake_responses as mini_fake_responses
 from backend.evaluation.runner import TrustedDemoRunner
+from backend.llm.adapters import ProviderRequestBudget
 from backend.llm.factory import create_llm_adapter
 from backend.schemas.database import SchemaAllowlist
 from backend.schemas.result import DatabaseExplorerSnapshot, SafeSystemInfo
@@ -25,8 +26,13 @@ from backend.services.experience_metadata import (
     build_safe_system_info,
 )
 from backend.services.feedback_service import FeedbackService
-from backend.services.orchestrator import QueryOrchestrator, QueryProcessor
+from backend.services.orchestrator import (
+    QueryOrchestrator,
+    QueryProcessor,
+    SQLGenerationService,
+)
 from backend.services.output_parser import StructuredOutputParser
+from backend.services.planned_sql_generator import PlannedPromptBuilder, PlannedSQLGenerator
 from backend.services.prompt_builder import PromptBuilder
 from backend.services.query_executor import ManualQueryExecutor
 from backend.services.query_history import QueryHistoryService
@@ -67,6 +73,7 @@ def create_stage6_runtime(
     settings: AppSettings,
     *,
     fake_responses: Mapping[str, str] | None = None,
+    request_budget: ProviderRequestBudget | None = None,
 ) -> Stage6Runtime:
     """Build the semantic, secured, result-aware fake runtime without network."""
 
@@ -98,19 +105,29 @@ def create_stage6_runtime(
     adapter = create_llm_adapter(
         settings,
         fake_responses=(mini_fake_responses() if fake_responses is None else fake_responses),
+        request_budget=request_budget,
     )
-    generator = SQLGenerator(
-        adapter,
-        PromptBuilder(
-            SchemaRetriever(
-                max_tables=settings.prompt_schema_max_tables,
-                max_characters=settings.prompt_schema_max_characters,
-            ),
-            prompt_version=settings.prompt_version,
-        ),
-        StructuredOutputParser(max_characters=settings.llm_max_output_characters),
-        timeout_seconds=settings.llm_timeout_seconds,
+    retriever = SchemaRetriever(
+        max_tables=settings.prompt_schema_max_tables,
+        max_characters=settings.prompt_schema_max_characters,
     )
+    generator: SQLGenerationService
+    if settings.prompt_version == "v5-plan":
+        generator = PlannedSQLGenerator(
+            adapter,
+            PlannedPromptBuilder(retriever, semantic_bundle),
+            semantic_bundle,
+            max_output_characters=settings.llm_max_output_characters,
+            timeout_seconds=settings.llm_timeout_seconds,
+            max_plan_repairs=min(1, settings.query_max_repair_attempts),
+        )
+    else:
+        generator = SQLGenerator(
+            adapter,
+            PromptBuilder(retriever, prompt_version=settings.prompt_version),
+            StructuredOutputParser(max_characters=settings.llm_max_output_characters),
+            timeout_seconds=settings.llm_timeout_seconds,
+        )
     generation = QueryOrchestrator(
         generator,
         snapshot,

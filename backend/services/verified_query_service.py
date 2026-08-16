@@ -12,15 +12,29 @@ from backend.services.clarification_service import normalize_semantic_text
 
 _STOPWORDS = frozenset(
     {
+        "all",
         "apa",
         "berapa",
+        "dalam",
         "dengan",
+        "five",
         "has",
+        "highest",
         "is",
+        "list",
+        "lima",
         "mana",
+        "most",
         "of",
+        "show",
+        "tampilkan",
+        "terbanyak",
+        "terbesar",
+        "tertinggi",
         "the",
+        "top",
         "what",
+        "with",
         "which",
         "yang",
     }
@@ -59,15 +73,15 @@ class VerifiedQueryService:
                 or query.review_status is ReviewStatus.DRAFT
             ):
                 continue
-            score = max(
+            lexical_score = max(
                 (
                     _similarity(normalized_question, question_tokens, candidate)
                     for candidate in query.questions.for_language(language)
                 ),
                 default=0.0,
             )
-            score += 0.2 * len(set(metric_ids) & set(query.metric_ids))
-            if score >= 0.35:
+            score = lexical_score + 0.2 * len(set(metric_ids) & set(query.metric_ids))
+            if lexical_score >= 0.25 and score >= 0.35:
                 scored.append((score, query.query_id, query))
         scored.sort(key=lambda item: (-item[0], item[1]))
         return tuple(item[2] for item in scored[: self._max_examples])
