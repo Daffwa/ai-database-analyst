@@ -7,6 +7,13 @@ from uuid import uuid4
 
 import httpx
 
+from backend.schemas.agent import (
+    AgentCancelRequest,
+    AgentCancelResponse,
+    AgentContinueRequest,
+    AgentQueryRequest,
+    AgentRunResponse,
+)
 from backend.schemas.api import APIFeedbackRequest, APIQueryRequest, HealthResponse, HistoryResponse
 from backend.schemas.llm import QueryResponse
 from backend.schemas.result import DatabaseExplorerSnapshot, FeedbackRating, FeedbackRecord
@@ -48,6 +55,38 @@ class AnalystAPIClient:
         payload = APIQueryRequest(question=question)
         return QueryResponse.model_validate(
             self._request("POST", "/api/v1/query", json=payload.model_dump(mode="json"))
+        )
+
+    def agent_query(self, question: str) -> AgentRunResponse:
+        payload = AgentQueryRequest(question=question)
+        return AgentRunResponse.model_validate(
+            self._request("POST", "/api/v1/agent/query", json=payload.model_dump(mode="json"))
+        )
+
+    def agent_continue(
+        self, continuation_id: str, option_id: str, question: str
+    ) -> AgentRunResponse:
+        payload = AgentContinueRequest(
+            continuation_id=continuation_id,
+            option_id=option_id,
+            question=question,
+        )
+        return AgentRunResponse.model_validate(
+            self._request(
+                "POST",
+                "/api/v1/agent/continue",
+                json=payload.model_dump(mode="json"),
+            )
+        )
+
+    def agent_cancel(self, continuation_id: str) -> AgentCancelResponse:
+        payload = AgentCancelRequest(continuation_id=continuation_id)
+        return AgentCancelResponse.model_validate(
+            self._request(
+                "POST",
+                "/api/v1/agent/cancel",
+                json=payload.model_dump(mode="json"),
+            )
         )
 
     def schema(self) -> DatabaseExplorerSnapshot:

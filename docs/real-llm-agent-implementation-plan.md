@@ -104,8 +104,8 @@ Gunakan hanya status `Belum dimulai`, `Sedang dikerjakan`, `Terblokir`, atau
 | 3 | Hubungkan konfigurasi API secara aman | Selesai | Second rotation stored only in ignored `.env`; exact-match audit and live smoke passed |
 | 4 | Tambahkan pengujian adapter dan pipeline | Selesai | 12 mocked Gemini pipeline cases; combined regression 332 passed, 4 skipped |
 | 5 | Evaluasi model nyata | Terblokir | Phase N passed 5/6 using 7/12 requests; `AGG-007` requires an explicit product cardinality/projection policy; holdout remains closed |
-| 6 | Bentuk tools untuk agent | Belum dimulai | - |
-| 7 | Tambahkan bounded agent loop | Belum dimulai | - |
+| 6 | Bentuk tools untuk agent | Selesai | Delapan typed/versioned tools, state allowlist, one-use validation/result handles, bounded repair, safe audit; 447-test regression passed |
+| 7 | Tambahkan bounded agent loop | Selesai | `bounded-agent-v1`, 8-step/30-second budgets, durable canonical continuation, API/UI integration, duplicate protection; Point 5 remains blocked |
 
 ## 6. Poin 1 - Memilih provider dan model LLM
 
@@ -702,20 +702,20 @@ langsung ke database atau sistem operasi.
 
 ### Langkah kerja
 
-- [ ] Definisikan `AgentTool` protocol/interface.
-- [ ] Definisikan typed tool request dan response schemas.
-- [ ] Buat registry allowlist, bukan dynamic import dari input model.
-- [ ] Bungkus semantic service sebagai `resolve_semantics`.
-- [ ] Bungkus schema retriever sebagai `retrieve_schema_context`.
-- [ ] Bungkus SQL security service sebagai `validate_sql`.
-- [ ] Rancang validation handle/fingerprint untuk mengikat hasil validasi dengan
+- [x] Definisikan `AgentTool` protocol/interface.
+- [x] Definisikan typed tool request dan response schemas.
+- [x] Buat registry allowlist, bukan dynamic import dari input model.
+- [x] Bungkus semantic service sebagai `resolve_semantics`.
+- [x] Bungkus schema retriever sebagai `retrieve_schema_context`.
+- [x] Bungkus SQL security service sebagai `validate_sql`.
+- [x] Rancang validation handle/fingerprint untuk mengikat hasil validasi dengan
   SQL yang akan dieksekusi.
-- [ ] Bungkus executor sebagai `execute_validated_sql` dan tolak raw SQL yang
+- [x] Bungkus executor sebagai `execute_validated_sql` dan tolak raw SQL yang
   tidak mempunyai validasi sah.
-- [ ] Rangkai `SQLRepairCoordinator` untuk violation codes yang repairable saja.
-- [ ] Bungkus result services sebagai `format_result`.
-- [ ] Tambahkan tool-call audit events dan latency.
-- [ ] Tambahkan unit test per tool dan authority boundary.
+- [x] Rangkai `SQLRepairCoordinator` untuk violation codes yang repairable saja.
+- [x] Bungkus result services sebagai `format_result`.
+- [x] Tambahkan tool-call audit events dan latency.
+- [x] Tambahkan unit test per tool dan authority boundary.
 
 ### File yang kemungkinan ditambahkan/diubah
 
@@ -737,6 +737,11 @@ Poin 6 boleh ditandai selesai jika:
 - repair attempt dibatasi dan setiap candidate divalidasi penuh;
 - tool-call audit tidak menyimpan data sensitif;
 - semua authority dan negative tests lulus.
+
+Status 2026-08-16: seluruh acceptance criteria di atas lulus. Implementasi ada
+di `backend/agent/` dan `backend/schemas/agent.py`; detail authority dan
+residual boundary didokumentasikan di `docs/bounded-agent.md`. Penyelesaian
+arsitektur ini tidak mengubah status Poin 5 atau mengualifikasi model nyata.
 
 ## 12. Poin 7 - Menambahkan bounded agent loop
 
@@ -828,36 +833,36 @@ RECEIVED
 
 ### Langkah kerja
 
-- [ ] Definisikan `AgentState`, `AgentAction`, `AgentObservation`, dan stop reason.
-- [ ] Definisikan transition table dan tool allowlist per state.
-- [ ] Implementasikan bounded loop tanpa database bypass.
-- [ ] Paksa security validation sebelum setiap execution.
-- [ ] Integrasikan repair coordinator dengan maksimum attempt dari settings.
-- [ ] Implementasikan continuation untuk klarifikasi multi-turn.
-- [ ] Tambahkan total deadline, max steps, token budget, dan cost budget.
-- [ ] Tambahkan idempotency/duplicate-call protection untuk execution.
-- [ ] Tambahkan pipeline/tool events untuk observability.
-- [ ] Tambahkan API contract untuk session/continuation jika diperlukan.
-- [ ] Perbarui UI agar dapat melanjutkan clarification state.
-- [ ] Pertahankan compatibility path untuk deterministic regression.
+- [x] Definisikan `AgentState`, `AgentAction`, `AgentObservation`, dan stop reason.
+- [x] Definisikan transition table dan tool allowlist per state.
+- [x] Implementasikan bounded loop tanpa database bypass.
+- [x] Paksa security validation sebelum setiap execution.
+- [x] Integrasikan repair coordinator dengan maksimum attempt dari settings.
+- [x] Implementasikan continuation untuk klarifikasi multi-turn.
+- [x] Tambahkan total deadline, max steps, token budget, dan cost budget.
+- [x] Tambahkan idempotency/duplicate-call protection untuk execution.
+- [x] Tambahkan pipeline/tool events untuk observability.
+- [x] Tambahkan API contract untuk session/continuation jika diperlukan.
+- [x] Perbarui UI agar dapat melanjutkan clarification state.
+- [x] Pertahankan compatibility path untuk deterministic regression.
 
 ### Skenario pengujian wajib
 
-- [ ] Safe one-shot question berhasil.
-- [ ] Pertanyaan ambigu berhenti dan dapat dilanjutkan setelah pilihan valid.
-- [ ] Pilihan klarifikasi invalid ditolak.
-- [ ] SQL syntax/schema error repairable berhasil diperbaiki.
-- [ ] Repair gagal setelah maksimum attempt dan berhenti aman.
-- [ ] Destructive SQL langsung diblokir tanpa repair.
-- [ ] Model meminta tool tidak dikenal dan ditolak.
-- [ ] Model meminta tool yang tidak diizinkan pada state tersebut dan ditolak.
-- [ ] Model mencoba execute sebelum validate dan runtime tetap memaksa validasi.
-- [ ] Model mengulang tool call hingga max steps dan loop dihentikan.
-- [ ] Provider timeout dan query timeout menghasilkan status berbeda yang aman.
-- [ ] Duplicate execution tidak menjalankan query dua kali.
-- [ ] Token/cost budget menghentikan run.
-- [ ] Audit trail tidak memuat secret, raw SQL, atau result rows.
-- [ ] Existing 100-case regression dan SQL security corpus tetap lulus.
+- [x] Safe one-shot question berhasil.
+- [x] Pertanyaan ambigu berhenti dan dapat dilanjutkan setelah pilihan valid.
+- [x] Pilihan klarifikasi invalid ditolak.
+- [x] SQL syntax/schema error repairable berhasil diperbaiki.
+- [x] Repair gagal setelah maksimum attempt dan berhenti aman.
+- [x] Destructive SQL langsung diblokir tanpa repair.
+- [x] Model meminta tool tidak dikenal dan ditolak.
+- [x] Model meminta tool yang tidak diizinkan pada state tersebut dan ditolak.
+- [x] Model mencoba execute sebelum validate dan runtime tetap memaksa validasi.
+- [x] Model mengulang tool call hingga max steps dan loop dihentikan.
+- [x] Provider timeout dan query timeout menghasilkan status berbeda yang aman.
+- [x] Duplicate execution tidak menjalankan query dua kali.
+- [x] Token/cost budget menghentikan run.
+- [x] Audit trail tidak memuat secret, raw SQL, atau result rows.
+- [x] Existing 100-case regression dan SQL security corpus tetap lulus.
 
 ### Acceptance criteria
 
@@ -873,6 +878,12 @@ Poin 7 boleh ditandai selesai jika:
 - seluruh scenario tests dan regression gates lulus;
 - dokumentasi arsitektur menyatakan sistem sebagai bounded agent, bukan
   autonomous unrestricted agent.
+
+Status 2026-08-16: seluruh acceptance criteria Poin 7 lulus secara offline dan
+arsitektural. Continuation tersimpan durable di metadata PostgreSQL tanpa raw
+question/SQL/prompt/rows dan diklaim atomik; client mengirim ulang pertanyaan
+untuk dicocokkan terhadap digest. Poin 5 tetap `Terblokir`, sehingga status ini
+bukan klaim bahwa Gemma lolos quality gate.
 
 ## 13. Milestone pengerjaan
 
@@ -979,6 +990,7 @@ Tambahkan baris baru setiap kali terdapat perubahan material.
 
 | Tanggal | Poin | Perubahan | Test/bukti | Status berikutnya |
 |---|---|---|---|---|
+| 2026-08-16 | 6-7 | Added typed/versioned tool registry, one-use validation and result capabilities, repairable-only coordinator, deterministic state authority, bounded loop/budgets, restart-safe canonical clarification, agent API/UI, and compatibility path | 447 passed, 4 PostgreSQL/Docker skips, 90.69% coverage; Ruff format/lint, strict Mypy, diff-check; no provider call | Points 6-7 complete as architecture/offline evidence; Point 5 remains blocked and no model qualification/holdout claim is made |
 | 2026-08-16 | 5 | Restored dependency security, made `dev.py verify` forcibly offline, completed authorized Phase N, and published draft PR #26 | GitPython 3.1.58 / zero `pip-audit` findings; 411 passed, 4 skipped, 90.10%; Phase N 5/6 using 7/12, 6/6 structured, 4/5 accuracy, 1/1 unsafe, zero bypass/cost/holdout; all nine hosted PR checks passed including source/container security | Blocked: decide generic unbounded-list cardinality/projection policy for `AGG-007`; create an independently sealed replacement holdout before any future promotion |
 | 2026-08-08 | 5 | Completed Phase M on 18 prior failures and prepared five generic offline follow-ups | 12/18 using 19/36 requests; 17/18 structured, 17/17 valid SQL/execution, 12/17 accuracy; new source 409 passed, 4 skipped, 90.10%, zero new provider/holdout calls | Blocked: authorize six-case Phase N max 12; no freeze/holdout/points 6-7 |
 | 2026-08-08 | 5 | Completed authorized Phase-L full v5-plan development evaluation | 74/136 requests; 52/70 passed; 94.12% structured, 95.08% valid SQL/execution, 72.13% accuracy, 85.71% unsafe blocking, 0 hallucination/bypass/cost/holdout | Blocked: failed structured/accuracy/unsafe gates; no freeze/holdout/summary; new versioned development candidate required |

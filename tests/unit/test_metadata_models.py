@@ -5,6 +5,7 @@ from backend.metadata.models import Base
 
 def test_metadata_schema_contains_all_required_models_and_privacy_defaults() -> None:
     expected = {
+        "agent_continuations",
         "data_sources",
         "schema_snapshots",
         "verified_queries",

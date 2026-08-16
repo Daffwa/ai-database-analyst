@@ -10,6 +10,12 @@ from pathlib import Path
 
 from sqlalchemy.engine import Engine
 
+from backend.agent.orchestrator import BoundedAnalyticsAgent
+from backend.agent.policy import PipelineAgentPolicy
+from backend.agent.registry import AgentToolRegistry
+from backend.agent.repair_provider import LLMRepairProvider
+from backend.agent.session import AgentLimits, AgentServices, AgentSessionStore
+from backend.agent.tools import default_tools
 from backend.core.config import AppSettings
 from backend.core.errors import ConfigurationError
 from backend.core.logging import ensure_logging_configured
@@ -53,6 +59,7 @@ class Stage8Runtime:
     analytics_engine: Engine
     metadata_engine: Engine
     orchestrator: QueryProcessor
+    agent: BoundedAnalyticsAgent
     metadata: MetadataRepository
     database_explorer: DatabaseExplorerSnapshot
     system_info: SafeSystemInfo
@@ -142,16 +149,18 @@ def create_stage8_runtime(
                 postgres_fake_responses(root) if fake_responses is None else fake_responses
             ),
         )
+        output_parser = StructuredOutputParser(max_characters=settings.llm_max_output_characters)
+        schema_retriever = SchemaRetriever(
+            max_tables=settings.prompt_schema_max_tables,
+            max_characters=settings.prompt_schema_max_characters,
+        )
         generator = SQLGenerator(
             adapter,
             PromptBuilder(
-                SchemaRetriever(
-                    max_tables=settings.prompt_schema_max_tables,
-                    max_characters=settings.prompt_schema_max_characters,
-                ),
+                schema_retriever,
                 prompt_version=settings.prompt_version,
             ),
-            StructuredOutputParser(max_characters=settings.llm_max_output_characters),
+            output_parser,
             timeout_seconds=settings.llm_timeout_seconds,
         )
         generation = QueryOrchestrator(
@@ -185,18 +194,20 @@ def create_stage8_runtime(
                 for metric in semantic_bundle.metrics.metrics
             }
         )
+        chart_selector = DeterministicChartSelector(
+            ChartPolicy(
+                max_bar_categories=settings.chart_max_categories,
+                max_grouped_measures=settings.chart_max_grouped_measures,
+                recommended_line_points=settings.chart_recommended_line_points,
+                recommended_scatter_points=settings.chart_recommended_scatter_points,
+            )
+        )
+        summarizer = ResultSummarizer()
         orchestrator = ResultExperienceOrchestrator(
             secure,
             formatter,
-            DeterministicChartSelector(
-                ChartPolicy(
-                    max_bar_categories=settings.chart_max_categories,
-                    max_grouped_measures=settings.chart_max_grouped_measures,
-                    recommended_line_points=settings.chart_recommended_line_points,
-                    recommended_scatter_points=settings.chart_recommended_scatter_points,
-                )
-            ),
-            ResultSummarizer(),
+            chart_selector,
+            summarizer,
             history,
             enable_summary=settings.enable_result_summary,
         )
@@ -207,10 +218,43 @@ def create_stage8_runtime(
             snapshot_location="data/schemas/chinook-postgresql-v1.4.5.json",
         )
         refreshed_at = datetime.fromtimestamp(snapshot_path.stat().st_mtime, UTC).isoformat()
+        repair_provider = LLMRepairProvider(
+            adapter,
+            output_parser,
+            timeout_seconds=settings.llm_timeout_seconds,
+        )
+        agent_policy = PipelineAgentPolicy(generator)
+        agent = BoundedAnalyticsAgent(
+            AgentServices(
+                semantic_service=semantic_service,
+                schema_retriever=schema_retriever,
+                snapshot=snapshot,
+                allowlist=allowlist,
+                validator=sql_security,
+                executor=executor,
+                formatter=formatter,
+                chart_selector=chart_selector,
+                summarizer=summarizer,
+            ),
+            agent_policy,
+            AgentToolRegistry(default_tools(repair_provider)),
+            limits=AgentLimits(
+                max_steps=settings.agent_max_steps,
+                max_repairs=settings.query_max_repair_attempts,
+                max_clarification_rounds=settings.agent_max_clarification_rounds,
+                max_runtime_seconds=settings.agent_max_runtime_seconds,
+                continuation_ttl_seconds=settings.agent_continuation_ttl_seconds,
+                max_total_tokens=settings.agent_max_total_tokens,
+                max_cost_usd=settings.agent_max_cost_usd,
+            ),
+            sessions=AgentSessionStore(backend=metadata),
+            max_question_characters=settings.question_max_characters,
+        )
         return Stage8Runtime(
             analytics_engine=analytics_engine,
             metadata_engine=metadata_engine,
             orchestrator=orchestrator,
+            agent=agent,
             metadata=metadata,
             database_explorer=DatabaseExplorerService(
                 snapshot, refreshed_at=refreshed_at

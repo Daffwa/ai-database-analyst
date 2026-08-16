@@ -13,6 +13,13 @@ from starlette.concurrency import run_in_threadpool
 from backend.api.dependencies import APIRuntime, get_runtime, require_evaluation_token
 from backend.core.logging import get_logger
 from backend.core.observability import OperationalMetrics
+from backend.schemas.agent import (
+    AgentCancelRequest,
+    AgentCancelResponse,
+    AgentContinueRequest,
+    AgentQueryRequest,
+    AgentRunResponse,
+)
 from backend.schemas.api import (
     APIFeedbackRequest,
     APIQueryRequest,
@@ -76,6 +83,44 @@ async def query(
         },
     )
     return result
+
+
+@router.post("/agent/query", response_model=AgentRunResponse, tags=["agent"])
+async def agent_query(
+    payload: AgentQueryRequest,
+    runtime: Annotated[APIRuntime, Depends(get_runtime)],
+) -> AgentRunResponse:
+    """Start one bounded tool-using run; the legacy query route remains compatible."""
+
+    result = await runtime.agent.process(payload.question)
+    _log_agent_result(result)
+    return result
+
+
+@router.post("/agent/continue", response_model=AgentRunResponse, tags=["agent"])
+async def agent_continue(
+    payload: AgentContinueRequest,
+    runtime: Annotated[APIRuntime, Depends(get_runtime)],
+) -> AgentRunResponse:
+    """Resume only from an issued continuation and canonical option ID."""
+
+    result = await runtime.agent.continue_with_choice(
+        payload.continuation_id,
+        payload.option_id,
+        payload.question,
+    )
+    _log_agent_result(result)
+    return result
+
+
+@router.post("/agent/cancel", response_model=AgentCancelResponse, tags=["agent"])
+async def agent_cancel(
+    payload: AgentCancelRequest,
+    runtime: Annotated[APIRuntime, Depends(get_runtime)],
+) -> AgentCancelResponse:
+    """Delete an unused clarification continuation."""
+
+    return runtime.agent.cancel(payload.continuation_id)
 
 
 @router.get("/schema", response_model=DatabaseExplorerSnapshot, tags=["analytics"])
@@ -145,3 +190,24 @@ async def operational_metrics(request: Request) -> OperationalMetricsResponse:
 
     metrics: OperationalMetrics = request.app.state.operational_metrics
     return OperationalMetricsResponse.model_validate(metrics.snapshot(), from_attributes=True)
+
+
+def _log_agent_result(result: AgentRunResponse) -> None:
+    LOGGER.info(
+        "Bounded agent request completed",
+        extra={
+            "request_id": result.request_id,
+            "session_id": result.session_id,
+            "stage": "bounded_agent_completed",
+            "status": result.status.value,
+            "stop_reason": result.stop_reason,
+            "steps_used": result.budget.steps_used,
+            "repair_attempts": result.budget.repairs_used,
+            "latency_ms": result.budget.elapsed_ms,
+            "provider": result.provider,
+            "model": result.model,
+            "sql_fingerprint": (
+                result.result.sql_fingerprint if result.result is not None else None
+            ),
+        },
+    )

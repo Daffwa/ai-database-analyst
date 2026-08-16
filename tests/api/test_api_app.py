@@ -10,6 +10,13 @@ from fastapi.testclient import TestClient
 
 from backend.api.app import create_app
 from backend.core.config import AppSettings
+from backend.schemas.agent import (
+    AgentBudgetSnapshot,
+    AgentCancelResponse,
+    AgentRunResponse,
+    AgentState,
+    AgentTerminalStatus,
+)
 from backend.schemas.llm import (
     LanguageCode,
     PipelineEvent,
@@ -70,6 +77,48 @@ class FakeOrchestrator:
         return _response(question)
 
 
+class FakeAgent:
+    def __init__(self) -> None:
+        self.continued: tuple[str, str, str] | None = None
+        self.cancelled: str | None = None
+
+    async def process(self, question: str) -> AgentRunResponse:
+        return self._response(f"agent-{question}")
+
+    async def continue_with_choice(
+        self, continuation_id: str, option_id: str, question: str
+    ) -> AgentRunResponse:
+        self.continued = (continuation_id, option_id, question)
+        return self._response("agent-continued")
+
+    def cancel(self, continuation_id: str) -> AgentCancelResponse:
+        self.cancelled = continuation_id
+        return AgentCancelResponse(session_id=continuation_id)
+
+    @staticmethod
+    def _response(request_id: str) -> AgentRunResponse:
+        return AgentRunResponse(
+            request_id=request_id,
+            session_id="ags_api_session_123456789",
+            state=AgentState.COMPLETED,
+            status=AgentTerminalStatus.SUCCESS,
+            stop_reason="success",
+            budget=AgentBudgetSnapshot(
+                steps_used=6,
+                max_steps=8,
+                repairs_used=0,
+                max_repairs=2,
+                clarification_rounds=0,
+                max_clarification_rounds=2,
+                elapsed_ms=1,
+                max_runtime_seconds=30,
+            ),
+            audit=(),
+            provider="fake",
+            model="fake-deterministic",
+        )
+
+
 class FakeMetadata:
     def __init__(self) -> None:
         self.responses: dict[str, QueryResponse] = {}
@@ -108,6 +157,7 @@ class FakeRuntime:
             ROOT / "data" / "schemas" / "chinook-postgresql-v1.4.5.json"
         )
         self.orchestrator = FakeOrchestrator()
+        self.agent = FakeAgent()
         self.metadata = FakeMetadata()
         self.database_explorer = DatabaseExplorerService(
             snapshot, refreshed_at="2026-07-20T00:00:00+00:00"
@@ -172,12 +222,43 @@ def test_api_contract_query_schema_history_feedback_health_and_openapi() -> None
     assert feedback.status_code == 200 and feedback.json()["rating"] == "correct"
     assert openapi.status_code == 200
     assert "/api/v1/query" in openapi.json()["paths"]
+    assert "/api/v1/agent/query" in openapi.json()["paths"]
     assert metrics.status_code == 200
     assert metrics.json()["analytics_requests_total"] == 1
     assert metrics.json()["success_total"] == 1
     serialized_metrics = metrics.text.casefold()
     assert "question" not in serialized_metrics
     assert "sql" not in serialized_metrics
+
+
+def test_agent_start_continue_and_cancel_routes_use_typed_contracts() -> None:
+    runtime = FakeRuntime()
+    continuation_id = "ags_api_continuation_123456"
+    with TestClient(create_app(_settings(), runtime=runtime)) as client:
+        started = client.post("/api/v1/agent/query", json={"question": "Count customers"})
+        continued = client.post(
+            "/api/v1/agent/continue",
+            json={
+                "continuation_id": continuation_id,
+                "option_id": "total_spend",
+                "question": "Who is the best customer?",
+            },
+        )
+        cancelled = client.post(
+            "/api/v1/agent/cancel",
+            json={"continuation_id": continuation_id},
+        )
+
+    assert started.status_code == 200
+    assert started.json()["architecture_version"] == "bounded-agent-v1"
+    assert continued.status_code == 200
+    assert runtime.agent.continued == (
+        continuation_id,
+        "total_spend",
+        "Who is the best customer?",
+    )
+    assert cancelled.status_code == 200
+    assert runtime.agent.cancelled == continuation_id
 
 
 def test_api_validation_errors_and_unhandled_errors_are_sanitized() -> None:

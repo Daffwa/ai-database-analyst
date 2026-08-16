@@ -1473,6 +1473,65 @@ development protocol and exact request authorization.
   does not inspect.
 - Point 5 is `Terblokir`; points 6-7 remain closed.
 
+## ADR-0047 - Build Bounded Agent Authority Independently of Model Promotion
+
+- Date: 2026-08-16
+- Status: Accepted
+
+### Context
+
+Point 5 remains blocked because Phase N failed its accuracy gate and no valid
+holdout remains available. The owner explicitly directed implementation of
+Points 6 and 7 despite that quality dependency. Tool authority and bounded-loop
+behavior can be implemented and verified offline, but doing so must not imply
+that Gemma is qualified for production analytical answers.
+
+Clarification also needs to survive API process restarts without violating the
+repository defaults that prohibit storage of raw question, SQL, prompts, and
+result rows. Concurrent resume attempts must not execute twice.
+
+### Decision
+
+Implement `bounded-agent-v1` as a separate API path while preserving the
+legacy `/api/v1/query` path. Use eight typed and versioned tools behind a static
+registry and per-state allowlist. Treat every model proposal as untrusted. Only
+the validator may issue a request-bound one-use capability containing the
+rewritten executable SQL; `execute_validated_sql` accepts that handle and has
+no SQL argument. Use a second one-use capability for result formatting.
+
+Allow repair only when every violation code is in the established repairable
+set. Run each proposed repair through `SQLRepairCoordinator` and the complete
+AST policy. Security-policy violations transition to `BLOCKED` without a model
+repair call.
+
+Use deterministic state transitions and initial limits of eight tool steps,
+two repairs, one tool call per step, one execution per validation handle, 30
+active seconds, and two clarification rounds. Optional token and cost ceilings
+stop the run before its next tool call.
+
+Persist clarification continuation in the metadata database with an opaque ID,
+question digest, canonical rule/option IDs, semantic version/hash, counters,
+and expiry only. Require the client to re-submit the original question and
+match its digest before canonical option resolution. Claim the row under a
+database lock and delete it on success/cancel; never persist raw question, SQL,
+prompt, rows, credentials, or internal exception text.
+
+### Consequences
+
+- Points 6 and 7 can be marked complete as architecture and offline regression
+  work. Point 5 remains `Terblokir`; no candidate freeze, holdout result, or
+  real-model qualification is inferred.
+- The default policy remains hybrid: the configured model selects analytical
+  versus unsupported intent and proposes SQL, while mandatory control actions
+  remain deterministic. Alternate action policies remain subordinate to the
+  same registry and state authority.
+- Alembic revision `20260816_0002` is required before enabling agent routes on
+  an existing metadata database.
+- The complete local gate passed 447 tests with four unavailable PostgreSQL/
+  Docker skips, 90.69% coverage, Ruff, strict Mypy, and diff-check. Hosted
+  PostgreSQL/Docker/security evidence is still required on the published
+  branch.
+
 ## Deferred Decisions
 
 | ID | Decision | Required by | Reason for deferral |

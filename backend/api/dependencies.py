@@ -8,6 +8,7 @@ from typing import Protocol, cast
 from fastapi import Header, HTTPException, Request, status
 
 from backend.core.config import AppSettings
+from backend.schemas.agent import AgentCancelResponse, AgentRunResponse
 from backend.schemas.llm import QueryResponse
 from backend.schemas.result import (
     DatabaseExplorerSnapshot,
@@ -27,9 +28,22 @@ class MetadataStore(Protocol):
     def submit_feedback(self, request_id: str, rating: FeedbackRating) -> FeedbackRecord: ...
 
 
+class AgentProcessor(Protocol):
+    async def process(self, question: str) -> AgentRunResponse: ...
+
+    async def continue_with_choice(
+        self, continuation_id: str, option_id: str, question: str
+    ) -> AgentRunResponse: ...
+
+    def cancel(self, continuation_id: str) -> AgentCancelResponse: ...
+
+
 class APIRuntime(Protocol):
     @property
     def orchestrator(self) -> QueryProcessor: ...
+
+    @property
+    def agent(self) -> AgentProcessor: ...
 
     @property
     def metadata(self) -> MetadataStore: ...

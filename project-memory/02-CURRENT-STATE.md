@@ -1,12 +1,13 @@
 # Current State
 
 - Last updated: 2026-08-16
-- Last known commit before current documentation work:
-  `c27b15b Record Stage 10 hosted release evidence (#12)`
-- Current working branch/implementation commit:
-  `agent/complete-real-llm-point5` / `9c54425 Implement secure real-model evaluation through Phase N`
-- Draft review: GitHub PR `#26`; all nine reported hosted checks passed on the
-  implementation commit.
+- Last known merged commit: `42ba532 Implement secure real-model evaluation
+  through Phase N (#26)`
+- Current working branch: `agent/bounded-agent-points-6-7`
+- Current implementation: Points 6-7 changes verified locally; use branch HEAD
+  as the authoritative commit after handoff.
+- Review: PR #26 is merged; Points 6-7 review publication is the remaining
+  handoff action.
 - Active goal: implement the real LLM and bounded-agent roadmap
 - Active plan: `docs/real-llm-agent-implementation-plan.md`
 - Default implementation provider: `fake` / `fake-deterministic`
@@ -21,18 +22,19 @@
 | 3 | Connect secure configuration | Selesai | Second rotation stored only in ignored `.env`; exact-match audit and live smoke passed |
 | 4 | Test adapter and pipeline | Selesai | 12 mocked Gemini pipeline cases; combined regression 332 passed, 4 skipped |
 | 5 | Evaluate real model | Terblokir | Phase N passed 5/6 using 7/12 requests; `AGG-007` still needs an explicit cardinality/projection policy; holdout 0 |
-| 6 | Create bounded agent tools | Belum dimulai | Stable/evaluated model integration |
-| 7 | Implement bounded agent loop | Belum dimulai | Typed tools and authority boundaries |
+| 6 | Create bounded agent tools | Selesai | Typed/versioned registry, one-use validation/result handles, repairable-only coordinator, safe audit; local gate passed |
+| 7 | Implement bounded agent loop | Selesai | `bounded-agent-v1`, explicit state authority/budgets, durable canonical continuation, API/UI; no model qualification claim |
 
 ## Immediate next action
 
-Decide whether unbounded analytical lists should have a product-level default
-cardinality/projection policy that justifies the 20-row, two-column
-`AGG-007` expectation. Do not encode that expectation by case ID. Phase N
-proved the other five corrections but missed its accuracy gate at 4/5
-analytical cases, so do not freeze a candidate, open holdout, or begin points
-6-7. Any new live development run needs a new versioned protocol and exact
-request authorization.
+Commit and publish the completed Points 6-7 implementation, then verify its
+hosted CI/PostgreSQL/Docker/security checks. Separately, decide whether
+unbounded analytical lists should have a product-level default cardinality/
+projection policy that justifies the 20-row, two-column `AGG-007` expectation.
+Do not encode that expectation by case ID. Phase N missed its accuracy gate at
+4/5 analytical cases, so do not freeze a candidate or open holdout. Any new
+live development run needs a new versioned protocol and exact request
+authorization.
 The current `stage-7-v1` holdout is disqualified as an unseen final set because
 a local read-only diagnostic accidentally displayed records outside the
 development split. Provider calls and scored holdout cases remain zero. Before
@@ -67,6 +69,24 @@ The following memory/plan work was created on 2026-08-07. Always verify with
 - a README link to the plan and memory entry point.
 
 ## Latest verification evidence
+
+- Points 6-7 local gate passed 447 tests with four unavailable PostgreSQL/
+  Docker skips and 90.69% coverage. Ruff format/lint, strict Mypy on 176
+  source files, and `git diff --check` passed. New authority tests cover safe
+  execution, destructive SQL without repair, bounded repair success/failure,
+  unknown/disallowed tools, execute-before-validation, one-use capabilities,
+  max steps, provider/query/agent timeout separation, token/cost stops, empty
+  result, canonical clarification continuation, restart recovery, concurrent
+  claim protection, and privacy-safe audit.
+- `bounded-agent-v1` adds eight typed/versioned tools, a static per-state
+  registry, deterministic transitions, 8-step/2-repair/30-second defaults,
+  `/api/v1/agent/query|continue|cancel`, Streamlit continuation controls, and
+  Alembic revision `20260816_0002`. Durable continuation stores only a question
+  digest, safe semantic IDs/version/hash, counters, and expiry; no raw question,
+  SQL, prompt, rows, credential, or internal exception is persisted.
+- No provider call was made for Points 6-7. This evidence proves architecture
+  and offline behavior only; Point 5 remains blocked and Gemma is not described
+  as qualified.
 
 - Phase N evaluated the six remaining Phase-M development failures on frozen
   source `126c6ecdbc...` with `gemma-4-31b-it`, prompt `v5-plan`, and

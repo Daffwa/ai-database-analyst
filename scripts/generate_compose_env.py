@@ -27,6 +27,10 @@ def compose_environment() -> dict[str, str]:
         "LLM_TIMEOUT_SECONDS": "30",
         "LLM_MAX_OUTPUT_TOKENS": "4096",
         "LLM_THINKING_LEVEL": "minimal",
+        "AGENT_MAX_STEPS": "8",
+        "AGENT_MAX_RUNTIME_SECONDS": "30",
+        "AGENT_MAX_CLARIFICATION_ROUNDS": "2",
+        "AGENT_CONTINUATION_TTL_SECONDS": "900",
         "API_PUBLISHED_PORT": "8000",
         "FRONTEND_PUBLISHED_PORT": "8501",
     }

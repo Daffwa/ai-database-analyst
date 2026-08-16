@@ -7,6 +7,12 @@ from uuid import UUID
 import httpx
 import pytest
 
+from backend.schemas.agent import (
+    AgentBudgetSnapshot,
+    AgentRunResponse,
+    AgentState,
+    AgentTerminalStatus,
+)
 from backend.schemas.llm import (
     LanguageCode,
     PipelineEvent,
@@ -106,3 +112,45 @@ def test_frontend_client_sends_a_canonical_correlation_id() -> None:
         client.close()
     assert len(observed) == 1
     assert UUID(observed[0])
+
+
+def test_frontend_agent_client_sends_original_question_for_safe_durable_resume() -> None:
+    observed: dict[str, object] = {}
+    response = AgentRunResponse(
+        request_id="agent-client-request",
+        session_id="ags_client_session_123456",
+        state=AgentState.COMPLETED,
+        status=AgentTerminalStatus.SUCCESS,
+        stop_reason="success",
+        budget=AgentBudgetSnapshot(
+            steps_used=1,
+            max_steps=8,
+            repairs_used=0,
+            max_repairs=2,
+            clarification_rounds=1,
+            max_clarification_rounds=2,
+            elapsed_ms=1,
+            max_runtime_seconds=30,
+        ),
+        audit=(),
+        provider="fake",
+        model="fake",
+    )
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        observed["path"] = request.url.path
+        observed["body"] = request.read().decode("utf-8")
+        return httpx.Response(200, json=response.model_dump(mode="json"))
+
+    client = AnalystAPIClient("http://test", transport=httpx.MockTransport(handler))
+    try:
+        parsed = client.agent_continue(
+            "ags_client_session_123456",
+            "total_spend",
+            "Who is the best customer?",
+        )
+    finally:
+        client.close()
+    assert parsed.status is AgentTerminalStatus.SUCCESS
+    assert observed["path"] == "/api/v1/agent/continue"
+    assert "Who is the best customer?" in str(observed["body"])

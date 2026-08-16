@@ -61,6 +61,13 @@ class AppSettings(BaseSettings):
     query_max_repair_attempts: int = Field(default=2, ge=0, le=5)
     csv_max_bytes: int = Field(default=1_000_000, ge=1_024, le=10_000_000)
 
+    agent_max_steps: int = Field(default=8, ge=1, le=32)
+    agent_max_runtime_seconds: int = Field(default=30, ge=1, le=300)
+    agent_max_clarification_rounds: int = Field(default=2, ge=1, le=5)
+    agent_continuation_ttl_seconds: int = Field(default=900, ge=60, le=86_400)
+    agent_max_total_tokens: int | None = Field(default=None, ge=1)
+    agent_max_cost_usd: float | None = Field(default=None, gt=0)
+
     chart_max_categories: int = Field(default=50, ge=2, le=500)
     chart_max_grouped_measures: int = Field(default=3, ge=1, le=5)
     chart_recommended_line_points: int = Field(default=8, ge=2, le=100)
