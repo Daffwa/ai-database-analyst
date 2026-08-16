@@ -4,9 +4,10 @@
 - Last known merged commit: `42ba532 Implement secure real-model evaluation
   through Phase N (#26)`
 - Current working branch: `agent/bounded-agent-points-6-7`
-- Current implementation: Points 6-7 are published in draft PR #27; branch HEAD
-  is the authoritative source while hosted checks rerun.
-- Review: PR #26 is merged; draft PR #27 contains Points 6-7.
+- Current implementation: Points 6-7 are published in PR #27; branch HEAD is
+  the authoritative source until review/merge.
+- Review: PR #26 is merged; PR #27 is ready for review with all hosted checks
+  passing on corrective commit `2290678`.
 - Active goal: implement the real LLM and bounded-agent roadmap
 - Active plan: `docs/real-llm-agent-implementation-plan.md`
 - Default implementation provider: `fake` / `fake-deterministic`
@@ -26,9 +27,7 @@
 
 ## Immediate next action
 
-Verify the corrective PR #27 hosted CI/PostgreSQL/Docker/security rerun after
-adding `agent_continuations` to the Tahap 8 evaluator and PostgreSQL expected
-schema. Separately, decide whether
+Review and merge PR #27 when desired. Separately, decide whether
 unbounded analytical lists should have a product-level default cardinality/
 projection policy that justifies the 20-row, two-column `AGG-007` expectation.
 Do not encode that expectation by case ID. Phase N missed its accuracy gate at
@@ -91,8 +90,10 @@ The following memory/plan work was created on 2026-08-07. Always verify with
   not a migration failure: both quality jobs rejected the new table in the
   evaluator and PostgreSQL rejected it in its exact table set. Both gates now
   include `agent_continuations`, check both Alembic revisions, and keep the
-  sensitive-column denylist; the full local gate passed again. Hosted rerun is
-  pending.
+  sensitive-column denylist; the full local gate passed again. The corrective
+  hosted runs all passed: CI `31942701362`, Docker `31942701282`, and Security
+  `31942701256`, covering PostgreSQL, Python 3.11/3.12, Compose, source and
+  container scans, and CodeQL.
 
 - Phase N evaluated the six remaining Phase-M development failures on frozen
   source `126c6ecdbc...` with `gemma-4-31b-it`, prompt `v5-plan`, and

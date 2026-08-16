@@ -15,8 +15,11 @@ secrets or raw sensitive payloads.
   retained an explicit denylist for raw question, prompt, SQL, and result-row
   column names.
 - Full local verification passed again: 447 tests, 4 PostgreSQL/Docker skips,
-  90.69% coverage, Ruff format/lint, and strict Mypy on 176 files. The hosted
-  PostgreSQL rerun remains the authoritative external evidence.
+  90.69% coverage, Ruff format/lint, and strict Mypy on 176 files.
+- The corrective hosted runs all passed: CI `31942701362`, Docker
+  `31942701282`, and Security `31942701256`. This covers real PostgreSQL,
+  Python 3.11/3.12, clean Compose, source/container scans, and CodeQL. PR #27
+  was moved from draft to ready for review.
 
 ## 2026-08-16 - Points 6-7 bounded agent implemented without model promotion
 
