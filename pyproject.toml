@@ -33,7 +33,7 @@ dependencies = [
   "sqlalchemy==2.0.51",
   "sqlglot==30.14.0",
   "streamlit==1.60.0",
-  "uvicorn==0.51.0",
+  "uvicorn==0.52.1",
 ]
 
 [project.optional-dependencies]
