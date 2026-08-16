@@ -1,8 +1,8 @@
 {
   "blocker": null,
-  "checked_at": "2026-07-21T12:56:37.429179+00:00",
+  "checked_at": "2026-08-16T10:47:34.244171+00:00",
   "checks": {
-    "alembic_revision_present": true,
+    "alembic_revisions_present": true,
     "fastapi_factory_present": true,
     "frontend_uses_api_client": true,
     "metadata_models_complete": true,
