@@ -14,7 +14,7 @@ from time import perf_counter
 
 from backend.core.config import AppSettings
 from backend.core.errors import AppError
-from backend.evaluation.case_loader import EvaluationDataset
+from backend.evaluation.case_loader import EvaluationDataset, validate_sealed_holdout_manifest
 from backend.evaluation.stage7_runner import (
     CHINOOK_SHA256,
     CHINOOK_VERSION,
@@ -36,12 +36,13 @@ from backend.schemas.evaluation import (
     RealEvaluationSummary,
     RealEvaluationThresholds,
     ResultComparisonPolicy,
+    SealedHoldoutManifest,
 )
 from backend.schemas.llm import QueryResponse, QueryStatus
 
-REAL_EVALUATION_REPORT_VERSION = "stage-7-real-provider-report-v2"
-REAL_EVALUATION_CANDIDATE_VERSION = "stage-7-real-provider-candidate-v2"
-REAL_EVALUATION_SUMMARY_VERSION = "stage-7-real-provider-summary-v2"
+REAL_EVALUATION_REPORT_VERSION = "stage-7-real-provider-report-v3"
+REAL_EVALUATION_CANDIDATE_VERSION = "stage-7-real-provider-candidate-v3"
+REAL_EVALUATION_SUMMARY_VERSION = "stage-7-real-provider-summary-v3"
 ProgressCallback = Callable[[int, int, EvaluationCaseResult, int], None]
 
 
@@ -68,6 +69,21 @@ def planned_provider_requests(
     )
 
 
+def planned_provider_requests_from_counts(
+    category_counts: dict[EvaluationCategory, int],
+    *,
+    prompt_version: str = "v4",
+) -> int:
+    """Calculate a hard call cap from a sealed manifest without opening its payload."""
+
+    generated = sum(category_counts.values()) - category_counts.get(
+        EvaluationCategory.AMBIGUITY,
+        0,
+    )
+    calls_per_generated_case = 2 if prompt_version == "v5-plan" else 1
+    return generated * calls_per_generated_case
+
+
 async def run_real_model_evaluation(
     root: Path,
     settings: AppSettings,
@@ -84,6 +100,7 @@ async def run_real_model_evaluation(
     existing_results: tuple[EvaluationCaseResult, ...] = (),
     progress: ProgressCallback | None = None,
     comparison_policy: ResultComparisonPolicy = ResultComparisonPolicy.STRICT_V1,
+    holdout_manifest_sha256: str | None = None,
 ) -> RealEvaluationReport:
     """Run one live split sequentially under an adapter-enforced hard call cap."""
 
@@ -122,6 +139,7 @@ async def run_real_model_evaluation(
         dataset=dataset,
         development_report_path=development_report_path,
         comparison_policy=comparison_policy,
+        holdout_manifest_sha256=holdout_manifest_sha256,
     )
 
     prior_attempts = sum(_provider_calls(result) for result in existing_results)
@@ -411,7 +429,8 @@ def build_real_evaluation_candidate(
     development_report: RealEvaluationReport,
     dataset: EvaluationDataset,
     *,
-    holdout_request_limit: int,
+    holdout_manifest_path: Path,
+    holdout_manifest: SealedHoldoutManifest,
     frozen_at: datetime | None = None,
 ) -> RealEvaluationCandidate:
     """Freeze a passing development candidate before any holdout provider call."""
@@ -425,12 +444,11 @@ def build_real_evaluation_candidate(
     expected_development_cases = len(cases_for_split(dataset, EvaluationSplit.DEVELOPMENT))
     if development_report.provenance.dataset_case_count != expected_development_cases:
         raise ValueError("candidate requires the complete development split")
-    expected_holdout = planned_provider_requests(
-        cases_for_split(dataset, EvaluationSplit.HOLDOUT),
+    validate_sealed_holdout_manifest(holdout_manifest)
+    expected_holdout = planned_provider_requests_from_counts(
+        holdout_manifest.category_counts,
         prompt_version=development_report.provenance.prompt_version,
     )
-    if holdout_request_limit != expected_holdout:
-        raise ValueError("holdout request limit must equal the planned request count")
     runtime = development_report.provenance.runtime_configuration
     runtime_policy = ResultComparisonPolicy(
         str(
@@ -447,8 +465,12 @@ def build_real_evaluation_candidate(
         frozen_at=(frozen_at or datetime.now(UTC)).isoformat(),
         development_report_sha256=file_sha256(development_report_path),
         evaluation_source_sha256=str(runtime["evaluation_source_sha256"]),
-        dataset_version=dataset.version,
-        dataset_sha256=dataset.sha256,
+        development_dataset_version=dataset.version,
+        development_dataset_sha256=dataset.sha256,
+        holdout_manifest_sha256=file_sha256(holdout_manifest_path),
+        holdout_dataset_version=holdout_manifest.dataset_version,
+        holdout_dataset_sha256=holdout_manifest.dataset_sha256,
+        holdout_case_count=holdout_manifest.case_count,
         provider=development_report.provenance.provider,
         model=development_report.provenance.model,
         prompt_version=development_report.provenance.prompt_version,
@@ -458,7 +480,7 @@ def build_real_evaluation_candidate(
         comparison_policy=runtime_policy,
         thinking_level=str(runtime["llm_thinking_level"]),
         max_output_tokens=int(runtime["llm_max_output_tokens"]),
-        holdout_request_limit=holdout_request_limit,
+        holdout_request_limit=expected_holdout,
         thresholds=development_report.thresholds,
     )
 
@@ -482,6 +504,16 @@ def build_real_evaluation_summary(
         failures.append("development_split")
     if holdout_report.split is not EvaluationSplit.HOLDOUT:
         failures.append("holdout_split")
+    if (
+        development_report.provenance.dataset_version != candidate.development_dataset_version
+        or development_report.provenance.dataset_sha256 != candidate.development_dataset_sha256
+    ):
+        failures.append("development_dataset_drift")
+    if (
+        holdout_report.provenance.dataset_version != candidate.holdout_dataset_version
+        or holdout_report.provenance.dataset_sha256 != candidate.holdout_dataset_sha256
+    ):
+        failures.append("holdout_dataset_drift")
     if not development_report.completed:
         failures.append("development_incomplete")
     if not holdout_report.completed:
@@ -532,8 +564,11 @@ def build_real_evaluation_summary(
         summary_version=REAL_EVALUATION_SUMMARY_VERSION,
         generated_at=(generated_at or datetime.now(UTC)).isoformat(),
         candidate_version=candidate.candidate_version,
-        dataset_version=candidate.dataset_version,
-        dataset_sha256=candidate.dataset_sha256,
+        development_dataset_version=candidate.development_dataset_version,
+        development_dataset_sha256=candidate.development_dataset_sha256,
+        holdout_dataset_version=candidate.holdout_dataset_version,
+        holdout_dataset_sha256=candidate.holdout_dataset_sha256,
+        holdout_manifest_sha256=candidate.holdout_manifest_sha256,
         provider=candidate.provider,
         model=candidate.model,
         prompt_version=candidate.prompt_version,
@@ -620,6 +655,7 @@ def _validate_live_configuration(
     dataset: EvaluationDataset,
     development_report_path: Path | None,
     comparison_policy: ResultComparisonPolicy,
+    holdout_manifest_sha256: str | None,
 ) -> None:
     if settings.llm_provider.strip().casefold() != "gemini":
         raise ValueError("real evaluation requires the gemini provider")
@@ -635,10 +671,13 @@ def _validate_live_configuration(
         if file_sha256(development_report_path) != candidate.development_report_sha256:
             raise ValueError("frozen development report hash does not match")
         if (
-            candidate.dataset_version != dataset.version
-            or candidate.dataset_sha256 != dataset.sha256
+            candidate.holdout_dataset_version != dataset.version
+            or candidate.holdout_dataset_sha256 != dataset.sha256
+            or candidate.holdout_case_count != len(dataset.cases)
         ):
             raise ValueError("frozen candidate dataset does not match")
+        if holdout_manifest_sha256 != candidate.holdout_manifest_sha256:
+            raise ValueError("sealed holdout manifest does not match frozen candidate")
         if candidate.holdout_request_limit != request_limit:
             raise ValueError("frozen candidate holdout request limit does not match")
         if candidate.provider != settings.llm_provider or candidate.model != settings.llm_model:

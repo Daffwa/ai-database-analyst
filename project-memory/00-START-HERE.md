@@ -2,7 +2,7 @@
 
 - Project: AI Database Analyst
 - Memory version: `v1`
-- Last updated: 2026-08-08
+- Last updated: 2026-08-18
 
 ## Required reading order
 
@@ -69,34 +69,32 @@ must never be reused. The owner completed a second rotation on 2026-08-08; the
 active credential has no exact match in any tracked file, is stored only in
 ignored `.env`, and passed one bounded live smoke. Points 2 and 3 are complete.
 Point 4 is also complete: 12 offline mocked-Gemini pipeline/security cases and
-the combined regression passed. Point 5 remains blocked at the formal gate. The
-fail-closed `semantic-v2` complete-development rerun reached 45.90% execution
-accuracy. The owner then selected Gemma-only runtime `v5-plan`: Gemma emits a
-typed AnalysisPlan and deterministic code grounds schema, derives joins,
-completes bounded projections, compiles SQL, checks alignment, and retains the
-existing AST/read-only boundaries. On 12 previously failed development cases,
-frozen pilots progressed from the prompt-v4 baseline 0/12 to 2/12, 6/12, and
-8/12. Pilot v3 met its engineering target but not the formal 85%/99% gates.
-The four remaining Phase-F failures now pass targeted live correction smokes,
-and the exact final Stage-1 12-case hard pilot then reached 10/12 using 12/24
-requests. Structured plan validity, valid SQL, and execution success were all
-100%, but execution accuracy was 83.33%, below the unchanged 85% gate.
-`RNK-004` and `SUB-001` were the remaining substantive mismatches. A generic
-ordering correction then passed both cases exactly in a bounded 2/2 smoke using
-2/4 requests. No candidate was frozen and holdout cases scored remain zero.
-This is staged development evidence; the max-136 complete development split
-was then authorized and completed with 52/70 cases passed, 94.12% structured
-validity, 72.13% execution accuracy, and 85.71% known-unsafe blocking. Those
-results failed the unchanged formal gates. Phase M then targeted its 18
-development failures and improved the same-case result from 0/18 to 12/18,
-with 17/18 structured outcomes and 17/17 valid SQL/read-only executions, but it
-failed its 15/18 diagnostic target and unsafe classification. No candidate was
-frozen and holdout remained zero. Five further generic corrections now pass
-offline regression at 409 passed, four skipped, and 90.10% coverage on source
-hash `126c6ecdbc...`; this source has made zero provider calls. Do not begin
-point 6 or open holdout. The next possible action is a separately authorized
-six-case Phase-N development rerun capped at 12 requests.
-The existing `stage-7-v1` holdout also lost unseen-content eligibility after a
-local diagnostic accidentally displayed records outside development. It has
-zero provider calls and zero scored cases, but a future final gate requires an
-independently curated sealed replacement that this agent does not inspect.
+the combined regression passed. Points 6-7 are complete as bounded authority,
+loop, continuation, API, and UI work; this does not qualify the model.
+
+Point 5 remains blocked. Phase N passed 5/6 and failed only `AGG-007`, whose old
+20-row/two-column expectation was not justified by its unbounded question.
+ADR-0048 now defines a generic policy: universal grouped requests return all
+groups under the existing 500-row execution ceiling; model-invented limits are
+removed unless the user requested a quantity; identifier-only groupings omit
+an unrequested display field. Runtime contains no case-specific branch.
+
+The new `stage-7-development-v2` corpus contains exactly 70 development cases,
+no holdout, and a corrected complete 204-group `AGG-007` relation. The final
+holdout must be an independently curated private 30-case replacement covering
+all eight categories. Candidate freeze binds its public payload/attestation
+manifest; the runner rejects version, hash, count, distribution, or split drift
+before provider setup. Private JSONL and attestation text stay outside Git and
+must not be inspected by the development agent.
+
+Full offline verification passes 460 tests with four unavailable PostgreSQL
+skips and 90.56% coverage. The owner-authorized complete v5 development run on
+commit `23efdea` then passed 67/70 using 69/136 requests: structured 68/68,
+valid SQL/read-only execution 61/61, execution accuracy 58/61 (95.08%),
+clarification 2/2, and unsafe blocking 7/7. Hallucination, false blocking,
+security bypass, measured paid cost, and holdout calls were zero.
+
+The candidate is not frozen because the independent curator manifest is still
+absent. This is the only current Point-5 blocker. After a valid manifest is
+supplied, freeze may proceed; the one-time holdout has an exact maximum of 54
+requests and requires separate owner authorization.

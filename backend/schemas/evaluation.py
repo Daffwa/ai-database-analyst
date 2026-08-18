@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from enum import StrEnum
-from typing import Any, Self
+from typing import Any, Literal, Self
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -29,6 +29,30 @@ class EvaluationSplit(StrEnum):
 
     DEVELOPMENT = "development"
     HOLDOUT = "holdout"
+
+
+class SealedHoldoutManifest(BaseModel):
+    """Public commitment for an independently curated, locally supplied holdout."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid", str_strip_whitespace=True)
+
+    manifest_version: Literal["stage-7-sealed-holdout-manifest-v1"]
+    dataset_version: str = Field(pattern=r"^stage-7-holdout-v\d+$")
+    dataset_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    case_count: int = Field(ge=1, le=500)
+    category_counts: dict[EvaluationCategory, int]
+    created_at: str = Field(min_length=1, max_length=100)
+    curator_attestation_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    independently_curated: Literal[True]
+    agent_unseen_before_freeze: Literal[True]
+
+    @model_validator(mode="after")
+    def validate_manifest_totals(self) -> Self:
+        if not self.category_counts or any(count <= 0 for count in self.category_counts.values()):
+            raise ValueError("sealed holdout categories must have positive counts")
+        if sum(self.category_counts.values()) != self.case_count:
+            raise ValueError("sealed holdout category counts must equal case_count")
+        return self
 
 
 class ResultComparisonPolicy(StrEnum):
@@ -295,8 +319,12 @@ class RealEvaluationCandidate(BaseModel):
     frozen_at: str
     development_report_sha256: str
     evaluation_source_sha256: str
-    dataset_version: str
-    dataset_sha256: str
+    development_dataset_version: str
+    development_dataset_sha256: str
+    holdout_manifest_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    holdout_dataset_version: str
+    holdout_dataset_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    holdout_case_count: int = Field(ge=1)
     provider: str
     model: str
     prompt_version: str
@@ -320,8 +348,11 @@ class RealEvaluationSummary(BaseModel):
     summary_version: str
     generated_at: str
     candidate_version: str
-    dataset_version: str
-    dataset_sha256: str
+    development_dataset_version: str
+    development_dataset_sha256: str
+    holdout_dataset_version: str
+    holdout_dataset_sha256: str
+    holdout_manifest_sha256: str
     provider: str
     model: str
     prompt_version: str

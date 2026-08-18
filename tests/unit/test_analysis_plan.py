@@ -635,6 +635,148 @@ def test_count_grouping_defaults_to_dimension_order_instead_of_measure_order() -
     assert sql.endswith("ORDER BY GenreId ASC")
 
 
+def test_universal_identifier_grouping_removes_invented_limit_and_display_projection() -> None:
+    grounder, compiler, _ = _services()
+    plan = _plan(
+        base_table="Album",
+        tables=("Album", "Artist"),
+        outputs=(
+            PlanOutput(
+                kind=PlanOutputKind.COLUMN,
+                column="Album.ArtistId",
+                alias="ArtistId",
+                group_by=True,
+            ),
+            PlanOutput(
+                kind=PlanOutputKind.COLUMN,
+                column="Artist.Name",
+                alias="Name",
+                group_by=True,
+            ),
+            PlanOutput(
+                kind=PlanOutputKind.AGGREGATE,
+                aggregate=PlanAggregate.COUNT,
+                column="Album.AlbumId",
+                alias="album_count",
+            ),
+        ),
+        limit=20,
+    )
+
+    grounded = grounder.ground(plan, question="Hitung album untuk setiap artist ID.")
+    compiled = compiler.compile(grounded)
+
+    assert grounded.limit is None
+    assert compiled.output_aliases == ("ArtistId", "album_count")
+    assert "Artist.Name" not in compiled.sql
+    assert "LIMIT" not in compiled.sql
+
+
+def test_grouping_keeps_display_when_user_explicitly_requests_it() -> None:
+    grounder, compiler, _ = _services()
+    plan = _plan(
+        base_table="Artist",
+        tables=("Album", "Artist"),
+        outputs=(
+            PlanOutput(
+                kind=PlanOutputKind.COLUMN,
+                column="Artist.ArtistId",
+                alias="ArtistId",
+                group_by=True,
+            ),
+            PlanOutput(
+                kind=PlanOutputKind.AGGREGATE,
+                aggregate=PlanAggregate.COUNT,
+                column="Album.AlbumId",
+                alias="album_count",
+            ),
+        ),
+    )
+
+    grounded = grounder.ground(
+        plan,
+        question="Hitung album untuk setiap artist ID dan nama artist.",
+    )
+
+    assert compiler.compile(grounded).output_aliases == ("ArtistId", "Name", "album_count")
+
+
+@pytest.mark.parametrize(
+    "question",
+    (
+        "Hitung album untuk tiap artist ID.",
+        "Hitung album untuk masing-masing artist ID.",
+        "Hitung album untuk semua artist ID, urutkan berdasarkan ID.",
+    ),
+)
+def test_universal_grouping_synonyms_do_not_accept_an_invented_limit(question: str) -> None:
+    grounder, compiler, _ = _services()
+    plan = _plan(
+        base_table="Album",
+        tables=("Album", "Artist"),
+        outputs=(
+            PlanOutput(
+                kind=PlanOutputKind.COLUMN,
+                column="Album.ArtistId",
+                alias="ArtistId",
+                group_by=True,
+            ),
+            PlanOutput(
+                kind=PlanOutputKind.COLUMN,
+                column="Artist.Name",
+                alias="Name",
+                group_by=True,
+            ),
+            PlanOutput(
+                kind=PlanOutputKind.AGGREGATE,
+                aggregate=PlanAggregate.COUNT,
+                column="Album.AlbumId",
+                alias="album_count",
+            ),
+        ),
+        limit=20,
+    )
+
+    grounded = grounder.ground(plan, question=question)
+
+    assert grounded.limit is None
+    assert compiler.compile(grounded).output_aliases == ("ArtistId", "album_count")
+
+
+def test_universal_grouping_keeps_an_explicit_requested_quantity() -> None:
+    grounder, compiler, _ = _services()
+    plan = _plan(
+        base_table="Album",
+        tables=("Album", "Artist"),
+        outputs=(
+            PlanOutput(
+                kind=PlanOutputKind.COLUMN,
+                column="Album.ArtistId",
+                alias="ArtistId",
+                group_by=True,
+            ),
+            PlanOutput(
+                kind=PlanOutputKind.COLUMN,
+                column="Artist.Name",
+                alias="Name",
+                group_by=True,
+            ),
+            PlanOutput(
+                kind=PlanOutputKind.AGGREGATE,
+                aggregate=PlanAggregate.COUNT,
+                column="Album.AlbumId",
+                alias="album_count",
+            ),
+        ),
+        limit=20,
+    )
+
+    grounded = grounder.ground(plan, question="Tampilkan 20 artist dan jumlah albumnya.")
+
+    assert grounded.limit == 20
+    assert compiler.compile(grounded).output_aliases == ("ArtistId", "Name", "album_count")
+
+
 def test_detail_projection_uses_requested_relationship_and_numeric_fact_roles() -> None:
     grounder, compiler, _ = _services()
     plan = _plan(

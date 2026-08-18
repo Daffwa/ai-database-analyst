@@ -12,12 +12,17 @@ from pathlib import Path
 from pydantic import BaseModel
 
 from backend.core.config import AppSettings
-from backend.evaluation.case_loader import load_evaluation_dataset
+from backend.evaluation.case_loader import (
+    EvaluationDatasetError,
+    load_development_evaluation_dataset,
+    load_sealed_holdout_dataset,
+)
 from backend.evaluation.real_model_runner import (
     build_real_evaluation_candidate,
     build_real_evaluation_summary,
     cases_for_split,
     evaluation_source_sha256,
+    file_sha256,
     planned_provider_requests,
     run_real_model_evaluation,
 )
@@ -30,23 +35,25 @@ from backend.schemas.evaluation import (
     RealEvaluationSummary,
     RealEvaluationThresholds,
     ResultComparisonPolicy,
+    SealedHoldoutManifest,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
-DATASET_PATH = ROOT / "data" / "evaluation" / "stage-7-v1.jsonl"
+DEVELOPMENT_DATASET_PATH = ROOT / "data" / "evaluation" / "stage-7-development-v2.jsonl"
+HOLDOUT_MANIFEST_PATH = ROOT / "data" / "evaluation" / "sealed" / "stage-7-holdout-v2.manifest.json"
 REPORT_DIRECTORY = ROOT / "reports" / "evaluation"
-DEVELOPMENT_REPORT_PATH = REPORT_DIRECTORY / "stage-7-gemini-development-v2.json"
-DEVELOPMENT_MARKDOWN_PATH = REPORT_DIRECTORY / "stage-7-gemini-development-v2.md"
-HOLDOUT_REPORT_PATH = REPORT_DIRECTORY / "stage-7-gemini-holdout-v2.json"
-HOLDOUT_MARKDOWN_PATH = REPORT_DIRECTORY / "stage-7-gemini-holdout-v2.md"
-CANDIDATE_PATH = REPORT_DIRECTORY / "stage-7-gemini-candidate-v2.json"
-SUMMARY_PATH = REPORT_DIRECTORY / "stage-7-gemini-summary-v2.json"
-SUMMARY_MARKDOWN_PATH = REPORT_DIRECTORY / "stage-7-gemini-summary-v2.md"
+DEVELOPMENT_REPORT_PATH = REPORT_DIRECTORY / "stage-7-gemini-development-v3.json"
+DEVELOPMENT_MARKDOWN_PATH = REPORT_DIRECTORY / "stage-7-gemini-development-v3.md"
+HOLDOUT_REPORT_PATH = REPORT_DIRECTORY / "stage-7-gemini-holdout-v3.json"
+HOLDOUT_MARKDOWN_PATH = REPORT_DIRECTORY / "stage-7-gemini-holdout-v3.md"
+CANDIDATE_PATH = REPORT_DIRECTORY / "stage-7-gemini-candidate-v3.json"
+SUMMARY_PATH = REPORT_DIRECTORY / "stage-7-gemini-summary-v3.json"
+SUMMARY_MARKDOWN_PATH = REPORT_DIRECTORY / "stage-7-gemini-summary-v3.md"
 FAKE_BASELINE_PATH = REPORT_DIRECTORY / "stage-7-baseline.json"
-DEVELOPMENT_CHECKPOINT_PATH = ROOT / "logs" / "point5-development-v2.checkpoint.json"
-HOLDOUT_CHECKPOINT_PATH = ROOT / "logs" / "point5-holdout-v2.checkpoint.json"
+DEVELOPMENT_CHECKPOINT_PATH = ROOT / "logs" / "point5-development-v3.checkpoint.json"
+HOLDOUT_CHECKPOINT_PATH = ROOT / "logs" / "point5-holdout-v3.checkpoint.json"
 MINIMUM_LIVE_INTERVAL_SECONDS = 2.0
-CHECKPOINT_VERSION = "stage-7-real-provider-checkpoint-v3"
+CHECKPOINT_VERSION = "stage-7-real-provider-checkpoint-v4"
 
 
 def _write_model(path: Path, payload: BaseModel, *, force: bool) -> None:
@@ -125,7 +132,8 @@ def _summary_markdown(summary: RealEvaluationSummary) -> str:
 - Gate: {"passed" if summary.gate_passed else "failed"}
 - Candidate: `{summary.candidate_version}`
 - Provider/model: `{summary.provider}` / `{summary.model}`
-- Dataset: `{summary.dataset_version}` / `{summary.dataset_sha256}`
+- Development dataset: `{summary.development_dataset_version}` / `{summary.development_dataset_sha256}`
+- Sealed holdout: `{summary.holdout_dataset_version}` / `{summary.holdout_dataset_sha256}`
 - Prompt/semantic: `{summary.prompt_version}` / `{summary.semantic_version}`
 - Result comparison: `{summary.comparison_policy.value}`
 - Schema hash: `{summary.schema_hash}`
@@ -276,8 +284,23 @@ def _run_command(args: argparse.Namespace) -> int:
         )
         return 2
 
-    dataset = load_evaluation_dataset(args.dataset)
     split = EvaluationSplit(args.split)
+    holdout_manifest_sha256: str | None = None
+    try:
+        if split is EvaluationSplit.DEVELOPMENT:
+            dataset = load_development_evaluation_dataset(args.dataset)
+        else:
+            if args.holdout_dataset is None:
+                print("Live evaluation not run: --holdout-dataset is required for holdout.")
+                return 2
+            manifest = SealedHoldoutManifest.model_validate_json(
+                args.holdout_manifest.read_text(encoding="utf-8")
+            )
+            dataset = load_sealed_holdout_dataset(args.holdout_dataset, manifest)
+            holdout_manifest_sha256 = file_sha256(args.holdout_manifest)
+    except (EvaluationDatasetError, OSError, ValueError) as exc:
+        print(f"Live evaluation not run: sealed dataset validation failed: {exc}")
+        return 2
     comparison_policy = ResultComparisonPolicy(args.comparison_policy)
     selected = cases_for_split(dataset, split)
     case_ids = tuple(args.case_ids or ())
@@ -424,6 +447,7 @@ def _run_command(args: argparse.Namespace) -> int:
                 existing_results=tuple(checkpoint_results),
                 progress=checkpoint_progress,
                 comparison_policy=comparison_policy,
+                holdout_manifest_sha256=holdout_manifest_sha256,
             )
         )
     except (OSError, ValueError, RuntimeError) as exc:
@@ -451,16 +475,20 @@ def _run_command(args: argparse.Namespace) -> int:
 
 
 def _freeze_command(args: argparse.Namespace) -> int:
-    dataset = load_evaluation_dataset(args.dataset)
-    report = RealEvaluationReport.model_validate_json(
-        args.development_report.read_text(encoding="utf-8")
-    )
     try:
+        dataset = load_development_evaluation_dataset(args.dataset)
+        report = RealEvaluationReport.model_validate_json(
+            args.development_report.read_text(encoding="utf-8")
+        )
+        manifest = SealedHoldoutManifest.model_validate_json(
+            args.holdout_manifest.read_text(encoding="utf-8")
+        )
         candidate = build_real_evaluation_candidate(
             args.development_report,
             report,
             dataset,
-            holdout_request_limit=args.holdout_max_requests,
+            holdout_manifest_path=args.holdout_manifest,
+            holdout_manifest=manifest,
         )
         _write_model(args.candidate, candidate, force=args.force)
     except (FileExistsError, OSError, ValueError) as exc:
@@ -474,6 +502,7 @@ def _freeze_command(args: argparse.Namespace) -> int:
                 "model": candidate.model,
                 "prompt_version": candidate.prompt_version,
                 "comparison_policy": candidate.comparison_policy.value,
+                "holdout_manifest_sha256": candidate.holdout_manifest_sha256,
                 "holdout_request_limit": candidate.holdout_request_limit,
             },
             indent=2,
@@ -563,7 +592,13 @@ def _build_parser() -> argparse.ArgumentParser:
         type=int,
         help="Override the frozen provider output-token ceiling for this run.",
     )
-    run.add_argument("--dataset", type=Path, default=DATASET_PATH)
+    run.add_argument("--dataset", type=Path, default=DEVELOPMENT_DATASET_PATH)
+    run.add_argument(
+        "--holdout-dataset",
+        type=Path,
+        help="Private holdout JSONL supplied by the independent curator; never commit it.",
+    )
+    run.add_argument("--holdout-manifest", type=Path, default=HOLDOUT_MANIFEST_PATH)
     run.add_argument("--development-output", type=Path, default=DEVELOPMENT_REPORT_PATH)
     run.add_argument("--development-markdown", type=Path, default=DEVELOPMENT_MARKDOWN_PATH)
     run.add_argument("--holdout-output", type=Path, default=HOLDOUT_REPORT_PATH)
@@ -576,10 +611,10 @@ def _build_parser() -> argparse.ArgumentParser:
     run.set_defaults(handler=_run_command)
 
     freeze = subparsers.add_parser("freeze", help="Freeze a passing development candidate.")
-    freeze.add_argument("--dataset", type=Path, default=DATASET_PATH)
+    freeze.add_argument("--dataset", type=Path, default=DEVELOPMENT_DATASET_PATH)
     freeze.add_argument("--development-report", type=Path, default=DEVELOPMENT_REPORT_PATH)
     freeze.add_argument("--candidate", type=Path, default=CANDIDATE_PATH)
-    freeze.add_argument("--holdout-max-requests", type=int, default=27)
+    freeze.add_argument("--holdout-manifest", type=Path, default=HOLDOUT_MANIFEST_PATH)
     freeze.add_argument("--force", action="store_true")
     freeze.set_defaults(handler=_freeze_command)
 

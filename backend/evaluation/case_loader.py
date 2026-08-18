@@ -10,9 +10,15 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
-from backend.schemas.evaluation import EvaluationCase, EvaluationCategory
+from backend.schemas.evaluation import (
+    EvaluationCase,
+    EvaluationCategory,
+    EvaluationSplit,
+    SealedHoldoutManifest,
+)
 
 STAGE7_DATASET_VERSION = "stage-7-v1"
+STAGE7_DEVELOPMENT_DATASET_VERSION = "stage-7-development-v2"
 REQUIRED_DISTRIBUTION: dict[EvaluationCategory, int] = {
     EvaluationCategory.FILTERING: 20,
     EvaluationCategory.AGGREGATION: 20,
@@ -22,6 +28,26 @@ REQUIRED_DISTRIBUTION: dict[EvaluationCategory, int] = {
     EvaluationCategory.SUBQUERY: 5,
     EvaluationCategory.AMBIGUITY: 5,
     EvaluationCategory.UNSAFE: 10,
+}
+DEVELOPMENT_DISTRIBUTION: dict[EvaluationCategory, int] = {
+    EvaluationCategory.FILTERING: 14,
+    EvaluationCategory.AGGREGATION: 14,
+    EvaluationCategory.MULTI_TABLE_JOIN: 14,
+    EvaluationCategory.TIME_ANALYSIS: 7,
+    EvaluationCategory.RANKING_TOP_N: 7,
+    EvaluationCategory.SUBQUERY: 5,
+    EvaluationCategory.AMBIGUITY: 2,
+    EvaluationCategory.UNSAFE: 7,
+}
+SEALED_HOLDOUT_DISTRIBUTION: dict[EvaluationCategory, int] = {
+    EvaluationCategory.FILTERING: 5,
+    EvaluationCategory.AGGREGATION: 5,
+    EvaluationCategory.MULTI_TABLE_JOIN: 5,
+    EvaluationCategory.TIME_ANALYSIS: 3,
+    EvaluationCategory.RANKING_TOP_N: 3,
+    EvaluationCategory.SUBQUERY: 3,
+    EvaluationCategory.AMBIGUITY: 3,
+    EvaluationCategory.UNSAFE: 3,
 }
 
 
@@ -103,3 +129,49 @@ def load_evaluation_dataset(
         path=path,
         cases=tuple(cases),
     )
+
+
+def load_development_evaluation_dataset(path: Path) -> EvaluationDataset:
+    """Load the versioned development-only corpus used before candidate freeze."""
+
+    dataset = load_evaluation_dataset(
+        path,
+        expected_version=STAGE7_DEVELOPMENT_DATASET_VERSION,
+        enforce_distribution=False,
+    )
+    if any(case.split is not EvaluationSplit.DEVELOPMENT for case in dataset.cases):
+        raise EvaluationDatasetError("development dataset contains a non-development case")
+    if Counter(case.category for case in dataset.cases) != Counter(DEVELOPMENT_DISTRIBUTION):
+        raise EvaluationDatasetError("development dataset distribution does not match")
+    return dataset
+
+
+def load_sealed_holdout_dataset(
+    path: Path,
+    manifest: SealedHoldoutManifest,
+) -> EvaluationDataset:
+    """Load a private holdout payload only when it matches its public commitment."""
+
+    validate_sealed_holdout_manifest(manifest)
+    dataset = load_evaluation_dataset(
+        path,
+        expected_version=manifest.dataset_version,
+        enforce_distribution=False,
+    )
+    if dataset.sha256 != manifest.dataset_sha256:
+        raise EvaluationDatasetError("sealed holdout payload hash does not match manifest")
+    if len(dataset.cases) != manifest.case_count:
+        raise EvaluationDatasetError("sealed holdout case count does not match manifest")
+    if any(case.split is not EvaluationSplit.HOLDOUT for case in dataset.cases):
+        raise EvaluationDatasetError("sealed holdout contains a non-holdout case")
+    observed = Counter(case.category for case in dataset.cases)
+    if observed != Counter(manifest.category_counts):
+        raise EvaluationDatasetError("sealed holdout category distribution does not match manifest")
+    return dataset
+
+
+def validate_sealed_holdout_manifest(manifest: SealedHoldoutManifest) -> None:
+    """Require the preregistered 30-case distribution across every category."""
+
+    if Counter(manifest.category_counts) != Counter(SEALED_HOLDOUT_DISTRIBUTION):
+        raise EvaluationDatasetError("sealed holdout manifest distribution does not match")

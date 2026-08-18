@@ -1532,6 +1532,51 @@ prompt, rows, credentials, or internal exception text.
   PostgreSQL/Docker/security evidence is still required on the published
   branch.
 
+## ADR-0048 - Version Universal Group Semantics and Seal the Replacement Holdout
+
+- Date: 2026-08-18
+- Status: Accepted
+
+### Context
+
+Phase N failed only `AGG-007`. Its unbounded question did not justify the
+reviewed 20-row expectation, and no product rule defined whether an unrequested
+artist name belonged beside the requested artist ID. Hard-coding the case would
+invalidate generalization evidence. Separately, the old `stage-7-v1` holdout
+could no longer support an unseen-final-set claim.
+
+### Decision
+
+Treat universal grouped questions as complete group requests within the
+existing 500-row execution ceiling. Remove model-invented limits unless the
+user requested a quantity. For universal identifier-only grouping, return the
+identifier and measure; retain a display field only when explicitly requested.
+Apply this from question semantics and schema metadata, never an evaluation
+case ID or expected result.
+
+Preserve `stage-7-v1` as historical evidence and create development-only
+`stage-7-development-v2`. Bind any future candidate to a public manifest for an
+independently curated private `stage-7-holdout-vN`. The manifest commits payload
+and attestation hashes, version, case count, and category counts. The holdout
+contract requires 30 cases across all eight categories (5/5/5/3/3/3/3/3).
+The runner must reject drift, partial data, mixed splits, or another
+distribution before provider setup.
+
+### Consequences
+
+- `AGG-007` now has a principled 204-row, two-column development expectation;
+  runtime source contains no case-specific branch.
+- Private holdout JSONL and attestation text remain outside Git and unseen by
+  the development agent before freeze. Independence still relies on the owner
+  selecting a trustworthy curator; flags cannot prove human process.
+- Thresholds remain unchanged, and Phase N is not reinterpreted or retried.
+- Point 5 remains blocked. A separately authorized complete development run
+  has an exact maximum of 136 provider requests. Candidate freeze and one-time
+  holdout execution remain conditional on passing gates and a valid manifest.
+- The authorized complete development run later passed 67/70 using 69/136
+  requests with 95.08% execution accuracy and all frozen gates satisfied.
+  Candidate freeze remains pending only because no independent manifest exists.
+
 ## Deferred Decisions
 
 | ID | Decision | Required by | Reason for deferral |

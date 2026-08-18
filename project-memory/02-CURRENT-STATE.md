@@ -1,13 +1,13 @@
 # Current State
 
-- Last updated: 2026-08-16
+- Last updated: 2026-08-18
 - Last known merged commit: `42ba532 Implement secure real-model evaluation
   through Phase N (#26)`
-- Current working branch: `agent/bounded-agent-points-6-7`
-- Current implementation: Points 6-7 are published in PR #27; branch HEAD is
-  the authoritative source until review/merge.
-- Review: PR #26 is merged; PR #27 is ready for review with all hosted checks
-  passing on corrective commit `2290678`.
+- Current working branch: `agent/fix-point5-policy-holdout`
+- Current implementation: Point-5 policy/holdout corrections and passing v5
+  development evidence are stacked on the Point 6-7 branch in draft PR #28.
+- Review: PR #27 is ready; PR #28 passed all nine hosted checks on source
+  commit `23efdea` before the development evidence follow-up.
 - Active goal: implement the real LLM and bounded-agent roadmap
 - Active plan: `docs/real-llm-agent-implementation-plan.md`
 - Default implementation provider: `fake` / `fake-deterministic`
@@ -21,33 +21,25 @@
 | 2 | Implement real API adapter | Selesai | Live structured smoke passed with `gemma-4-26b-a4b-it` |
 | 3 | Connect secure configuration | Selesai | Second rotation stored only in ignored `.env`; exact-match audit and live smoke passed |
 | 4 | Test adapter and pipeline | Selesai | 12 mocked Gemini pipeline cases; combined regression 332 passed, 4 skipped |
-| 5 | Evaluate real model | Terblokir | Phase N passed 5/6 using 7/12 requests; `AGG-007` still needs an explicit cardinality/projection policy; holdout 0 |
+| 5 | Evaluate real model | Terblokir | Complete v5 development passed 67/70 using 69/136 requests with 95.08% execution accuracy and all gates; independent manifest, freeze, and holdout remain |
 | 6 | Create bounded agent tools | Selesai | Typed/versioned registry, one-use validation/result handles, repairable-only coordinator, safe audit; local gate passed |
 | 7 | Implement bounded agent loop | Selesai | `bounded-agent-v1`, explicit state authority/budgets, durable canonical continuation, API/UI; no model qualification claim |
 
 ## Immediate next action
 
-Review and merge PR #27 when desired. Separately, decide whether
-unbounded analytical lists should have a product-level default cardinality/
-projection policy that justifies the 20-row, two-column `AGG-007` expectation.
-Do not encode that expectation by case ID. Phase N missed its accuracy gate at
-4/5 analytical cases, so do not freeze a candidate or open holdout. Any new
-live development run needs a new versioned protocol and exact request
-authorization.
-The current `stage-7-v1` holdout is disqualified as an unseen final set because
-a local read-only diagnostic accidentally displayed records outside the
-development split. Provider calls and scored holdout cases remain zero. Before
-any future final holdout, create an independently curated sealed replacement
-that this agent does not inspect.
+Review and merge PRs #27/#28 when desired. For Point 5, an independent curator
+must create the private 30-case replacement holdout and public manifest without
+this agent inspecting its contents. Development already passed every frozen
+gate. After the manifest is available, freeze the candidate, then obtain
+separate authorization for the exact maximum-54 one-time holdout run.
 
 ## Decisions currently awaiting the user
 
-- Choose an explicit product policy for unbounded analytical list cardinality
-  and projections, or accept that `AGG-007` remains a development mismatch and
-  stop this candidate. Phase N must not be reinterpreted or retried in place.
-- The existing holdout cannot be used for final claims despite zero provider
-  calls/scoring; a new independently sealed holdout version is required before
-  any future freeze-to-holdout transition.
+- Select an independent curator for the required 30-case replacement holdout.
+  The development agent must receive only its public manifest before freeze;
+  the private payload is supplied to automation only after freeze.
+- After candidate freeze, authorize or decline exactly maximum 54 provider
+  requests for the one-time complete holdout. No holdout retry/tuning is allowed.
 - No paid budget remains: hosted Gemma 4 is free-only at the decision date and
   the paid budget is USD 0.
 - No credential action remains. The active replacement must stay only in

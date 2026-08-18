@@ -35,6 +35,25 @@ def test_real_evaluation_rejects_burst_interval_before_loading_credentials(
     assert "at least 2 seconds" in capsys.readouterr().out
 
 
+def test_holdout_requires_private_payload_before_loading_credentials(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    assert (
+        main(
+            [
+                "run",
+                "--split",
+                "holdout",
+                "--max-requests",
+                "1",
+                "--confirm-live",
+            ]
+        )
+        == 2
+    )
+    assert "--holdout-dataset is required" in capsys.readouterr().out
+
+
 def test_real_evaluation_cli_rejects_unknown_comparison_policy() -> None:
     with pytest.raises(SystemExit):
         main(

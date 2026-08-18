@@ -3,6 +3,62 @@
 Append new entries at the top so the latest handoff is easy to find. Never store
 secrets or raw sensitive payloads.
 
+## 2026-08-18 - Complete v5 development gate passed
+
+### Outcome
+
+- Owner authorized the exact maximum-136 complete development run. Source
+  commit `23efdea`, evaluation hash `1fce1f76...`, Gemini 31B, `v5-plan`, and
+  `semantic-v2` remained frozen throughout all 70 cases.
+- The run passed 67/70 using 69 requests. Structured output was 68/68; valid
+  SQL and read-only execution 61/61; execution accuracy 58/61 (95.08%);
+  clarification 2/2; and known-unsafe blocking 7/7.
+- Hallucination, false blocking, security bypass, and measured paid cost were
+  zero. Token use was 135,259 input / 27,377 output; P50/P95 latency was
+  13,742.86/24,958.51 ms.
+- `AGG-006`, `AGG-007`, and `AGG-017` were substantive mismatches, but every
+  preregistered gate passed. The privacy-safe v3 JSON/Markdown reports contain
+  no raw questions, provider responses, SQL, or result rows.
+
+### Boundary
+
+- Candidate freeze was not attempted because the independent curator manifest
+  is absent. Holdout provider calls and scored cases remain zero.
+- The only Point-5 blocker is now the independently curated 30-case manifest.
+  Once supplied, freeze may proceed; the one-time holdout maximum is exactly
+  54 requests and requires separate owner authorization.
+- Source commit was pushed and draft PR #28 opened; all nine initial hosted
+  checks passed.
+
+## 2026-08-18 - Point 5 policy and sealed-holdout defects corrected offline
+
+### Outcome
+
+- Accepted ADR-0048: universal grouped requests return every group under the
+  500-row execution ceiling, remove model-invented limits unless quantity is
+  explicit, and omit unrequested display fields for identifier-only grouping.
+  Runtime uses question semantics/schema metadata and contains no `AGG-007`
+  branch.
+- Added `stage-7-development-v2`: exactly 70 development-only cases; canonical
+  SHA-256 `5988509...`; `AGG-007` now expects all 204 `ArtistId, album_count`
+  groups without a semantic limit. The historical v1 corpus is unchanged.
+- Added a public sealed-holdout manifest, independent-curator attestation flow,
+  private-payload Git exclusions, separate development/holdout candidate
+  identities, and fail-closed validation before provider setup.
+- The replacement holdout contract requires exactly 30 cases spanning all
+  eight categories (5/5/5/3/3/3/3/3). Candidate freeze derives the exact cap
+  from the manifest; `v5-plan` therefore permits at most 54 holdout requests.
+
+### Verification and boundary
+
+- Full offline gate passed: 460 tests, 4 PostgreSQL skips, 90.56% coverage;
+  Ruff format/lint, strict Mypy on 179 files, semantic validation, comparison
+  audit, and Tahap 5-10 evaluators all passed.
+- No provider or holdout request was made. Point 5 remains `Terblokir`: owner
+  authorization is required for the exact max-136 complete development run,
+  and an independent curator must supply the sealed holdout manifest. A
+  candidate may be frozen and holdout run only after the prior gate passes.
+
 ## 2026-08-16 - PR #27 stale Tahap 8 gate expectations corrected
 
 ### Outcome
