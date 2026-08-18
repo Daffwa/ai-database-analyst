@@ -263,7 +263,8 @@ See `reports/evaluation/stage-7-gemini-calibration-analysis.md`,
 `reports/evaluation/stage-7-gemini-31b-development-analysis.md`, and
 `docs/real-model-evaluation-protocol-v2.md`.
 
-The available commands are intentionally opt-in:
+The commands below are historical v1 examples and must not be used for a new
+qualification because `stage-7-v1` is no longer an eligible unseen holdout:
 
 ```powershell
 uv run python scripts/dev.py evaluate-real-model run --split development --confirm-live --max-requests 68 --request-interval-seconds 6
@@ -272,8 +273,9 @@ uv run python scripts/dev.py evaluate-real-model run --split holdout --confirm-l
 uv run python scripts/dev.py evaluate-real-model summarize
 ```
 
-`freeze` refuses incomplete or failing development evidence, so the holdout
-commands above are documented but currently gated.
+The replacement v5 workflow uses a development-only v2 corpus and a private
+holdout payload bound to an independently produced manifest. See
+`docs/real-model-evaluation-protocol-v5.md` for the current commands.
 
 #### Semantic comparison policy v2
 
@@ -333,8 +335,28 @@ with 5 requests; after one fail-closed 2-request diagnostic, Phase I passed the
 remaining grouped-benchmark case exactly in 1 request. Hallucination, bypass,
 paid cost, and holdout calls remained zero. Because these were successive
 source freezes, they are not reported as a 12/12 same-source result. The next
-quality step is a separately authorized 12-case hard pilot capped at 24
-requests before considering the max-136 complete-development run.
+quality step at that historical point was a separately authorized hard pilot.
+
+Phase N later passed 5/6 but exposed an inconsistent development contract: an
+unbounded universal grouping expected an unexplained 20 rows and omitted an
+unrequested-versus-requested projection policy. Protocol v5 now defines the
+generic behavior: universal groupings return every group within the 500-row
+execution ceiling, model-invented limits are removed unless the user requested
+a quantity, and ID-only grouping omits an unrequested display field. Explicit
+quantities and display names remain honored.
+
+The new `stage-7-development-v2` corpus contains only 70 development cases and
+records the corrected 204-row `ArtistId, album_count` expectation. Runtime code
+contains no `AGG-007` branch. The replacement final holdout must be curated
+independently, kept outside Git, committed by a content/attestation manifest,
+and supplied to the runner only after a passing development report is frozen.
+Missing, altered, partial, or mixed-split payloads fail before provider setup.
+
+This repairs the policy and isolation mechanisms, not the model qualification.
+No v5 provider call has been made. Point 5 remains blocked until the owner
+authorizes the exact 136-request complete development run, that run passes,
+and an independent curator supplies a valid sealed holdout manifest. Current
+details and commands are in `docs/real-model-evaluation-protocol-v5.md`.
 
 ## Tahap 8 Readiness Evaluation
 

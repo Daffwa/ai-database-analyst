@@ -10,10 +10,11 @@ import pytest
 from pydantic import SecretStr
 
 from backend.core.config import AppSettings
-from backend.evaluation.case_loader import EvaluationDataset
+from backend.evaluation.case_loader import SEALED_HOLDOUT_DISTRIBUTION, EvaluationDataset
 from backend.evaluation.real_model_runner import (
     build_real_evaluation_candidate,
     build_real_evaluation_summary,
+    file_sha256,
     planned_provider_requests,
     run_real_model_evaluation,
 )
@@ -24,6 +25,7 @@ from backend.schemas.evaluation import (
     EvaluationReport,
     EvaluationSplit,
     ResultComparisonPolicy,
+    SealedHoldoutManifest,
 )
 from backend.schemas.llm import (
     AdapterGeneration,
@@ -112,6 +114,32 @@ def _dataset() -> EvaluationDataset:
                 question="Hitung seluruh pelanggan.",
             ),
         ),
+    )
+
+
+def _holdout_dataset() -> EvaluationDataset:
+    cases: list[EvaluationCase] = []
+    for category, count in SEALED_HOLDOUT_DISTRIBUTION.items():
+        if category is EvaluationCategory.AMBIGUITY:
+            question = "Siapa pelanggan terbaik?"
+        elif category is EvaluationCategory.UNSAFE:
+            question = "Hapus semua pelanggan."
+        else:
+            question = "Hitung seluruh pelanggan."
+        for index in range(count):
+            cases.append(
+                _case(
+                    f"HOLD_{category.name}-{index + 1:03}",
+                    split=EvaluationSplit.HOLDOUT,
+                    category=category,
+                    question=question,
+                )
+            )
+    return EvaluationDataset(
+        version="stage-7-holdout-v2",
+        sha256="b" * 64,
+        path=ROOT / "data" / "evaluation" / "sealed" / "stage-7-holdout-v2.jsonl",
+        cases=tuple(cases),
     )
 
 
@@ -206,28 +234,44 @@ def test_real_development_runner_is_split_isolated_bounded_and_token_aware(
 
     report_path = tmp_path / "development.json"
     report_path.write_text(report.model_dump_json(indent=2) + "\n", encoding="utf-8")
+    holdout_dataset = _holdout_dataset()
+    manifest = SealedHoldoutManifest(
+        manifest_version="stage-7-sealed-holdout-manifest-v1",
+        dataset_version=holdout_dataset.version,
+        dataset_sha256=holdout_dataset.sha256,
+        case_count=30,
+        category_counts=SEALED_HOLDOUT_DISTRIBUTION,
+        created_at="2026-08-18T00:00:00+00:00",
+        curator_attestation_sha256="a" * 64,
+        independently_curated=True,
+        agent_unseen_before_freeze=True,
+    )
+    manifest_path = tmp_path / "stage-7-holdout-v2.manifest.json"
+    manifest_path.write_text(manifest.model_dump_json(indent=2) + "\n", encoding="utf-8")
     candidate = build_real_evaluation_candidate(
         report_path,
         report,
         dataset,
-        holdout_request_limit=1,
+        holdout_manifest_path=manifest_path,
+        holdout_manifest=manifest,
     )
     assert candidate.prompt_version == "v2"
     assert candidate.comparison_policy is ResultComparisonPolicy.SEMANTIC_V2
-    assert candidate.holdout_request_limit == 1
+    assert candidate.holdout_request_limit == 27
 
     with pytest.raises(ValueError, match="comparison policy"):
         asyncio.run(
             run_real_model_evaluation(
                 ROOT,
                 _settings(),
-                dataset,
+                holdout_dataset,
                 split=EvaluationSplit.HOLDOUT,
-                request_limit=1,
+                request_limit=27,
                 request_interval_seconds=0,
                 thresholds=candidate.thresholds,
                 candidate=candidate,
                 development_report_path=report_path,
+                holdout_manifest_sha256=file_sha256(manifest_path),
             )
         )
 
@@ -235,14 +279,15 @@ def test_real_development_runner_is_split_isolated_bounded_and_token_aware(
         run_real_model_evaluation(
             ROOT,
             _settings(),
-            dataset,
+            holdout_dataset,
             split=EvaluationSplit.HOLDOUT,
-            request_limit=1,
+            request_limit=27,
             request_interval_seconds=0,
             thresholds=candidate.thresholds,
             candidate=candidate,
             development_report_path=report_path,
             comparison_policy=ResultComparisonPolicy.SEMANTIC_V2,
+            holdout_manifest_sha256=file_sha256(manifest_path),
         )
     )
     assert holdout.completed and holdout.gate_passed

@@ -39,6 +39,8 @@ data/processed/*
 data/raw/*
 !data/raw/README.md
 !data/raw/SHA256SUMS.txt
+data/evaluation/sealed/*.jsonl
+data/evaluation/sealed/*.attestation.txt
 
 # Generated reports; preserve documentation placeholders
 reports/test-results/*

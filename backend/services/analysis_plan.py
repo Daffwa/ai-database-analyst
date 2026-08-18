@@ -319,6 +319,7 @@ class AnalysisPlanGrounder:
         if question is not None:
             base_table = self._requested_plan_base_table(plan, base_table, outputs, question)
             outputs = self._align_grouped_entity_key(outputs, base_table)
+            plan = self._normalize_group_cardinality(plan, outputs, question)
             plan = self._normalize_display_ranking_limit(plan, outputs, question)
             plan = self._with_default_limit(plan, base_table, outputs, question)
             outputs = self._complete_base_projection(plan, base_table, outputs, question)
@@ -500,6 +501,28 @@ class AnalysisPlanGrounder:
             or not _is_display_request(question)
             or not _has_explicit_order(question)
             or _has_requested_quantity(question)
+        ):
+            return plan
+        return plan.model_copy(update={"limit": None})
+
+    def _normalize_group_cardinality(
+        self,
+        plan: AnalysisPlan,
+        outputs: tuple[PlanOutput, ...],
+        question: str,
+    ) -> AnalysisPlan:
+        """Honor universal grouped requests instead of accepting an invented sample size."""
+
+        grouped = any(output.group_by for output in outputs)
+        measured = any(
+            output.kind in {PlanOutputKind.AGGREGATE, PlanOutputKind.METRIC} for output in outputs
+        )
+        if (
+            plan.limit is None
+            or not grouped
+            or not measured
+            or _has_requested_quantity(question)
+            or not _has_universal_group_scope(question)
         ):
             return plan
         return plan.model_copy(update={"limit": None})
@@ -850,7 +873,21 @@ class AnalysisPlanGrounder:
             entity_signature = set(primary_key) | set(base_display)
             if not selected_group_columns & entity_signature:
                 return outputs
-            required_columns = [primary_key[0], *base_display]
+            identifier_only = self._requests_identifier_only_grouping(base_table, question)
+            if identifier_only:
+                display_references = {
+                    f"{base_table}.{column}".casefold() for column in base_display
+                }
+                outputs = tuple(
+                    output
+                    for output in outputs
+                    if output.column is None
+                    or not output.group_by
+                    or output.column.casefold() not in display_references
+                )
+                required_columns = [primary_key[0]]
+            else:
+                required_columns = [primary_key[0], *base_display]
         else:
             required_columns = [primary_key[0], *base_display]
             if not base_display:
@@ -899,6 +936,40 @@ class AnalysisPlanGrounder:
             if output.column is None or output.column.casefold() not in used_references
         )
         return tuple(completed)
+
+    def _requests_identifier_only_grouping(self, base_table: str, question: str) -> bool:
+        """Return true when the grouped entity key is requested without a display field."""
+
+        if not _has_universal_group_scope(question) or _has_requested_quantity(question):
+            return False
+        primary_key = self._primary_keys.get(base_table, ())
+        if len(primary_key) != 1:
+            return False
+        normalized = " ".join(re.sub(r"[^a-z0-9]+", " ", question.casefold()).split())
+        compact = normalized.replace(" ", "")
+        key_spaced = " ".join(self._column_tokens(primary_key[0]))
+        key_named = (
+            bool(key_spaced and re.search(rf"\b{re.escape(key_spaced)}\b", normalized))
+            or key_spaced.replace(" ", "") in compact
+        )
+        if not key_named:
+            return False
+        display_named = any(
+            self._display_column_is_named(question, column)
+            for column in self._display_column_sets.get(base_table, ())
+        )
+        return not display_named
+
+    def _display_column_is_named(self, question: str, column: str) -> bool:
+        tokens = set(re.sub(r"[^a-z0-9]+", " ", question.casefold()).split())
+        if self._column_is_named(question, column):
+            return True
+        folded = column.casefold()
+        if folded in {"name", "firstname", "lastname"}:
+            return "nama" in tokens
+        if folded == "title":
+            return bool({"judul", "nama"} & tokens)
+        return False
 
     def _relevant_foreign_keys(self, base_table: str, question: str) -> tuple[str, ...]:
         foreign_keys = self._foreign_key_targets.get(base_table, ())
@@ -1725,6 +1796,16 @@ def _has_requested_quantity(question: str) -> bool:
         "two",
     }
     return any(token.isdigit() or token in quantity for token in normalized.split())
+
+
+def _has_universal_group_scope(question: str) -> bool:
+    normalized = " ".join(re.sub(r"[^a-z0-9]+", " ", question.casefold()).split())
+    return bool(
+        re.search(
+            r"\b(?:all|by|each|every|per|semua|seluruh|setiap|tiap)\b|\bmasing masing\b",
+            normalized,
+        )
+    )
 
 
 def _literal(value: str | int | float) -> str:

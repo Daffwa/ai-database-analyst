@@ -1,5 +1,10 @@
 # Real-Model Evaluation Protocol v1
 
+> Historical protocol only. It is retained for audit reproduction and is not
+> valid for a new qualification run. The current protocol is
+> `docs/real-model-evaluation-protocol-v5.md`; in particular, the old
+> `stage-7-v1` holdout and fixed 27-request holdout command must not be used.
+
 - Provider/model: Gemini Developer API / `gemma-4-26b-a4b-it`
 - Corpus: immutable `stage-7-v1`
 - Candidate prompt: `v3` (selected from development-only calibration)
