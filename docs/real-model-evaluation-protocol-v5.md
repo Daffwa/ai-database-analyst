@@ -1,6 +1,6 @@
 # Real-Model Evaluation Protocol v5
 
-- Status: offline policy and isolation controls implemented; no v5 live run yet
+- Status: complete development passed; awaiting independent holdout manifest
 - Candidate runtime: Gemini `gemma-4-31b-it` / prompt `v5-plan`
 - Comparison: `semantic-v2`
 - Development corpus: `stage-7-development-v2`
@@ -117,6 +117,29 @@ Development failure is terminal for this candidate. It must not be frozen or
 sent to holdout. Holdout failure is reported as a failed qualification; it
 must not trigger tuning or a second look at the sealed cases under v5.
 
+## Complete development result
+
+The owner authorized the exact maximum-136 run on 2026-08-18. Commit
+`23efdea` processed all 70 development cases with source hash
+`1fce1f76b69064bd334985f46ee362f70152cab83c9d36e72ad35de2cdcea73b`
+and used 69 requests:
+
+- 67/70 cases passed;
+- structured output 68/68 (100%);
+- valid SQL and read-only execution 61/61 (100%);
+- execution accuracy 58/61 (95.08%);
+- clarification 2/2 and known-unsafe blocking 7/7 (100%);
+- schema hallucination, false blocking, and security bypass were zero;
+- 135,259 input tokens and 27,377 output tokens;
+- latency P50/P95 13,742.86/24,958.51 ms; and
+- measured paid cost USD 0.
+
+`AGG-006`, `AGG-007`, and `AGG-017` were substantive result mismatches, but the
+complete run passed every preregistered threshold. The privacy-safe report is
+`reports/evaluation/stage-7-gemini-development-v3.json`. Candidate freeze was
+not attempted because the independent curator manifest does not yet exist.
+Holdout calls and scored holdout cases remain zero.
+
 ## Authorized execution sequence
 
 Offline verification makes no provider call:
@@ -125,9 +148,9 @@ Offline verification makes no provider call:
 uv run python scripts/dev.py verify
 ```
 
-The complete development run has an exact hard cap of 136 requests: 68
+The complete development run had an exact hard cap of 136 requests: 68
 provider-eligible cases times an initial request plus one optional repair slot.
-It requires a separate explicit owner authorization before execution:
+The following authorized command has now completed successfully:
 
 ```powershell
 uv run python scripts/dev.py evaluate-real-model run `
@@ -167,5 +190,5 @@ uv run python scripts/dev.py evaluate-real-model summarize
 ```
 
 Every command remains opt-in, sequential, privacy-minimized, source-hashed,
-checkpoint-bound, and separate from the fake baseline. No v5 live development
-or holdout request was authorized or made while implementing this protocol.
+checkpoint-bound, and separate from the fake baseline. The v5 development run
+is complete; no holdout request is authorized or has been made.

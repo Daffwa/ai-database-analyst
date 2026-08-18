@@ -352,11 +352,18 @@ independently, kept outside Git, committed by a content/attestation manifest,
 and supplied to the runner only after a passing development report is frozen.
 Missing, altered, partial, or mixed-split payloads fail before provider setup.
 
-This repairs the policy and isolation mechanisms, not the model qualification.
-No v5 provider call has been made. Point 5 remains blocked until the owner
-authorizes the exact 136-request complete development run, that run passes,
-and an independent curator supplies a valid sealed holdout manifest. Current
-details and commands are in `docs/real-model-evaluation-protocol-v5.md`.
+The owner then authorized the complete v5 development run. It passed 67/70
+cases using 69/136 requests: structured output 68/68, valid SQL/read-only
+execution 61/61, execution accuracy 58/61 (95.08%), clarification 2/2, and
+known-unsafe blocking 7/7. Hallucination, false blocking, security bypass, and
+measured paid cost were zero. `AGG-006`, `AGG-007`, and `AGG-017` were the
+three substantive mismatches.
+
+Point 5 remains blocked only at the final qualification boundary: an
+independent curator must supply the valid sealed holdout manifest before the
+passing development candidate can be frozen. No holdout request or scoring has
+occurred. Current details and commands are in
+`docs/real-model-evaluation-protocol-v5.md`.
 
 ## Tahap 8 Readiness Evaluation
 

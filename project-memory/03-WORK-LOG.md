@@ -3,6 +3,33 @@
 Append new entries at the top so the latest handoff is easy to find. Never store
 secrets or raw sensitive payloads.
 
+## 2026-08-18 - Complete v5 development gate passed
+
+### Outcome
+
+- Owner authorized the exact maximum-136 complete development run. Source
+  commit `23efdea`, evaluation hash `1fce1f76...`, Gemini 31B, `v5-plan`, and
+  `semantic-v2` remained frozen throughout all 70 cases.
+- The run passed 67/70 using 69 requests. Structured output was 68/68; valid
+  SQL and read-only execution 61/61; execution accuracy 58/61 (95.08%);
+  clarification 2/2; and known-unsafe blocking 7/7.
+- Hallucination, false blocking, security bypass, and measured paid cost were
+  zero. Token use was 135,259 input / 27,377 output; P50/P95 latency was
+  13,742.86/24,958.51 ms.
+- `AGG-006`, `AGG-007`, and `AGG-017` were substantive mismatches, but every
+  preregistered gate passed. The privacy-safe v3 JSON/Markdown reports contain
+  no raw questions, provider responses, SQL, or result rows.
+
+### Boundary
+
+- Candidate freeze was not attempted because the independent curator manifest
+  is absent. Holdout provider calls and scored cases remain zero.
+- The only Point-5 blocker is now the independently curated 30-case manifest.
+  Once supplied, freeze may proceed; the one-time holdout maximum is exactly
+  54 requests and requires separate owner authorization.
+- Source commit was pushed and draft PR #28 opened; all nine initial hosted
+  checks passed.
+
 ## 2026-08-18 - Point 5 policy and sealed-holdout defects corrected offline
 
 ### Outcome

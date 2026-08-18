@@ -4,10 +4,10 @@
 - Last known merged commit: `42ba532 Implement secure real-model evaluation
   through Phase N (#26)`
 - Current working branch: `agent/fix-point5-policy-holdout`
-- Current implementation: Point-5 policy/holdout corrections are stacked on
-  the Point 6-7 branch while PR #27 remains ready for review.
-- Review: PR #26 is merged; PR #27 is ready for review with all hosted checks
-  passing on corrective commit `2290678`.
+- Current implementation: Point-5 policy/holdout corrections and passing v5
+  development evidence are stacked on the Point 6-7 branch in draft PR #28.
+- Review: PR #27 is ready; PR #28 passed all nine hosted checks on source
+  commit `23efdea` before the development evidence follow-up.
 - Active goal: implement the real LLM and bounded-agent roadmap
 - Active plan: `docs/real-llm-agent-implementation-plan.md`
 - Default implementation provider: `fake` / `fake-deterministic`
@@ -21,26 +21,25 @@
 | 2 | Implement real API adapter | Selesai | Live structured smoke passed with `gemma-4-26b-a4b-it` |
 | 3 | Connect secure configuration | Selesai | Second rotation stored only in ignored `.env`; exact-match audit and live smoke passed |
 | 4 | Test adapter and pipeline | Selesai | 12 mocked Gemini pipeline cases; combined regression 332 passed, 4 skipped |
-| 5 | Evaluate real model | Terblokir | ADR-0048 policy, development-only v2 corpus, and sealed 30-case holdout verification pass offline; exact max-136 complete development plus independent curator evidence remain |
+| 5 | Evaluate real model | Terblokir | Complete v5 development passed 67/70 using 69/136 requests with 95.08% execution accuracy and all gates; independent manifest, freeze, and holdout remain |
 | 6 | Create bounded agent tools | Selesai | Typed/versioned registry, one-use validation/result handles, repairable-only coordinator, safe audit; local gate passed |
 | 7 | Implement bounded agent loop | Selesai | `bounded-agent-v1`, explicit state authority/budgets, durable canonical continuation, API/UI; no model qualification claim |
 
 ## Immediate next action
 
-Review and merge PR #27 when desired. For Point 5, an independent curator must
-create the private 30-case replacement holdout and public manifest without this
-agent inspecting its contents. The owner must separately authorize the exact
-maximum-136 complete `v5-plan` development run. Do not freeze a candidate
-unless that complete run passes unchanged thresholds; do not run holdout unless
-the candidate is frozen and the exact candidate cap is separately authorized.
+Review and merge PRs #27/#28 when desired. For Point 5, an independent curator
+must create the private 30-case replacement holdout and public manifest without
+this agent inspecting its contents. Development already passed every frozen
+gate. After the manifest is available, freeze the candidate, then obtain
+separate authorization for the exact maximum-54 one-time holdout run.
 
 ## Decisions currently awaiting the user
 
-- Authorize or decline the complete v5 development run with an exact maximum
-  of 136 provider requests. Phase N is historical and is not reinterpreted.
 - Select an independent curator for the required 30-case replacement holdout.
   The development agent must receive only its public manifest before freeze;
   the private payload is supplied to automation only after freeze.
+- After candidate freeze, authorize or decline exactly maximum 54 provider
+  requests for the one-time complete holdout. No holdout retry/tuning is allowed.
 - No paid budget remains: hosted Gemma 4 is free-only at the decision date and
   the paid budget is USD 0.
 - No credential action remains. The active replacement must stay only in

@@ -1573,6 +1573,9 @@ distribution before provider setup.
 - Point 5 remains blocked. A separately authorized complete development run
   has an exact maximum of 136 provider requests. Candidate freeze and one-time
   holdout execution remain conditional on passing gates and a valid manifest.
+- The authorized complete development run later passed 67/70 using 69/136
+  requests with 95.08% execution accuracy and all frozen gates satisfied.
+  Candidate freeze remains pending only because no independent manifest exists.
 
 ## Deferred Decisions
 

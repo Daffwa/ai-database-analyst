@@ -103,7 +103,7 @@ Gunakan hanya status `Belum dimulai`, `Sedang dikerjakan`, `Terblokir`, atau
 | 2 | Implementasikan adapter API LLM | Selesai | Live structured smoke passed with `gemma-4-26b-a4b-it` |
 | 3 | Hubungkan konfigurasi API secara aman | Selesai | Second rotation stored only in ignored `.env`; exact-match audit and live smoke passed |
 | 4 | Tambahkan pengujian adapter dan pipeline | Selesai | 12 mocked Gemini pipeline cases; combined regression 332 passed, 4 skipped |
-| 5 | Evaluasi model nyata | Terblokir | Generic universal-group policy, development-only v2 corpus, and sealed-holdout verification are implemented offline; complete v5 development and independent holdout evidence remain |
+| 5 | Evaluasi model nyata | Terblokir | Complete v5 development passed 67/70 with 95.08% execution accuracy and all frozen gates; independent holdout manifest, freeze, and holdout evidence remain |
 | 6 | Bentuk tools untuk agent | Selesai | Delapan typed/versioned tools, state allowlist, one-use validation/result handles, bounded repair, safe audit; 447-test regression passed |
 | 7 | Tambahkan bounded agent loop | Selesai | `bounded-agent-v1`, 8-step/30-second budgets, durable canonical continuation, API/UI integration, duplicate protection; Point 5 remains blocked |
 
@@ -681,10 +681,18 @@ dari kurator independen dan payload/attestation tetap di luar Git. Kontrak
 holdout menetapkan 30 kasus dan mencakup seluruh delapan kategori dengan
 distribusi 5/5/5/3/3/3/3/3; manifest lain ditolak sebelum provider setup.
 
-Perbaikan ini belum mengualifikasi model. Tidak ada provider call v5 yang
-dilakukan. Poin 5 tetap `Terblokir` sampai owner mengotorisasi complete
-development maksimum tepat 136 request, run tersebut lulus threshold lama,
-dan kurator independen menyediakan manifest replacement holdout yang sah.
+Owner kemudian mengotorisasi complete development dengan batas tepat 136
+request. Run pada commit `23efdea` selesai memakai 69 request dan lulus 67/70:
+structured 68/68, valid SQL/read-only execution 61/61, execution accuracy
+58/61 (95.08%), clarification 2/2, dan unsafe blocking 7/7. Hallucination,
+false blocking, security bypass, dan measured paid cost semuanya nol.
+`AGG-006`, `AGG-007`, dan `AGG-017` adalah mismatch substantif, tetapi seluruh
+threshold preregistered lulus.
+
+Poin 5 tetap `Terblokir` hanya pada final qualification boundary. Candidate
+belum dibekukan karena manifest replacement holdout independen belum tersedia;
+holdout provider/scoring tetap nol. Setelah manifest sah tersedia, freeze boleh
+dilakukan dan holdout maksimum tepat 54 request memerlukan otorisasi terpisah.
 Lihat `docs/real-model-evaluation-protocol-v5.md`.
 
 ## 11. Poin 6 - Membentuk tools untuk agent
@@ -1013,6 +1021,7 @@ Tambahkan baris baru setiap kali terdapat perubahan material.
 
 | Tanggal | Poin | Perubahan | Test/bukti | Status berikutnya |
 |---|---|---|---|---|
+| 2026-08-18 | 5 | Completed the owner-authorized v5 development qualification run on commit `23efdea` | 67/70 passed using 69/136 requests; 100% structured/valid SQL/execution/unsafe/clarification, 95.08% execution accuracy, zero hallucination/bypass/paid cost/holdout | Blocked only on independent 30-case holdout manifest; then freeze and separately authorize exact max-54 holdout |
 | 2026-08-18 | 5 | Accepted generic universal-group semantics, created development-only v2 corpus, and added independently curated sealed-holdout manifest/payload enforcement | 460 passed, 4 skipped, 90.56% coverage; Ruff/Mypy, semantic and comparison audits, Tahap 5-10 gates; no provider/holdout calls | Blocked: authorize exact max-136 complete development and obtain a valid independent 30-case holdout manifest; freeze/holdout remain conditional |
 | 2026-08-16 | 6-7 | Added typed/versioned tool registry, one-use validation and result capabilities, repairable-only coordinator, deterministic state authority, bounded loop/budgets, restart-safe canonical clarification, agent API/UI, and compatibility path | 447 passed, 4 PostgreSQL/Docker skips, 90.69% coverage; Ruff format/lint, strict Mypy, diff-check; no provider call | Points 6-7 complete as architecture/offline evidence; Point 5 remains blocked and no model qualification/holdout claim is made |
 | 2026-08-16 | 5 | Restored dependency security, made `dev.py verify` forcibly offline, completed authorized Phase N, and published draft PR #26 | GitPython 3.1.58 / zero `pip-audit` findings; 411 passed, 4 skipped, 90.10%; Phase N 5/6 using 7/12, 6/6 structured, 4/5 accuracy, 1/1 unsafe, zero bypass/cost/holdout; all nine hosted PR checks passed including source/container security | Blocked: decide generic unbounded-list cardinality/projection policy for `AGG-007`; create an independently sealed replacement holdout before any future promotion |

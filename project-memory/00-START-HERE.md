@@ -88,8 +88,13 @@ before provider setup. Private JSONL and attestation text stay outside Git and
 must not be inspected by the development agent.
 
 Full offline verification passes 460 tests with four unavailable PostgreSQL
-skips and 90.56% coverage. No v5 provider or holdout call was made. The next
-possible action is explicit owner authorization for the exact maximum-136
-complete development run. Freeze requires a valid curator manifest; only a
-passing frozen candidate may receive a separately authorized one-time holdout
-run (maximum 54 requests under the required distribution).
+skips and 90.56% coverage. The owner-authorized complete v5 development run on
+commit `23efdea` then passed 67/70 using 69/136 requests: structured 68/68,
+valid SQL/read-only execution 61/61, execution accuracy 58/61 (95.08%),
+clarification 2/2, and unsafe blocking 7/7. Hallucination, false blocking,
+security bypass, measured paid cost, and holdout calls were zero.
+
+The candidate is not frozen because the independent curator manifest is still
+absent. This is the only current Point-5 blocker. After a valid manifest is
+supplied, freeze may proceed; the one-time holdout has an exact maximum of 54
+requests and requires separate owner authorization.
