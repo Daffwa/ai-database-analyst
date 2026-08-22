@@ -70,16 +70,25 @@ class SchemaContext:
 class SchemaRetriever:
     """Select tables by deterministic lexical scoring and relationship paths."""
 
-    def __init__(self, *, max_tables: int = 8, max_characters: int = 12_000) -> None:
+    def __init__(
+        self,
+        *,
+        max_tables: int = 8,
+        max_characters: int = 12_000,
+        fallback_to_all: bool = False,
+    ) -> None:
         if max_tables <= 0 or max_characters <= 0:
             raise ValueError("Schema context budgets must be greater than zero")
         self._max_tables = max_tables
         self._max_characters = max_characters
+        self._fallback_to_all = fallback_to_all
 
     def retrieve(self, question: str, snapshot: SchemaSnapshot) -> SchemaContext:
         normalized = " ".join(question.casefold().split())
         scores = {table.name: self._score_table(normalized, table) for table in snapshot.tables}
         selected = [name for name, score in scores.items() if score > 0]
+        if not selected and self._fallback_to_all:
+            selected = [table.name for table in snapshot.tables]
         selected.sort(key=lambda name: (-scores[name], name.casefold()))
         selected = selected[: self._max_tables]
         selected = self._add_relationship_paths(selected, snapshot, scores)
@@ -116,6 +125,12 @@ class SchemaRetriever:
     @staticmethod
     def _score_table(question: str, table: TableMetadata) -> int:
         score = sum(5 for alias in _ALIASES.get(table.name, ()) if alias in question)
+        table_words = " ".join(
+            part.casefold()
+            for part in re.findall(r"[A-Z]?[a-z]+|[A-Z]+(?=[A-Z]|$)|\d+", table.name)
+        )
+        if table_words and table_words in question:
+            score += 5
         for column in table.columns:
             words = " ".join(
                 part.casefold()

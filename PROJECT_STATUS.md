@@ -1,10 +1,10 @@
 # Project Status — AI Database Analyst
 
 - Project version: `0.1.0`
-- Last updated: 2026-08-16 (Asia/Bangkok)
-- Active work package: bounded-agent roadmap follow-up
-- Active phase: Points 6-7 complete; Point 5 model-quality gate blocked; public deployment decision pending
-- Overall status: public repository and hosted release gate passed; bounded-agent local gate passed; application is not publicly deployed
+- Last updated: 2026-08-22 (Asia/Bangkok)
+- Active work package: uploaded SQLite workspace follow-up
+- Active phase: upload feature locally complete; Point 5 independent holdout gate and public deployment decision pending
+- Overall status: public repository and hosted release gate passed; uploaded-workspace local and hosted gates passed; application is not publicly deployed
 - Repository path: `D:\Capstone\AI Database Analyst Project\ai-database-analyst`
 
 ## Phase Status
@@ -23,16 +23,23 @@
 | Tahap 9 — Docker and CI/CD | Completed | Passed on 2026-07-21 |
 | Tahap 10 — Release | In progress | Repository/hosted gate passed; public deployment pending |
 
-## Post-release bounded-agent extension
+## Post-release bounded-agent and upload extensions
 
-- Roadmap Point 5 remains blocked after Phase N passed 5/6 but missed its
-  execution-accuracy gate; no candidate was frozen and no holdout was opened.
+- Roadmap Point 5 development now passes 67/70 with 95.08% execution accuracy
+  and all frozen gates. It remains blocked only on an independently curated
+  sealed-holdout manifest, candidate freeze, and separately authorized one-time
+  holdout; no holdout was opened.
 - Points 6 and 7 are complete as architecture/offline work: eight typed tools,
   static state authority, one-use execution capabilities, bounded repair,
   restart-safe canonical clarification, `/api/v1/agent/*`, and Streamlit resume/
   cancel controls.
-- Local evidence is 447 passed, 4 PostgreSQL/Docker skips, 90.69% coverage,
-  Ruff and strict Mypy clean. Hosted evidence for this new branch is pending.
+- The uploaded-database extension adds isolated, expiring SQLite database/dump
+  workspaces, schema explorer, prompt-to-query, and explicit deletion through
+  FastAPI and Streamlit. It never imports into PostgreSQL or durable history.
+- Current local evidence is 479 passed, 4 PostgreSQL skips, 90.34% coverage,
+  Ruff and strict Mypy clean. Commit `fe7fcfe` passed every hosted check in
+  stacked PR #32: Python 3.11/3.12 quality, PostgreSQL integration, clean
+  Compose, source/container security, CodeQL, and CodeRabbit.
 - This extension is called a bounded agent and does not qualify the blocked
   real model or claim a public deployment.
 

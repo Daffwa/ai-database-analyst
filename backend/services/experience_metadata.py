@@ -31,9 +31,16 @@ _TABLE_DESCRIPTIONS = {
 class DatabaseExplorerService:
     """Expose only schema metadata and reviewed descriptions, never sample rows."""
 
-    def __init__(self, snapshot: SchemaSnapshot, *, refreshed_at: str) -> None:
+    def __init__(
+        self,
+        snapshot: SchemaSnapshot,
+        *,
+        refreshed_at: str,
+        review_status: str = "project_verified",
+    ) -> None:
         self._snapshot = snapshot
         self._refreshed_at = refreshed_at
+        self._review_status = review_status
 
     def snapshot(self) -> DatabaseExplorerSnapshot:
         """Build the complete schema-only explorer contract."""
@@ -45,7 +52,7 @@ class DatabaseExplorerService:
                     table.name,
                     "Belum memiliki deskripsi bisnis yang ditinjau.",
                 ),
-                review_status="project_verified",
+                review_status=self._review_status,
                 columns=tuple(
                     ExplorerColumn(
                         name=column.name,

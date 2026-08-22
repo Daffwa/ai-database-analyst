@@ -3,6 +3,53 @@
 Append new entries at the top so the latest handoff is easy to find. Never store
 secrets or raw sensitive payloads.
 
+## 2026-08-22 - Uploaded workspace isolated, pushed, and hosted-verified
+
+### Outcome
+
+- Moved the uploaded SQLite workspace into its own branch,
+  `agent/uploaded-sqlite-workspace`, stacked on the Point-5 branch so the
+  feature remains reviewable independently.
+- Committed the implementation as `fe7fcfe`, pushed the branch, and opened
+  draft PR #32 against `agent/fix-point5-policy-holdout`.
+- GitHub reported the PR mergeable. Python 3.11/3.12 quality, PostgreSQL
+  integration, clean Compose, source security, container security, CodeQL,
+  and CodeRabbit all passed for the implementation commit.
+
+### Verification and boundary
+
+- Local verification remains 479 passed, 4 PostgreSQL skips, 90.34% branch
+  coverage, with Ruff format/lint and strict Mypy clean.
+- No live provider or holdout request was made. Point 5 remains blocked only
+  by its independent sealed-holdout manifest, candidate freeze, and separately
+  authorized one-time holdout; public deployment also remains pending.
+
+## 2026-08-18 - Ephemeral uploaded SQLite workspace implemented
+
+### Outcome
+
+- Added raw-byte create, schema, query, and delete API contracts for opaque,
+  expiring uploaded SQLite workspaces plus typed frontend client support.
+- Added Streamlit upload/source-selection UX for `.db`, `.sqlite`, `.sqlite3`,
+  and restricted `.sql`, including schema explorer, prompt results, warnings,
+  and explicit deletion.
+- Each upload builds an independent schema snapshot, exact allowlist, prompt-v4
+  generator, AST security policy, read-only executor, and result pipeline. It
+  never reuses Chinook semantics or touches either PostgreSQL database.
+- Added a deny-by-default SQL dump importer and SQLite integrity/active-object
+  checks. Runtime connections now also set `trusted_schema=OFF`.
+
+### Verification and boundary
+
+- Full offline gate: 479 passed, 4 PostgreSQL skips, 90.34% coverage; Ruff and
+  strict Mypy passed. No live provider or holdout call was made.
+- Hostile tests reject `ATTACH`, views, virtual tables, `INSERT SELECT`, writes,
+  computed index functions, and generated destructive SQL.
+- The feature is local/loopback-only and SQLite-first. Public use still needs
+  authentication, per-user ownership, rate limits, quotas, sandbox/content
+  policy, and approved LLM-provider data governance. Point 5 remains blocked
+  only on the independent sealed-holdout manifest/freeze/run sequence.
+
 ## 2026-08-18 - Complete v5 development gate passed
 
 ### Outcome

@@ -73,8 +73,9 @@ Features planned after the MVP security gate:
 6. PostgreSQL analytics database with a dedicated read-only role.
 7. Separate metadata database credentials and Alembic migrations.
 8. FastAPI backend and versioned API contracts.
-9. Docker Compose, observability, GitHub Actions, and security checks.
-10. Reproducible documentation, deployment, and portfolio release.
+9. Ephemeral uploaded SQLite workspaces for schema inspection and prompt-to-query.
+10. Docker Compose, observability, GitHub Actions, and security checks.
+11. Reproducible documentation, deployment, and portfolio release.
 
 ## 5. Non-Goals
 
@@ -191,6 +192,22 @@ Acceptance:
 
 - Final setup succeeds from a clean environment using documented commands.
 
+### US-011 — Analyze an Uploaded SQLite Database
+
+As a data analyst, I want to upload a SQLite database or schema/data dump so
+that I can inspect its tables and ask questions without connecting it to the
+configured Chinook database.
+
+Acceptance:
+
+- The UI accepts supported SQLite/database dump files and shows the inspected
+  schema before a query.
+- Generated SQL receives an exact per-upload allowlist and the normal read-only
+  AST gate.
+- The uploaded database is temporary, isolated from both PostgreSQL databases,
+  and explicitly deletable.
+- Unsupported SQL-dump objects and statements fail closed.
+
 ## 7. Functional Requirements
 
 ### Input and Intent
@@ -260,6 +277,21 @@ Acceptance:
 - FR-052: Measure structured-output validity, SQL validity, execution success,
   execution accuracy, hallucination, unsafe blocking, false blocking,
   clarification behavior, repair, latency, and usage.
+
+### Uploaded Database Workspaces
+
+- FR-060: Accept bounded SQLite `.db`, `.sqlite`, `.sqlite3`, and restricted
+  UTF-8 SQLite `.sql` uploads.
+- FR-061: Create an opaque, expiring, server-owned workspace without accepting
+  a client filesystem path.
+- FR-062: Inspect a validated upload into a schema snapshot and exact
+  table/column allowlist.
+- FR-063: Execute prompt-generated SQL only against the selected upload after
+  the normal deterministic AST policy passes.
+- FR-064: Never import uploaded SQL into or attach it to the analytics or
+  metadata PostgreSQL database.
+- FR-065: Delete workspace bytes on explicit deletion, expiry cleanup, or API
+  shutdown and exclude workspace payloads from durable query history.
 
 ## 8. Non-Functional Requirements
 

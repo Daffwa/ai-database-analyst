@@ -103,6 +103,28 @@ The primary environment settings are:
 
 `SQL_ALLOW_EXPLAIN` remains false and no EXPLAIN path is enabled in this phase.
 
+## Uploaded SQLite Workspace Controls
+
+Uploaded database bytes are stored only in opaque, expiring server-owned
+temporary directories and are removed on delete, expiry cleanup, or API
+shutdown. SQLite dump import is deny-by-default: only `CREATE TABLE`,
+`CREATE INDEX`, literal `INSERT ... VALUES`, and transaction markers are
+accepted. Views, triggers, virtual tables, attachments, computed
+imports/indexes, and all other statements are rejected before SQLite
+execution.
+
+Uploaded database queries receive a snapshot-derived table/column allowlist,
+the normal SQL AST policy, response/time limits, and a separate SQLite
+connection using `mode=ro`, `query_only=ON`, and `trusted_schema=OFF`. Uploads
+never execute against or attach to the PostgreSQL analytics/metadata databases,
+and their questions/results are not added to durable history.
+
+This workspace feature remains approved only for the loopback/local boundary.
+A public version requires authentication, per-user ownership checks, upload and
+LLM rate limits, aggregate disk/concurrency quotas, content-scanning/sandbox
+review, and an approved data-processing policy for schema metadata sent to the
+LLM provider.
+
 ## Verification
 
 ```powershell

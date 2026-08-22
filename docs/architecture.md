@@ -39,6 +39,29 @@ The Tahap 6 regression fixture calls orchestration in-process. The Tahap 8
 frontend is an API client; FastAPI owns orchestration and both server-side
 database connections.
 
+### Uploaded SQLite workspace
+
+The final frontend may select an independent ephemeral SQLite source:
+
+```mermaid
+flowchart LR
+    U["User upload + prompt"] --> API["FastAPI workspace API"]
+    API --> I["Bounded SQLite importer / integrity check"]
+    I --> S["Schema snapshot + allowlist"]
+    S --> L["Configured LLM adapter"]
+    L --> V["SQLGlot read-only policy"]
+    V --> R["Workspace SQLite mode=ro"]
+    R --> U
+    API -. "never imports" .-> P[("Chinook PostgreSQL")]
+    API -. "no workspace history" .-> M[("Metadata PostgreSQL")]
+```
+
+The API owns an opaque-ID registry and server temporary directories. Each
+upload receives its own engine, schema snapshot, validator, and query
+processor. The generic path uses prompt v4 without the Chinook semantic layer;
+it does not pretend that Chinook metrics or joins apply to arbitrary schemas.
+The normal PostgreSQL runtime remains unchanged.
+
 ## 3. Trust Boundaries
 
 ### Untrusted
@@ -57,6 +80,8 @@ database connections.
 - Function and system-catalog policy.
 - Row, column, byte, and time budgets.
 - SQLite read-only mode for the MVP.
+- Restricted SQLite upload import, integrity checks, expiring server-owned
+  storage, `trusted_schema=OFF`, and a per-upload schema allowlist.
 - PostgreSQL `analytics_readonly` role for the final runtime.
 - Network, credential, and secret configuration.
 
@@ -320,6 +345,10 @@ for future phases are intentionally not created during Tahap 0.
     embedded runtime credential.
 16. A canonical request ID crosses frontend, API, orchestration, SQL policy,
     database execution, and privacy-safe logs.
+17. Uploaded SQL is never executed against either PostgreSQL database; only a
+    restricted allowlist may initialize a new temporary SQLite file.
+18. An uploaded workspace never reuses the Chinook semantic layer or durable
+    metadata history.
 
 ## 11. Tahap 8 Productionization Boundary
 

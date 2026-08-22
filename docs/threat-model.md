@@ -66,6 +66,7 @@ influence a later model call.
 | Config/files to application | YAML, environment, dataset | Tampering, secret leakage, invalid policy |
 | Application to metadata DB | Audit and feedback writes | Sensitive retention, injection, integrity loss |
 | CI/deployment | Build inputs and secrets | Supply-chain compromise, secret exposure |
+| User to upload workspace | SQLite/database dump bytes and filename | parser abuse, resource exhaustion, active schema objects, cross-database access, private-data disclosure |
 
 ## 5. Threats and Required Controls
 
@@ -271,6 +272,38 @@ Future controls:
 - Tenant-aware cache keys.
 - PostgreSQL RLS or database/schema isolation.
 - Authorization-specific evaluation.
+
+### TM-015 — Malicious Uploaded Database or SQL Dump
+
+Controls:
+
+- Accept only bounded SQLite database files and UTF-8 SQLite SQL dumps.
+- Create a fresh server-owned directory from an opaque random ID; never accept
+  a client filesystem path.
+- Integrity-check database files and reject views, triggers, virtual tables,
+  attached databases, system objects, and computed dump statements.
+- Import dumps only into a new isolated SQLite file under statement, byte,
+  database-size, time, table, and column budgets.
+- Inspect schema into an exact allowlist, then reopen through SQLite read-only,
+  query-only, untrusted-schema mode.
+- Run every generated query through the existing single-statement read-only
+  AST policy and result budgets.
+- Expire and delete workspace files; keep raw uploads, questions, SQL, and rows
+  out of logs and durable metadata.
+
+Verification:
+
+- Tests cover `ATTACH`, views, virtual tables, `INSERT SELECT`, destructive
+  DML, computed index functions, malformed SQLite, model-generated writes,
+  lifecycle deletion, and API not-found behavior.
+
+Residual risk:
+
+- SQLite and SQL parser vulnerabilities, storage amplification,
+  unauthenticated resource consumption, and sensitive schema disclosure remain
+  public-deployment blockers. Loopback binding is mandatory until per-user
+  authorization, rate limits, quotas, sandbox policy, and provider data policy
+  are implemented.
 
 ## 6. Abuse-Case Baseline
 
