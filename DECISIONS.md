@@ -1669,8 +1669,10 @@ apply the service start-command override reliably.
 ### Consequences
 
 - Railway account authentication and project linkage are complete. Private
-  PostgreSQL is healthy in Singapore; bootstrap/API/frontend verification is
-  still in progress and no public application deployment is claimed.
+  PostgreSQL, FastAPI, and Streamlit are health-gated in Singapore; the
+  successful one-shot bootstrap was stripped of privileged variables and
+  deleted. Functional private smoke remains, and no public application
+  deployment is claimed.
 - Deployment source should be a reviewed commit after stacked PRs #27, #28,
   and #32 are merged, unless the owner explicitly authorizes an ephemeral
   branch deployment.
@@ -1686,6 +1688,6 @@ apply the service start-command override reliably.
 |---|---|---|---|
 | DD-001 | Real LLM provider and model | Resolved 2026-08-07 | ADR-0035 selects Gemini API with `gemma-4-26b-a4b-it`; paid budget USD 0. |
 | DD-002 | Public project license | Resolved 2026-07-21 | MIT selected by the owner. |
-| DD-003 | Deployment platform | Resolved 2026-08-22 | ADR-0050 selects Railway for a private staging path; no resources are deployed. |
+| DD-003 | Deployment platform | Resolved 2026-08-22 | ADR-0050 selects Railway; private staging is health-gated in Singapore with no public domain. |
 | DD-004 | Authentication provider | Public production-like demo | Not required for the local portfolio MVP. |
 | DD-005 | Cloud secret manager | Deployment | Depends on the selected platform. |

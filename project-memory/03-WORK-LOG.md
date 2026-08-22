@@ -3,7 +3,7 @@
 Append new entries at the top so the latest handoff is easy to find. Never store
 secrets or raw sensitive payloads.
 
-## 2026-08-22 - Railway private staging provisioning started
+## 2026-08-22 - Railway private staging provisioned and health-gated
 
 ### Outcome
 
@@ -12,13 +12,18 @@ secrets or raw sensitive payloads.
   hard limit, so that limit was not raised.
 - Provisioned a fresh managed PostgreSQL service in Singapore with one private
   volume and no public TCP proxy/domain. Created private bootstrap, API, and
-  frontend service placeholders in the same staging environment.
+  frontend services in the same staging environment.
 - Generated distinct analytics, metadata, migration, and evaluation
   credentials locally and sent them to Railway Variables through stdin without
   printing or persisting their values. The deployed provider remains fake.
 - Added a dedicated one-shot `Dockerfile.bootstrap` after Railway's CLI service
   start-command override did not apply. Added it to Dockerfile contracts and
   hosted container build/security scans.
+- Bootstrapped the pinned Chinook data and separated roles/databases, applied
+  Alembic through head, removed all privileged bootstrap variables, and deleted
+  the completed ephemeral job.
+- Deployed private FastAPI and Streamlit from clean commit `eb90de0` and set
+  deployment healthchecks through the official Railway API.
 
 ### Verification and boundary
 
@@ -30,12 +35,16 @@ secrets or raw sensitive payloads.
 - Full offline verification passes: formatting, lint, strict Mypy on 183 source
   files, and 479 tests with four PostgreSQL skips and 90.34% coverage. Local
   Docker image build is unavailable because Docker Desktop is not running;
-  hosted Linux checks must build and scan the new image before bootstrap is
-  trusted.
-- The first bootstrap deployment failed before build because a stale Virginia
-  region made the service appear multi-region on Hobby. The service is now
-  single-region Singapore; no application code or migration ran in that failed
-  attempt.
+  hosted Linux checks subsequently built and scanned the image successfully.
+- Every hosted PR #33 gate passed on `eb90de0`, including the new bootstrap
+  image build and container/config scan.
+- PostgreSQL, API, and frontend report `SUCCESS`, one Singapore replica, and no
+  domain. Healthcheck-gated deployments pass `/api/v1/health` and
+  `/_stcore/health`; the raw IP printed by Streamlit was unreachable externally.
+- Railway SSH smoke was aborted without accepting the host key because Railway
+  does not publish an authoritative fingerprint. The temporary registered/local
+  key was removed. Functional query/security smoke remains for a trusted private
+  or authenticated channel; no public route was created.
 
 ## 2026-08-22 - Railway project connected without provisioning resources
 

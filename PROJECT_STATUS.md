@@ -3,7 +3,7 @@
 - Project version: `0.1.0`
 - Last updated: 2026-08-22 (Asia/Bangkok)
 - Active work package: Railway private-staging deployment
-- Active phase: private PostgreSQL healthy; one-shot bootstrap and private application deployment in progress
+- Active phase: private Railway staging health-gated; public routing intentionally absent
 - Overall status: public repository and hosted release gate passed; uploaded-workspace local and hosted gates passed; application is not publicly deployed
 - Repository path: `D:\Capstone\AI Database Analyst Project\ai-database-analyst`
 
@@ -27,15 +27,18 @@
 
 - The `ai-database-analyst` project is authenticated and linked to `staging`;
   the default `production` environment remains untouched.
-- The owner's Hobby-plan authorization enabled a private PostgreSQL service in
-  Singapore with a ready volume. Private bootstrap/API/frontend service
-  placeholders and secret references are configured. No public domain or real
+- The owner's Hobby-plan authorization enabled a private PostgreSQL service,
+  FastAPI, and Streamlit in Singapore. The one-shot bootstrap seeded Chinook,
+  applied Alembic to head, removed its privileged variables, and was deleted.
+- API and frontend are `SUCCESS` on Railway-gated healthcheck paths. They use
+  clean commit `eb90de0`; no public domain, public database proxy, or real
   provider credential exists.
 - Public exposure still requires authentication, tenant authorization,
   request limits, rate limiting, and verified rollback/monitoring controls.
-- The remaining private-staging work is the audited one-shot bootstrap, private
-  FastAPI/Streamlit deployment, and hosted smoke evidence; details are in
-  `docs/railway-deployment-plan.md` and ADR-0050.
+- Remaining deployment work is functional smoke through an authenticated or
+  private trusted channel, durable `main`-branch sourcing, and all controls
+  required before public access; details are in `docs/railway-deployment-plan.md`
+  and ADR-0050.
 
 ## Post-release bounded-agent and upload extensions
 

@@ -1,7 +1,7 @@
 # Railway Deployment Plan
 
 - Date: 2026-08-22
-- Status: private PostgreSQL healthy in Singapore; application bootstrap in progress
+- Status: private staging health-gated in Singapore; no public domain
 - Target: private staging before any authenticated public demo
 - Source repository: `Daffwa/ai-database-analyst`
 
@@ -38,13 +38,25 @@ claiming a public deployment or exposing unauthenticated application routes.
 - [x] Remove the first empty PostgreSQL deployment and volume after its initial
   generated credential appeared in CLI configuration output; replace it with a
   fresh healthy service and leave no registered temporary SSH key.
+- [x] Pass every hosted PR #33 gate on deployment commit `eb90de0`, including
+  the dedicated bootstrap image build and Trivy container/config scan.
+- [x] Run bootstrap deployment `4f75d32d-ff44-4731-b24e-2412bb8fdb25`, seed
+  the pinned Chinook counts, create separated roles/databases, and apply Alembic
+  through `20260816_0002`/head; then remove privileged bootstrap variables and
+  delete the completed ephemeral service.
+- [x] Deploy healthcheck-gated private API deployment
+  `b21897c1-abc0-4490-bbe7-3285ce04be71` and frontend deployment
+  `2caf7c74-bc68-4087-9951-5bca31943c46` from clean commit `eb90de0`.
+- [x] Verify all three retained services report `SUCCESS`, use one Singapore
+  replica each, and expose zero custom or Railway service domains. Production
+  remains empty.
 
 ## Intended service mapping
 
 | Local Compose service | Railway service | Exposure |
 |---|---|---|
 | `db` | Managed PostgreSQL | Private only |
-| `bootstrap` | One-shot service from `Dockerfile.bootstrap` | Private, no domain |
+| `bootstrap` | Ephemeral `Dockerfile.bootstrap` job, deleted after success | None retained |
 | `api` | FastAPI from `Dockerfile.api` | Private, no domain |
 | `frontend` | Streamlit from `Dockerfile.frontend` | No public domain until authentication and rate limits exist |
 
@@ -63,14 +75,31 @@ bind those ports. Configure healthcheck paths `/api/v1/health` and
   limits, rate limiting, and abuse controls before generating a public domain.
 - [ ] Review Gemini data governance before adding a real-provider credential;
   otherwise deploy with `fake` / `fake-deterministic` only.
-- [ ] Pass hosted checks for the dedicated one-shot `Dockerfile.bootstrap`,
-  bootstrap PostgreSQL, apply Alembic through the current head, and verify role
-  separation.
-- [ ] Deploy the private API and frontend in Singapore after bootstrap succeeds.
-- [ ] Run health, success, clarification, blocked, timeout, privacy, and
-  database read-only smoke tests.
-- [ ] Record image/source identifiers, logs, rollback target, costs, and hosted
-  evidence before changing the project status to deployed.
+- [x] Pass hosted checks for the dedicated one-shot `Dockerfile.bootstrap`,
+  bootstrap PostgreSQL, apply Alembic through the current head, and verify the
+  runtime starts only with separated analytics/metadata identities.
+- [x] Deploy the private API and frontend in Singapore after bootstrap succeeds.
+- [x] Pass Railway deployment healthchecks for `/api/v1/health` and
+  `/_stcore/health` and confirm the Streamlit-reported raw external IP is not
+  reachable without Railway public networking.
+- [ ] Run success, clarification, blocked, timeout, privacy, and explicit
+  database read-only functional smoke tests through an authenticated/private
+  test channel. Railway SSH was intentionally not trusted because Railway does
+  not publish an authoritative host-key fingerprint.
+- [x] Record source/deployment/image identifiers, rollback target, cost-limit
+  state, and hosted evidence without storing secret values.
+
+## Current deployment evidence
+
+- Source: clean commit `eb90de06c83e3ffadcf23a7b4dae2aaacbe38283`.
+- API image: `sha256:2d129b66cabf0597a6bd90b7e9afcbbb25db07aab54bab71573035a90129b81c`.
+- Frontend image: `sha256:3d16632da2d933de71e708cdb3d634280e9c0687fca58ba71494d36f08a718e3`.
+- Successful bootstrap image:
+  `sha256:946e474e2b19b76a1e73768542a74524d1d9cf383a4bac8afa0835d2ac5c2a86`.
+- Database image: `sha256:53f2aec0d73373caa91fe493e5d2bb908ee38310c79771cc1ce733dfee8d4545`.
+- Provider: `fake` / `fake-deterministic`; no `LLM_API_KEY` is present.
+- Cost evidence: effective USD 5 account hard limit; workspace usage was about
+  USD 0.239 at final verification and is not attributed solely to this project.
 
 ## Stop conditions
 

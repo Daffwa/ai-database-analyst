@@ -1,6 +1,6 @@
 # Deployment and Rollback Guide
 
-- Status: Railway private staging in progress; PostgreSQL healthy, application not public
+- Status: Railway private staging health-gated; application not public
 - Scope: managed PostgreSQL, FastAPI, Streamlit, and optional real LLM
 - Last reviewed: 2026-08-22
 
@@ -10,12 +10,13 @@ The MIT-licensed source is published in the authorized public GitHub repository,
 and its hosted CI/security/evaluation evidence is recorded. Railway is selected
 for a private staging path and the `ai-database-analyst` project is linked
 locally to `staging`. The default `production` environment remains empty. The
-owner's Hobby-plan authorization enabled one healthy private PostgreSQL service
-and private bootstrap/API/frontend service placeholders in Singapore. No
-public domain, public database proxy, Git credential, or real-provider secret
-exists. Application bootstrap and hosted smoke verification are still in
-progress, so this is not a public deployed demo; public routing remains blocked
-on authentication, authorization, and rate limiting. See
+owner's Hobby-plan authorization enabled healthy private PostgreSQL, FastAPI,
+and Streamlit services in Singapore. The ephemeral bootstrap seeded Chinook,
+applied Alembic to head, removed its privileged variables, and was deleted. API
+and frontend passed Railway deployment healthchecks. No public domain, public
+database proxy, Git credential, or real-provider secret exists, so this is not
+a public deployed demo; public routing remains blocked on authentication,
+authorization, and rate limiting. See
 `railway-deployment-plan.md` for the live checklist.
 
 ## Railway connection state

@@ -8,8 +8,8 @@
   in stacked PR #32, based on the Point-5 policy/holdout branch in PR #28.
 - Review: PR #27 is ready; PR #28 is green; PR #32 is ready and mergeable, and its
   implementation commit passed every reported hosted check.
-- Active goal: complete and verify the explicitly authorized private Railway
-  staging deployment while preserving the real-model and upload security gates
+- Active goal: preserve the health-gated private Railway staging deployment
+  while completing its remaining private functional smoke evidence
 - Active plans: `docs/real-llm-agent-implementation-plan.md` and
   `docs/uploaded-database-workspace-plan.md` plus
   `docs/railway-deployment-plan.md`
@@ -47,10 +47,12 @@
 
 ## Immediate next action
 
-Complete the one-shot Railway bootstrap from the dedicated audited Dockerfile,
-then deploy and smoke-test the private API/frontend. Managed PostgreSQL is
-healthy in Singapore under the owner's Hobby-plan authorization and no public
-domain exists. Authentication remains required before any public domain.
+Choose a trusted private/authenticated test channel for success,
+clarification, blocked, timeout, privacy, and explicit read-only smoke cases.
+PostgreSQL, API, and frontend are health-gated and running privately in
+Singapore under the owner's Hobby-plan authorization; bootstrap is complete
+and removed, and no public domain exists. Authentication remains required
+before any public domain.
 Review PR #32 and merge the stacked PRs #27, #28, and #32 in dependency order
 when desired.
 For Point 5, an independent curator
@@ -89,12 +91,16 @@ The following memory/plan work was created on 2026-08-07. Always verify with
 
 ## Latest verification evidence
 
-- Railway CLI v5.43.1 is authenticated and linked to the `staging` environment.
-  After Hobby-plan authorization, a fresh private PostgreSQL service became
-  healthy in Singapore with one 5 GB volume. Empty private `bootstrap`, `api`,
-  and `frontend` services and their Railway Variables are configured; no domain
-  or real-provider credential exists. The first empty database/volume was
-  replaced after its generated credential appeared in CLI output.
+- Railway CLI v5.43.1 is authenticated and linked to `staging`. PostgreSQL,
+  FastAPI, and Streamlit report `SUCCESS` with one Singapore replica each and
+  zero domains; production is empty. API/frontend healthcheck deployments
+  `b21897c1` and `2caf7c74` run clean commit `eb90de0`. Bootstrap seeded the
+  pinned counts and migrated to head, then its privileged variables and service
+  were removed. Provider remains fake and no real-provider key exists.
+- PR #33 passed all hosted checks on `eb90de0`, including Python 3.11/3.12,
+  PostgreSQL integration, Compose, source/container security, CodeQL, and
+  CodeRabbit. The first empty database/volume was replaced after its generated
+  credential appeared in CLI output.
 - Railway documentation PR #33 passed all hosted gates on corrective commit
   `d858001`, including Python 3.11/3.12 quality, PostgreSQL integration, clean
   Compose, source/container security, CodeQL, and CodeRabbit.
