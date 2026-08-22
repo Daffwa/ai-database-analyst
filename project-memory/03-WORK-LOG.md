@@ -24,6 +24,9 @@ secrets or raw sensitive payloads.
 - No paid or trial-credit-consuming resource was created. Provisioning awaits
   explicit environment/region and budget approval. Public exposure remains
   blocked on authentication, authorization, request limits, and rate limiting.
+- The first hosted quality run exposed one stale Stage 10 assertion that still
+  required the pre-selection phrase. The contract now verifies Railway is
+  connected while no service/database exists and public routing stays blocked.
 
 ## 2026-08-22 - Uploaded workspace isolated, pushed, and hosted-verified
 

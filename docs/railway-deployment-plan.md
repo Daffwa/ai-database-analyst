@@ -22,6 +22,8 @@ claiming a public deployment or exposing unauthenticated application routes.
   domains, or active deployments.
 - [x] Preserve a clean Git working tree and keep Railway credentials outside
   the repository.
+- [x] Update the Stage 10 documentation contract to require the new Railway
+  connection state while preserving the no-service and no-public-routing gates.
 
 ## Intended service mapping
 
