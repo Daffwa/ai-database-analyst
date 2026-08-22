@@ -1,18 +1,34 @@
 # Deployment and Rollback Guide
 
-- Status: public repository released; no application hosting platform selected
+- Status: Railway project connected; no application service or database deployed
 - Scope: managed PostgreSQL, FastAPI, Streamlit, and optional real LLM
-- Last reviewed: 2026-07-28
+- Last reviewed: 2026-08-22
 
 ## Decision boundary
 
 The MIT-licensed source is published in the authorized public GitHub repository,
-and its hosted CI/security/evaluation evidence is recorded. No cloud account,
-paid resource, public application hostname, or real LLM credential has been
-created by this project. Platform selection requires a current cost and
-data-policy review plus explicit approval of the account, region, budget, and
-authentication design. Repository or local success must not be described as a
-deployed demo.
+and its hosted CI/security/evaluation evidence is recorded. Railway is selected
+for a private staging path and an empty `ai-database-analyst` project is linked
+locally to its empty `staging` environment. The default `production`
+environment also remains empty. The project has no service, database, volume,
+domain, active deployment, or
+project credential in Git. Creating compute remains blocked on explicit region
+and budget approval; public routing remains blocked on authentication,
+authorization, and rate limiting. A linked empty project must not be described
+as a deployed demo. See `railway-deployment-plan.md` for the live checklist.
+
+## Railway connection state
+
+Railway does not run this repository's Compose file directly. The intended
+translation is managed PostgreSQL, a one-shot bootstrap/migration service,
+private FastAPI, and Streamlit. Database and API traffic use Railway private
+networking. The current containers bind fixed ports, so Railway service
+variables must set API `PORT=8000` and frontend `PORT=8501`; deployment
+healthchecks use `/api/v1/health` and `/_stcore/health`.
+
+No GitHub source is attached to a Railway service yet. Local CLI actions target
+`staging`, not `production`. The reviewed stacked
+branches should be merged before a durable deployment source is selected.
 
 ## Required production topology
 

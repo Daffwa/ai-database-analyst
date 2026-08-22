@@ -1632,12 +1632,54 @@ data governance exist.
 - Local evidence passes 479 tests with four PostgreSQL skips and 90.34%
   coverage; no provider or holdout call was made.
 
+## ADR-0050 - Use Railway for a Private Staging Path Before Public Exposure
+
+- Date: 2026-08-22
+- Status: Accepted
+
+### Context
+
+The owner asked to connect the project to Railway. The repository already has
+separate API/frontend Dockerfiles, a PostgreSQL bootstrap job, health endpoints,
+and a Compose topology, but it intentionally lacks public authentication,
+tenant authorization, and rate limiting. Railway maps Compose services to
+separate services and its compute/database resources may consume trial credit
+or incur cost.
+
+### Decision
+
+Select Railway as the initial managed staging platform. Create and locally link
+an empty Railway project named `ai-database-analyst`, but do not provision
+services, databases, volumes, or public domains until the owner approves the
+environment/region and a maximum budget.
+
+When authorized, map the topology to managed PostgreSQL, a one-shot bootstrap/
+migration service, private FastAPI, and Streamlit. Use Railway private-network
+references for service and database traffic. Keep FastAPI without a public
+domain. Do not expose Streamlit publicly until authentication, authorization,
+request limits, and rate limiting are implemented and verified. Keep the fake
+provider as the staging default unless Gemini data governance and secret use
+are separately approved.
+
+### Consequences
+
+- Railway account authentication and project linkage are complete, but this is
+  not an application deployment and creates no hosted-runtime evidence.
+- Deployment source should be a reviewed commit after stacked PRs #27, #28,
+  and #32 are merged, unless the owner explicitly authorizes an ephemeral
+  branch deployment.
+- Railway Variables may be evaluated as the staging secret store, but no local
+  credential may be copied into source, documentation, chat, build arguments,
+  or image layers.
+- DD-003 is resolved for staging. Authentication, budget, region, public
+  exposure, and production secret-management decisions remain open gates.
+
 ## Deferred Decisions
 
 | ID | Decision | Required by | Reason for deferral |
 |---|---|---|---|
 | DD-001 | Real LLM provider and model | Resolved 2026-08-07 | ADR-0035 selects Gemini API with `gemma-4-26b-a4b-it`; paid budget USD 0. |
 | DD-002 | Public project license | Resolved 2026-07-21 | MIT selected by the owner. |
-| DD-003 | Deployment platform | Tahap 10 | Availability and pricing are time-sensitive. |
+| DD-003 | Deployment platform | Resolved 2026-08-22 | ADR-0050 selects Railway for a private staging path; no resources are deployed. |
 | DD-004 | Authentication provider | Public production-like demo | Not required for the local portfolio MVP. |
 | DD-005 | Cloud secret manager | Deployment | Depends on the selected platform. |

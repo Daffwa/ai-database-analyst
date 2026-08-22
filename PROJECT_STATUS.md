@@ -2,8 +2,8 @@
 
 - Project version: `0.1.0`
 - Last updated: 2026-08-22 (Asia/Bangkok)
-- Active work package: uploaded SQLite workspace follow-up
-- Active phase: upload feature locally complete; Point 5 independent holdout gate and public deployment decision pending
+- Active work package: Railway private-staging preparation
+- Active phase: Railway project connected without resources; region, budget, authentication, and deployment remain pending
 - Overall status: public repository and hosted release gate passed; uploaded-workspace local and hosted gates passed; application is not publicly deployed
 - Repository path: `D:\Capstone\AI Database Analyst Project\ai-database-analyst`
 
@@ -22,6 +22,21 @@
 | Tahap 8 — PostgreSQL and FastAPI | Completed | Passed on 2026-07-21 |
 | Tahap 9 — Docker and CI/CD | Completed | Passed on 2026-07-21 |
 | Tahap 10 — Release | In progress | Repository/hosted gate passed; public deployment pending |
+
+## Railway staging connection
+
+- An empty Railway project named `ai-database-analyst` is authenticated and
+  linked to the local repository as of 2026-08-22. The local CLI targets an
+  empty `staging` environment; the default `production` environment is empty.
+- It contains no service, PostgreSQL database, bucket, volume, public domain,
+  GitHub service source, or active deployment. No hosted application or cost is
+  claimed.
+- Provisioning is gated on explicit environment/region and budget approval.
+  Public exposure additionally requires authentication, tenant authorization,
+  request limits, rate limiting, and verified rollback/monitoring controls.
+- The intended topology is managed PostgreSQL, one-shot bootstrap/migration,
+  private FastAPI, and Streamlit; details are in
+  `docs/railway-deployment-plan.md` and ADR-0050.
 
 ## Post-release bounded-agent and upload extensions
 

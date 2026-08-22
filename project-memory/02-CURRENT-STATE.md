@@ -3,15 +3,16 @@
 - Last updated: 2026-08-22
 - Last known merged commit: `42ba532 Implement secure real-model evaluation
   through Phase N (#26)`
-- Current working branch: `agent/uploaded-sqlite-workspace`
+- Current working branch: `agent/railway-staging`
 - Current implementation: uploaded-SQLite workspace commit `fe7fcfe` is pushed
   in stacked PR #32, based on the Point-5 policy/holdout branch in PR #28.
-- Review: PR #27 is ready; PR #28 is green; draft PR #32 is mergeable and its
+- Review: PR #27 is ready; PR #28 is green; PR #32 is ready and mergeable, and its
   implementation commit passed every reported hosted check.
-- Active goal: preserve the real-model gate while adding safe local
-  uploaded-database analysis
+- Active goal: preserve the real-model and upload security gates while
+  preparing an explicitly authorized Railway staging deployment
 - Active plans: `docs/real-llm-agent-implementation-plan.md` and
-  `docs/uploaded-database-workspace-plan.md`
+  `docs/uploaded-database-workspace-plan.md` plus
+  `docs/railway-deployment-plan.md`
 - Default implementation provider: `fake` / `fake-deterministic`
 - Opt-in real provider: `gemini` / `gemma-4-26b-a4b-it`
 
@@ -46,8 +47,11 @@
 
 ## Immediate next action
 
-Review PR #32 and merge the stacked PRs #27, #28, and #32 in dependency order
-when desired. For Point 5, an independent curator
+Approve or decline a Railway environment/region and maximum staging budget,
+then select the authentication design required before any public domain. The
+empty Railway project is connected but contains no resources. Review PR #32
+and merge the stacked PRs #27, #28, and #32 in dependency order when desired.
+For Point 5, an independent curator
 must create the private 30-case replacement holdout and public manifest without
 this agent inspecting its contents. Development already passed every frozen
 gate. After the manifest is available, freeze the candidate, then obtain
@@ -55,6 +59,10 @@ separate authorization for the exact maximum-54 one-time holdout run.
 
 ## Decisions currently awaiting the user
 
+- Approve the Railway staging region and maximum monthly or trial-credit
+  budget before creating PostgreSQL or application compute.
+- Select authentication, tenant authorization, request limits, and rate
+  limiting before any public frontend domain is generated.
 - Select an independent curator for the required 30-case replacement holdout.
   The development agent must receive only its public manifest before freeze;
   the private payload is supplied to automation only after freeze.
@@ -81,6 +89,12 @@ The following memory/plan work was created on 2026-08-07. Always verify with
 
 ## Latest verification evidence
 
+- Railway CLI v5.43.1 authentication succeeded and an empty project named
+  `ai-database-analyst` was created and linked on 2026-08-22. Railway status
+  reported empty `staging` and `production` environments, with the local CLI
+  explicitly linked to `staging`, and zero services, databases/buckets,
+  volumes, domains, or deployments. No resource, public URL, application
+  secret, provider call, or cost was created by these connection steps.
 - Uploaded workspace gate passed 479 tests with four unavailable PostgreSQL
   skips and 90.34% coverage. Ruff, strict Mypy on 183 sources, focused API/
   importer/security tests, and the complete offline suite passed. Tests cover

@@ -3,6 +3,28 @@
 Append new entries at the top so the latest handoff is easy to find. Never store
 secrets or raw sensitive payloads.
 
+## 2026-08-22 - Railway project connected without provisioning resources
+
+### Outcome
+
+- Reviewed current official Railway CLI, Docker Compose mapping, PostgreSQL,
+  healthcheck, private networking, and trial documentation.
+- Authenticated Railway CLI v5.43.1 through the owner's account, created the
+  empty `ai-database-analyst` project, and linked this repository directory.
+- Created an empty `staging` environment and made it the explicit local CLI
+  target; the default `production` environment remains empty.
+- Recorded ADR-0050 and a staged service-mapping plan for managed PostgreSQL,
+  one-shot bootstrap/migration, private FastAPI, and Streamlit.
+
+### Verification and boundary
+
+- Railway status reported empty `staging` and `production` environments with
+  zero services, buckets, or volumes; no database, domain, active deployment,
+  GitHub service source, application secret, or provider call exists.
+- No paid or trial-credit-consuming resource was created. Provisioning awaits
+  explicit environment/region and budget approval. Public exposure remains
+  blocked on authentication, authorization, request limits, and rate limiting.
+
 ## 2026-08-22 - Uploaded workspace isolated, pushed, and hosted-verified
 
 ### Outcome
