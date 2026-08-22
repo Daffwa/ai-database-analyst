@@ -27,9 +27,9 @@ claiming a public deployment or exposing unauthenticated application routes.
 - [x] Pass PR #33 hosted gates on corrective commit `d858001`: Python
   3.11/3.12 quality, PostgreSQL integration, clean Compose, source/container
   security, CodeQL, and CodeRabbit.
-- [x] Accept the owner's Railway Hobby-plan authorization while preserving the
-  effective USD 5 account hard limit; do not raise the separate workspace limit
-  because Railway requires at least USD 10.
+- [x] Accept the owner's Railway Hobby-plan authorization. Keep the CLI-reported
+  USD 5 agent/account limit unchanged, add a USD 5 workspace soft alert, and do
+  not create a workspace hard limit because Railway requires at least USD 10.
 - [x] Provision a private managed PostgreSQL service in Singapore
   (`asia-southeast1-eqsg3a`) with no public TCP proxy or domain.
 - [x] Create private `bootstrap`, `api`, and `frontend` service placeholders,
@@ -98,8 +98,9 @@ bind those ports. Configure healthcheck paths `/api/v1/health` and
   `sha256:946e474e2b19b76a1e73768542a74524d1d9cf383a4bac8afa0835d2ac5c2a86`.
 - Database image: `sha256:53f2aec0d73373caa91fe493e5d2bb908ee38310c79771cc1ce733dfee8d4545`.
 - Provider: `fake` / `fake-deterministic`; no `LLM_API_KEY` is present.
-- Cost evidence: effective USD 5 account hard limit; workspace usage was about
-  USD 0.239 at final verification and is not attributed solely to this project.
+- Cost evidence: USD 5 workspace soft alert, no workspace hard cap, and about
+  USD 0.239 workspace usage at final verification (not attributed solely to
+  this project). Hobby may bill overage beyond its included USD 5 usage.
 
 ## Stop conditions
 

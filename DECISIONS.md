@@ -1652,9 +1652,10 @@ Select Railway as the initial managed staging platform. Create and locally link
 an empty Railway project named `ai-database-analyst`, but do not provision
 services, databases, volumes, or public domains until the owner approves the
 environment/region and a maximum budget. The owner subsequently approved the
-Hobby plan on 2026-08-22; use the effective USD 5 account hard limit and the
-Singapore region without raising the separate workspace limit to its USD 10
-minimum.
+Hobby plan on 2026-08-22; use the Singapore region, add a USD 5 workspace soft
+alert, and do not raise the workspace hard limit to its USD 10 minimum. The
+Hobby inclusion is not itself a hard workspace cap, so usage must still be
+monitored.
 
 When authorized, map the topology to managed PostgreSQL, a one-shot bootstrap/
 migration service, private FastAPI, and Streamlit. Use Railway private-network

@@ -7,9 +7,9 @@ secrets or raw sensitive payloads.
 
 ### Outcome
 
-- Confirmed the owner's Hobby-plan authorization and Railway's effective USD 5
-  account hard limit. Railway requires at least USD 10 for a separate workspace
-  hard limit, so that limit was not raised.
+- Confirmed the owner's Hobby-plan authorization. Railway requires at least USD
+  10 for a workspace hard limit, so it was not raised; a USD 5 workspace soft
+  alert was added instead. Hobby overage remains possible and must be monitored.
 - Provisioned a fresh managed PostgreSQL service in Singapore with one private
   volume and no public TCP proxy/domain. Created private bootstrap, API, and
   frontend services in the same staging environment.
