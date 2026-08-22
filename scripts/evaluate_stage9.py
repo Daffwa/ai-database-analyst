@@ -23,6 +23,7 @@ def main() -> int:
     compose_source = (ROOT / "docker-compose.yml").read_text(encoding="utf-8")
     compose = yaml.safe_load(compose_source)
     api_dockerfile = (ROOT / "Dockerfile.api").read_text(encoding="utf-8")
+    bootstrap_dockerfile = (ROOT / "Dockerfile.bootstrap").read_text(encoding="utf-8")
     frontend_dockerfile = (ROOT / "Dockerfile.frontend").read_text(encoding="utf-8")
     workflows = {
         path.name: path.read_text(encoding="utf-8")
@@ -37,7 +38,7 @@ def main() -> int:
         "stage8_gate_preserved": stage8_report.get("stage_gate_passed") is True,
         "pinned_non_root_images": all(
             "@sha256:" in source and "USER 10001:10001" in source
-            for source in (api_dockerfile, frontend_dockerfile)
+            for source in (api_dockerfile, bootstrap_dockerfile, frontend_dockerfile)
         ),
         "compose_services_complete": set(services) == {"db", "bootstrap", "api", "frontend"},
         "compose_health_and_readiness": all(

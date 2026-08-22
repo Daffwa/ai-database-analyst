@@ -3,6 +3,40 @@
 Append new entries at the top so the latest handoff is easy to find. Never store
 secrets or raw sensitive payloads.
 
+## 2026-08-22 - Railway private staging provisioning started
+
+### Outcome
+
+- Confirmed the owner's Hobby-plan authorization and Railway's effective USD 5
+  account hard limit. Railway requires at least USD 10 for a separate workspace
+  hard limit, so that limit was not raised.
+- Provisioned a fresh managed PostgreSQL service in Singapore with one private
+  volume and no public TCP proxy/domain. Created private bootstrap, API, and
+  frontend service placeholders in the same staging environment.
+- Generated distinct analytics, metadata, migration, and evaluation
+  credentials locally and sent them to Railway Variables through stdin without
+  printing or persisting their values. The deployed provider remains fake.
+- Added a dedicated one-shot `Dockerfile.bootstrap` after Railway's CLI service
+  start-command override did not apply. Added it to Dockerfile contracts and
+  hosted container build/security scans.
+
+### Verification and boundary
+
+- PostgreSQL reports `SUCCESS`, one running Singapore replica, a ready volume,
+  and no public URL. Production remains untouched.
+- The first empty PostgreSQL instance was deleted and recreated after its
+  initial generated password appeared in CLI JSON output. Its replacement value
+  was never printed, and no temporary SSH key remains registered or on disk.
+- Full offline verification passes: formatting, lint, strict Mypy on 183 source
+  files, and 479 tests with four PostgreSQL skips and 90.34% coverage. Local
+  Docker image build is unavailable because Docker Desktop is not running;
+  hosted Linux checks must build and scan the new image before bootstrap is
+  trusted.
+- The first bootstrap deployment failed before build because a stale Virginia
+  region made the service appear multi-region on Hobby. The service is now
+  single-region Singapore; no application code or migration ran in that failed
+  attempt.
+
 ## 2026-08-22 - Railway project connected without provisioning resources
 
 ### Outcome

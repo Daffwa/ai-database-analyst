@@ -1,6 +1,6 @@
 # Deployment and Rollback Guide
 
-- Status: Railway project connected; no application service or database deployed
+- Status: Railway private staging in progress; PostgreSQL healthy, application not public
 - Scope: managed PostgreSQL, FastAPI, Streamlit, and optional real LLM
 - Last reviewed: 2026-08-22
 
@@ -8,14 +8,15 @@
 
 The MIT-licensed source is published in the authorized public GitHub repository,
 and its hosted CI/security/evaluation evidence is recorded. Railway is selected
-for a private staging path and an empty `ai-database-analyst` project is linked
-locally to its empty `staging` environment. The default `production`
-environment also remains empty. The project has no service, database, volume,
-domain, active deployment, or
-project credential in Git. Creating compute remains blocked on explicit region
-and budget approval; public routing remains blocked on authentication,
-authorization, and rate limiting. A linked empty project must not be described
-as a deployed demo. See `railway-deployment-plan.md` for the live checklist.
+for a private staging path and the `ai-database-analyst` project is linked
+locally to `staging`. The default `production` environment remains empty. The
+owner's Hobby-plan authorization enabled one healthy private PostgreSQL service
+and private bootstrap/API/frontend service placeholders in Singapore. No
+public domain, public database proxy, Git credential, or real-provider secret
+exists. Application bootstrap and hosted smoke verification are still in
+progress, so this is not a public deployed demo; public routing remains blocked
+on authentication, authorization, and rate limiting. See
+`railway-deployment-plan.md` for the live checklist.
 
 ## Railway connection state
 
@@ -27,8 +28,9 @@ variables must set API `PORT=8000` and frontend `PORT=8501`; deployment
 healthchecks use `/api/v1/health` and `/_stcore/health`.
 
 No GitHub source is attached to a Railway service yet. Local CLI actions target
-`staging`, not `production`. The reviewed stacked
-branches should be merged before a durable deployment source is selected.
+`staging`, not `production`; the current staging source is uploaded explicitly
+from a recorded clean branch commit. The reviewed stacked branches should be
+merged before a durable GitHub deployment source is selected.
 
 ## Required production topology
 

@@ -8,8 +8,8 @@
   in stacked PR #32, based on the Point-5 policy/holdout branch in PR #28.
 - Review: PR #27 is ready; PR #28 is green; PR #32 is ready and mergeable, and its
   implementation commit passed every reported hosted check.
-- Active goal: preserve the real-model and upload security gates while
-  preparing an explicitly authorized Railway staging deployment
+- Active goal: complete and verify the explicitly authorized private Railway
+  staging deployment while preserving the real-model and upload security gates
 - Active plans: `docs/real-llm-agent-implementation-plan.md` and
   `docs/uploaded-database-workspace-plan.md` plus
   `docs/railway-deployment-plan.md`
@@ -47,10 +47,12 @@
 
 ## Immediate next action
 
-Approve or decline a Railway environment/region and maximum staging budget,
-then select the authentication design required before any public domain. The
-empty Railway project is connected but contains no resources. Review PR #32
-and merge the stacked PRs #27, #28, and #32 in dependency order when desired.
+Complete the one-shot Railway bootstrap from the dedicated audited Dockerfile,
+then deploy and smoke-test the private API/frontend. Managed PostgreSQL is
+healthy in Singapore under the owner's Hobby-plan authorization and no public
+domain exists. Authentication remains required before any public domain.
+Review PR #32 and merge the stacked PRs #27, #28, and #32 in dependency order
+when desired.
 For Point 5, an independent curator
 must create the private 30-case replacement holdout and public manifest without
 this agent inspecting its contents. Development already passed every frozen
@@ -59,8 +61,6 @@ separate authorization for the exact maximum-54 one-time holdout run.
 
 ## Decisions currently awaiting the user
 
-- Approve the Railway staging region and maximum monthly or trial-credit
-  budget before creating PostgreSQL or application compute.
 - Select authentication, tenant authorization, request limits, and rate
   limiting before any public frontend domain is generated.
 - Select an independent curator for the required 30-case replacement holdout.
@@ -89,12 +89,12 @@ The following memory/plan work was created on 2026-08-07. Always verify with
 
 ## Latest verification evidence
 
-- Railway CLI v5.43.1 authentication succeeded and an empty project named
-  `ai-database-analyst` was created and linked on 2026-08-22. Railway status
-  reported empty `staging` and `production` environments, with the local CLI
-  explicitly linked to `staging`, and zero services, databases/buckets,
-  volumes, domains, or deployments. No resource, public URL, application
-  secret, provider call, or cost was created by these connection steps.
+- Railway CLI v5.43.1 is authenticated and linked to the `staging` environment.
+  After Hobby-plan authorization, a fresh private PostgreSQL service became
+  healthy in Singapore with one 5 GB volume. Empty private `bootstrap`, `api`,
+  and `frontend` services and their Railway Variables are configured; no domain
+  or real-provider credential exists. The first empty database/volume was
+  replaced after its generated credential appeared in CLI output.
 - Railway documentation PR #33 passed all hosted gates on corrective commit
   `d858001`, including Python 3.11/3.12 quality, PostgreSQL integration, clean
   Compose, source/container security, CodeQL, and CodeRabbit.

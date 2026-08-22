@@ -2,8 +2,8 @@
 
 - Project version: `0.1.0`
 - Last updated: 2026-08-22 (Asia/Bangkok)
-- Active work package: Railway private-staging preparation
-- Active phase: Railway project connected without resources; region, budget, authentication, and deployment remain pending
+- Active work package: Railway private-staging deployment
+- Active phase: private PostgreSQL healthy; one-shot bootstrap and private application deployment in progress
 - Overall status: public repository and hosted release gate passed; uploaded-workspace local and hosted gates passed; application is not publicly deployed
 - Repository path: `D:\Capstone\AI Database Analyst Project\ai-database-analyst`
 
@@ -23,19 +23,18 @@
 | Tahap 9 — Docker and CI/CD | Completed | Passed on 2026-07-21 |
 | Tahap 10 — Release | In progress | Repository/hosted gate passed; public deployment pending |
 
-## Railway staging connection
+## Railway private staging
 
-- An empty Railway project named `ai-database-analyst` is authenticated and
-  linked to the local repository as of 2026-08-22. The local CLI targets an
-  empty `staging` environment; the default `production` environment is empty.
-- It contains no service, PostgreSQL database, bucket, volume, public domain,
-  GitHub service source, or active deployment. No hosted application or cost is
-  claimed.
-- Provisioning is gated on explicit environment/region and budget approval.
-  Public exposure additionally requires authentication, tenant authorization,
+- The `ai-database-analyst` project is authenticated and linked to `staging`;
+  the default `production` environment remains untouched.
+- The owner's Hobby-plan authorization enabled a private PostgreSQL service in
+  Singapore with a ready volume. Private bootstrap/API/frontend service
+  placeholders and secret references are configured. No public domain or real
+  provider credential exists.
+- Public exposure still requires authentication, tenant authorization,
   request limits, rate limiting, and verified rollback/monitoring controls.
-- The intended topology is managed PostgreSQL, one-shot bootstrap/migration,
-  private FastAPI, and Streamlit; details are in
+- The remaining private-staging work is the audited one-shot bootstrap, private
+  FastAPI/Streamlit deployment, and hosted smoke evidence; details are in
   `docs/railway-deployment-plan.md` and ADR-0050.
 
 ## Post-release bounded-agent and upload extensions

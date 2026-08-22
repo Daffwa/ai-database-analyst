@@ -1,7 +1,7 @@
 # Railway Deployment Plan
 
 - Date: 2026-08-22
-- Status: Railway project connected; no service or database deployed
+- Status: private PostgreSQL healthy in Singapore; application bootstrap in progress
 - Target: private staging before any authenticated public demo
 - Source repository: `Daffwa/ai-database-analyst`
 
@@ -27,13 +27,24 @@ claiming a public deployment or exposing unauthenticated application routes.
 - [x] Pass PR #33 hosted gates on corrective commit `d858001`: Python
   3.11/3.12 quality, PostgreSQL integration, clean Compose, source/container
   security, CodeQL, and CodeRabbit.
+- [x] Accept the owner's Railway Hobby-plan authorization while preserving the
+  effective USD 5 account hard limit; do not raise the separate workspace limit
+  because Railway requires at least USD 10.
+- [x] Provision a private managed PostgreSQL service in Singapore
+  (`asia-southeast1-eqsg3a`) with no public TCP proxy or domain.
+- [x] Create private `bootstrap`, `api`, and `frontend` service placeholders,
+  configure Railway Variables without printing or persisting generated
+  credentials, and keep `fake` / `fake-deterministic` as the provider.
+- [x] Remove the first empty PostgreSQL deployment and volume after its initial
+  generated credential appeared in CLI configuration output; replace it with a
+  fresh healthy service and leave no registered temporary SSH key.
 
 ## Intended service mapping
 
 | Local Compose service | Railway service | Exposure |
 |---|---|---|
 | `db` | Managed PostgreSQL | Private only |
-| `bootstrap` | One-shot bootstrap/migration service | Private, no domain |
+| `bootstrap` | One-shot service from `Dockerfile.bootstrap` | Private, no domain |
 | `api` | FastAPI from `Dockerfile.api` | Private, no domain |
 | `frontend` | Streamlit from `Dockerfile.frontend` | No public domain until authentication and rate limits exist |
 
@@ -46,18 +57,16 @@ bind those ports. Configure healthcheck paths `/api/v1/health` and
 ## Remaining approval gates
 
 - [ ] Merge PRs #27, #28, and #32 in dependency order and deploy an exact
-  reviewed commit from `main`, unless the owner explicitly authorizes an
-  ephemeral branch deployment.
-- [ ] Approve the Railway staging region and maximum monthly or trial-credit
-  budget before creating compute or PostgreSQL resources.
+  reviewed commit from `main`; the current owner-authorized staging attempt is
+  an ephemeral deployment from the clean `agent/railway-staging` branch.
 - [ ] Select and implement authentication, per-user authorization, request/body
   limits, rate limiting, and abuse controls before generating a public domain.
-- [ ] Approve Railway Variables as the staging secret store and create distinct
-  owner, analytics, metadata, migration, and evaluation credentials.
 - [ ] Review Gemini data governance before adding a real-provider credential;
   otherwise deploy with `fake` / `fake-deterministic` only.
-- [ ] Create the four Railway services, bootstrap PostgreSQL, apply Alembic
-  through the current head, and verify role separation.
+- [ ] Pass hosted checks for the dedicated one-shot `Dockerfile.bootstrap`,
+  bootstrap PostgreSQL, apply Alembic through the current head, and verify role
+  separation.
+- [ ] Deploy the private API and frontend in Singapore after bootstrap succeeds.
 - [ ] Run health, success, clarification, blocked, timeout, privacy, and
   database read-only smoke tests.
 - [ ] Record image/source identifiers, logs, rollback target, costs, and hosted

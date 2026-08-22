@@ -1651,7 +1651,10 @@ or incur cost.
 Select Railway as the initial managed staging platform. Create and locally link
 an empty Railway project named `ai-database-analyst`, but do not provision
 services, databases, volumes, or public domains until the owner approves the
-environment/region and a maximum budget.
+environment/region and a maximum budget. The owner subsequently approved the
+Hobby plan on 2026-08-22; use the effective USD 5 account hard limit and the
+Singapore region without raising the separate workspace limit to its USD 10
+minimum.
 
 When authorized, map the topology to managed PostgreSQL, a one-shot bootstrap/
 migration service, private FastAPI, and Streamlit. Use Railway private-network
@@ -1659,12 +1662,15 @@ references for service and database traffic. Keep FastAPI without a public
 domain. Do not expose Streamlit publicly until authentication, authorization,
 request limits, and rate limiting are implemented and verified. Keep the fake
 provider as the staging default unless Gemini data governance and secret use
-are separately approved.
+are separately approved. Use a dedicated non-root `Dockerfile.bootstrap` whose
+immutable command runs the one-shot bootstrap, because the Railway CLI did not
+apply the service start-command override reliably.
 
 ### Consequences
 
-- Railway account authentication and project linkage are complete, but this is
-  not an application deployment and creates no hosted-runtime evidence.
+- Railway account authentication and project linkage are complete. Private
+  PostgreSQL is healthy in Singapore; bootstrap/API/frontend verification is
+  still in progress and no public application deployment is claimed.
 - Deployment source should be a reviewed commit after stacked PRs #27, #28,
   and #32 are merged, unless the owner explicitly authorizes an ephemeral
   branch deployment.

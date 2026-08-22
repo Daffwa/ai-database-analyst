@@ -11,18 +11,22 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 def test_dockerfiles_pin_base_and_run_as_non_root() -> None:
-    for filename in ("Dockerfile.api", "Dockerfile.frontend"):
+    for filename in ("Dockerfile.api", "Dockerfile.bootstrap", "Dockerfile.frontend"):
         source = (ROOT / filename).read_text(encoding="utf-8")
         assert "python:3.12.13-slim-bookworm@sha256:" in source
         assert "USER 10001:10001" in source
-        assert "HEALTHCHECK" in source
         assert "COPY ." not in source
         assert ".env" not in source
     api_source = (ROOT / "Dockerfile.api").read_text(encoding="utf-8")
+    bootstrap_source = (ROOT / "Dockerfile.bootstrap").read_text(encoding="utf-8")
     frontend_source = (ROOT / "Dockerfile.frontend").read_text(encoding="utf-8")
+    assert "HEALTHCHECK" in api_source
+    assert "HEALTHCHECK" in frontend_source
     assert "COPY --chown=10001:10001 scripts ./scripts" not in api_source
     assert "scripts/bootstrap_postgres.py" in api_source
     assert "data/evaluation/stage-7-v1.jsonl" in api_source
+    assert 'CMD ["python", "-m", "scripts.bootstrap_postgres"]' in bootstrap_source
+    assert "HEALTHCHECK" not in bootstrap_source
     assert "PYTHONPATH=/app" in frontend_source
 
 
