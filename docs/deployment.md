@@ -28,10 +28,11 @@ networking. The current containers bind fixed ports, so Railway service
 variables must set API `PORT=8000` and frontend `PORT=8501`; deployment
 healthchecks use `/api/v1/health` and `/_stcore/health`.
 
-No GitHub source is attached to a Railway service yet. Local CLI actions target
-`staging`, not `production`; the current staging source is uploaded explicitly
-from a recorded clean branch commit. The reviewed stacked branches should be
-merged before a durable GitHub deployment source is selected.
+The API and frontend services are attached to the public GitHub repository and
+track `agent/railway-staging`. Both build the exact commit recorded by Railway
+through `Dockerfile.api` and `Dockerfile.frontend`; local CLI actions also
+target `staging`, not `production`. Move both deployment triggers to `main`
+only after the reviewed stacked branches are merged.
 
 ## Required production topology
 

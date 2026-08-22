@@ -1674,9 +1674,9 @@ apply the service start-command override reliably.
   successful one-shot bootstrap was stripped of privileged variables and
   deleted. Functional private smoke remains, and no public application
   deployment is claimed.
-- Deployment source should be a reviewed commit after stacked PRs #27, #28,
-  and #32 are merged, unless the owner explicitly authorizes an ephemeral
-  branch deployment.
+- The owner authorized a durable GitHub source for private staging. API and
+  frontend track the reviewed `agent/railway-staging` branch and must move to
+  `main` only after stacked PRs #27, #28, and #32 are merged.
 - Railway Variables may be evaluated as the staging secret store, but no local
   credential may be copied into source, documentation, chat, build arguments,
   or image layers.

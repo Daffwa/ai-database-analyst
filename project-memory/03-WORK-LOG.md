@@ -3,6 +3,29 @@
 Append new entries at the top so the latest handoff is easy to find. Never store
 secrets or raw sensitive payloads.
 
+## 2026-08-22 - Railway services attached to GitHub staging source
+
+### Outcome
+
+- Restricted the refreshed Railway CLI OAuth grant to the single
+  `ai-database-analyst` project in the owner's workspace.
+- Attached API and frontend to `Daffwa/ai-database-analyst` and set both
+  deployment triggers to `agent/railway-staging`.
+- Persisted `Dockerfile.api` and `Dockerfile.frontend` as the service build
+  paths without changing private variables, database roles, or public routing.
+- Deployed exact commit `21252e2`. API deployment `a581c51a` and frontend
+  deployment `11cef924` each report `SUCCESS`, one running Singapore replica,
+  and a passed Railway healthcheck. Both services still have zero domains.
+
+### Boundary
+
+- Production remains empty and the staging provider remains
+  `fake` / `fake-deterministic` with no real-provider key.
+- Move the deployment triggers to `main` only after the stacked PRs are merged.
+- The Railway CLI source-connect command returned a misleading
+  `ServiceInstance not found` after initiating the requested deployment; final
+  state and build logs, rather than that message, were used for verification.
+
 ## 2026-08-22 - Railway private staging provisioned and health-gated
 
 ### Outcome

@@ -30,13 +30,16 @@
 - The owner's Hobby-plan authorization enabled a private PostgreSQL service,
   FastAPI, and Streamlit in Singapore. The one-shot bootstrap seeded Chinook,
   applied Alembic to head, removed its privileged variables, and was deleted.
-- API and frontend are `SUCCESS` on Railway-gated healthcheck paths. They use
-  clean commit `eb90de0`; no public domain, public database proxy, or real
-  provider credential exists.
+- API and frontend are connected to the public GitHub repository on
+  `agent/railway-staging` and are `SUCCESS` on Railway-gated healthcheck paths.
+  They use clean commit `21252e2`, their dedicated Dockerfiles, and one running
+  replica each; no public domain, public database proxy, or real provider
+  credential exists.
 - Public exposure still requires authentication, tenant authorization,
   request limits, rate limiting, and verified rollback/monitoring controls.
 - Remaining deployment work is functional smoke through an authenticated or
-  private trusted channel, durable `main`-branch sourcing, and all controls
+  private trusted channel, moving the durable trigger to `main` after merges,
+  and all controls
   required before public access; details are in `docs/railway-deployment-plan.md`
   and ADR-0050.
 

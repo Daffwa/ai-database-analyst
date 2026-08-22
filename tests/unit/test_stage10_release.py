@@ -17,7 +17,7 @@ def test_release_documents_disclose_public_boundaries() -> None:
     assert "Do not open a public issue" in security
     assert "Railway private staging health-gated; application not public" in deployment
     assert "public routing remains blocked" in deployment
-    assert "No GitHub source is attached to a Railway service yet" in deployment
+    assert "The API and frontend services are attached" in deployment
     assert "## Rollback" in deployment
 
 

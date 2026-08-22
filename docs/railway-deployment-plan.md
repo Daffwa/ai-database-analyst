@@ -50,6 +50,10 @@ claiming a public deployment or exposing unauthenticated application routes.
 - [x] Verify all three retained services report `SUCCESS`, use one Singapore
   replica each, and expose zero custom or Railway service domains. Production
   remains empty.
+- [x] Attach API and frontend to `Daffwa/ai-database-analyst`, restrict both
+  deployment triggers to `agent/railway-staging`, persist their dedicated
+  Dockerfile paths, and pass fresh GitHub-source health-gated deployments from
+  commit `21252e2`.
 
 ## Intended service mapping
 
@@ -68,9 +72,9 @@ bind those ports. Configure healthcheck paths `/api/v1/health` and
 
 ## Remaining approval gates
 
-- [ ] Merge PRs #27, #28, and #32 in dependency order and deploy an exact
-  reviewed commit from `main`; the current owner-authorized staging attempt is
-  an ephemeral deployment from the clean `agent/railway-staging` branch.
+- [ ] Merge PRs #27, #28, and #32 in dependency order, then move the durable
+  GitHub deployment triggers from `agent/railway-staging` to `main` and deploy
+  an exact reviewed `main` commit.
 - [ ] Select and implement authentication, per-user authorization, request/body
   limits, rate limiting, and abuse controls before generating a public domain.
 - [ ] Review Gemini data governance before adding a real-provider credential;
@@ -91,9 +95,13 @@ bind those ports. Configure healthcheck paths `/api/v1/health` and
 
 ## Current deployment evidence
 
-- Source: clean commit `eb90de06c83e3ffadcf23a7b4dae2aaacbe38283`.
-- API image: `sha256:2d129b66cabf0597a6bd90b7e9afcbbb25db07aab54bab71573035a90129b81c`.
-- Frontend image: `sha256:3d16632da2d933de71e708cdb3d634280e9c0687fca58ba71494d36f08a718e3`.
+- Source: public GitHub repository `Daffwa/ai-database-analyst`, branch
+  `agent/railway-staging`, clean commit
+  `21252e297b42b986ff5cd9ea4261b81de2c4b607`.
+- API deployment `a581c51a-cd6d-4e5e-a0ff-42ec84070cab`; image
+  `sha256:da8e454902dacd8463c86efe99edd056705b2aeaf97d31a59895fab098f990af`.
+- Frontend deployment `11cef924-8f62-4849-b721-44c79a61d07e`; image
+  `sha256:fdb7fd65073b491a75f25996ec3d81cdee1f98a9ffba523ff78a0a3dc3b86281`.
 - Successful bootstrap image:
   `sha256:946e474e2b19b76a1e73768542a74524d1d9cf383a4bac8afa0835d2ac5c2a86`.
 - Database image: `sha256:53f2aec0d73373caa91fe493e5d2bb908ee38310c79771cc1ce733dfee8d4545`.
