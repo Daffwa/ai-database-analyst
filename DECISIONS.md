@@ -1577,6 +1577,61 @@ distribution before provider setup.
   requests with 95.08% execution accuracy and all frozen gates satisfied.
   Candidate freeze remains pending only because no independent manifest exists.
 
+## ADR-0049 - Isolate Uploaded Databases as Ephemeral SQLite Workspaces
+
+- Date: 2026-08-18
+- Status: Accepted
+
+### Context
+
+The owner requested a UI that accepts a SQL/schema or database file, lets the
+AI read its schema, and generates queries from natural-language prompts. The
+existing final runtime is intentionally bound to reviewed Chinook PostgreSQL
+and a separate metadata database. Executing an untrusted dump there, reusing
+Chinook semantics, or exposing a client path would violate established trust
+boundaries.
+
+### Decision
+
+Implement SQLite-first, process-local workspaces. Accept SQLite database files
+and a restricted UTF-8 SQLite dump subset. Create a fresh server-owned
+temporary database under an opaque random ID; never execute uploaded SQL
+against, attach it to, or persist it in either PostgreSQL database.
+
+For dumps, allow only `CREATE TABLE`, `CREATE INDEX`, literal
+`INSERT ... VALUES`, and transaction markers. Reject views, triggers, virtual
+tables, system/cross-schema objects, computed imports/indexes, and all other
+statements. Bound input bytes, resulting database bytes, statements, import
+time, tables, columns, active workspaces, query results, and lifetime. Verify
+SQLite integrity and reopen every workspace with `mode=ro`, `query_only=ON`,
+and `trusted_schema=OFF`.
+
+Build an independent schema snapshot, allowlist, direct prompt-v4 generator,
+SQL policy, and result pipeline per workspace. Do not load the Chinook semantic
+bundle for arbitrary schemas. The fake provider remains deterministic and
+therefore reports unsupported for arbitrary upload questions; open-ended use
+requires the separately configured Gemini provider. Send only relevant schema
+metadata—not sample/result rows—to generation.
+
+Expose create/schema/query/delete API contracts and a Streamlit active-source
+control. Keep workspace questions, SQL, and results out of durable metadata
+history. Treat the feature as loopback-only until public authentication,
+per-user ownership, rate limiting, quotas, sandbox/content policy, and provider
+data governance exist.
+
+### Consequences
+
+- Users can inspect and query ordinary SQLite databases and schema/data dumps
+  without changing the Chinook PostgreSQL runtime.
+- PostgreSQL/MySQL dumps, live connection strings, views, triggers, virtual
+  tables, and unrestricted dump restoration are explicit non-goals.
+- The generic path has no reviewed business semantics; a syntactically safe
+  result can still be semantically wrong and must remain auditable.
+- This feature does not qualify the real model, open the sealed holdout, or
+  change the Point-5 gate.
+- Local evidence passes 479 tests with four PostgreSQL skips and 90.34%
+  coverage; no provider or holdout call was made.
+
 ## Deferred Decisions
 
 | ID | Decision | Required by | Reason for deferral |

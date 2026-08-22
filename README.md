@@ -19,6 +19,8 @@ The implemented portfolio includes:
 - recursive SQL AST validation, allowlists, and limit rewriting;
 - exact PostgreSQL least-privilege roles and read-only transactions;
 - database-grounded tables, KPI/charts, explanations, sources, and CSV export;
+- expiring SQLite database/dump workspaces with schema inspection and
+  prompt-to-query through the same read-only AST boundary;
 - privacy-minimized history, feedback, logs, metrics, and request correlation;
 - a typed, state-authorized bounded agent with one-use validation handles,
   bounded repair, and durable canonical clarification continuation;
@@ -184,6 +186,14 @@ After PostgreSQL bootstrap and migration, start FastAPI with
 `python scripts/dev.py api` and the final client with `python scripts/dev.py ui`.
 Use `ui-stage6` for the SQLite in-process regression fixture.
 
+In the final client sidebar, upload `.db`, `.sqlite`, `.sqlite3`, or a
+restricted SQLite `.sql` dump, then submit prompts normally. Database Explorer
+and query execution switch to that expiring upload until **Hapus workspace
+upload** is selected. The default fake provider can inspect the schema but
+cannot generalize to arbitrary questions; the approved Gemini configuration is
+required for open-ended prompt-to-query. See
+[`docs/api.md`](docs/api.md#uploaded-sqlite-workspace) for formats and limits.
+
 For the reproducible local stack:
 
 ```powershell
@@ -225,6 +235,8 @@ The safe default configuration:
 - Requires no API key.
 - Does not store raw questions, SQL, or result rows.
 - Applies row, column, response-size, and SQL-length budgets to manual queries.
+- Bounds uploaded SQLite bytes, imported database size, statement/table/column
+  counts, import time, active workspaces, and workspace lifetime.
 - Uses an explicit SQLite dialect for the regression fixture and PostgreSQL for
   the final API runtime, a maximum rewritten limit of 500, and a reviewed
   dangerous-function blocklist.
@@ -386,6 +398,9 @@ rate limiting, and deployment hardening remain later-stage gates.
   schemas are solved.
 - The local Streamlit/FastAPI surface has no end-user authentication or tenant
   authorization and is intentionally bound to loopback.
+- Uploaded workspaces are SQLite-only, process-local, and intentionally reject
+  views, triggers, virtual tables, and unrestricted SQL dumps. They are not a
+  public multi-user upload service.
 - Metrics and some UI history are process-local; production needs durable,
   access-controlled observability with an approved retention policy.
 - No public application deployment, authentication boundary, managed secret
@@ -406,6 +421,7 @@ evaluation baseline.
 - `docs/data-source.md` — pinned Chinook source decision
 - `docs/evaluation.md` — formal Tahap 7 dataset, metrics, baseline, and regression policy
 - `docs/api.md` — versioned API surface and local examples
+- `docs/uploaded-database-workspace-plan.md` — implemented upload/query scope and evidence
 - `docs/stage8-productionization.md` — PostgreSQL, metadata, API, and passed gate
 - `docs/operations.md` — Compose lifecycle, CI/security gates, metrics, and diagnosis
 - `docs/deployment.md` — public deployment requirements and rollback procedure

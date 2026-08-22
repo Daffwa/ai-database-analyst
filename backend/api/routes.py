@@ -6,11 +6,18 @@ import json
 from pathlib import Path
 from time import perf_counter
 from typing import Annotated
+from urllib.parse import unquote_to_bytes
 
-from fastapi import APIRouter, Depends, Query, Request, Response, status
+from fastapi import APIRouter, Depends, Header, Query, Request, Response, status
 from starlette.concurrency import run_in_threadpool
 
-from backend.api.dependencies import APIRuntime, get_runtime, require_evaluation_token
+from backend.api.dependencies import (
+    APIRuntime,
+    get_database_workspaces,
+    get_runtime,
+    require_evaluation_token,
+)
+from backend.core.errors import InvalidRequestError
 from backend.core.logging import get_logger
 from backend.core.observability import OperationalMetrics
 from backend.schemas.agent import (
@@ -33,6 +40,8 @@ from backend.schemas.result import (
     DatabaseExplorerSnapshot,
     FeedbackRecord,
 )
+from backend.schemas.workspace import DatabaseWorkspace, DatabaseWorkspaceDeleteResponse
+from backend.services.database_workspace import DatabaseWorkspaceService
 
 ROOT = Path(__file__).resolve().parents[2]
 router = APIRouter(prefix="/api/v1")
@@ -130,6 +139,92 @@ async def schema(
     return runtime.database_explorer
 
 
+@router.post(
+    "/workspaces",
+    response_model=DatabaseWorkspace,
+    status_code=status.HTTP_201_CREATED,
+    tags=["uploaded-databases"],
+)
+async def create_database_workspace(
+    request: Request,
+    encoded_filename: Annotated[
+        str,
+        Header(alias="X-Upload-Filename", min_length=1, max_length=765),
+    ],
+    workspaces: Annotated[DatabaseWorkspaceService, Depends(get_database_workspaces)],
+) -> DatabaseWorkspace:
+    """Upload bounded SQLite bytes into a new isolated, expiring workspace."""
+
+    payload = await _read_bounded_upload(request, workspaces.max_upload_bytes)
+    try:
+        filename = unquote_to_bytes(encoded_filename).decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise InvalidRequestError("The upload filename encoding is invalid.") from exc
+    return await run_in_threadpool(workspaces.create, filename, payload)
+
+
+@router.get(
+    "/workspaces/{workspace_id}/schema",
+    response_model=DatabaseExplorerSnapshot,
+    tags=["uploaded-databases"],
+)
+async def database_workspace_schema(
+    workspace_id: str,
+    workspaces: Annotated[DatabaseWorkspaceService, Depends(get_database_workspaces)],
+) -> DatabaseExplorerSnapshot:
+    return await run_in_threadpool(workspaces.schema, workspace_id)
+
+
+@router.post(
+    "/workspaces/{workspace_id}/query",
+    response_model=QueryResponse,
+    tags=["uploaded-databases"],
+)
+async def query_database_workspace(
+    workspace_id: str,
+    payload: APIQueryRequest,
+    request: Request,
+    workspaces: Annotated[DatabaseWorkspaceService, Depends(get_database_workspaces)],
+) -> QueryResponse:
+    """Generate, validate, and execute SQL only against one uploaded workspace."""
+
+    started = perf_counter()
+    result = await workspaces.query(workspace_id, payload.question)
+    metrics: OperationalMetrics = request.app.state.operational_metrics
+    metrics.record_query(result)
+    LOGGER.info(
+        "Uploaded database analytics request completed",
+        extra={
+            "request_id": result.request_id,
+            "workspace_id": workspace_id,
+            "stage": "uploaded_analytics_completed",
+            "status": result.status.value,
+            "model": result.model,
+            "prompt_version": result.prompt_version,
+            "schema_hash": result.schema_hash,
+            "sql_fingerprint": (
+                result.validation.fingerprint if result.validation is not None else None
+            ),
+            "latency_ms": (perf_counter() - started) * 1_000,
+            "row_count": result.result.row_count if result.result is not None else None,
+            "error_code": None,
+        },
+    )
+    return result
+
+
+@router.delete(
+    "/workspaces/{workspace_id}",
+    response_model=DatabaseWorkspaceDeleteResponse,
+    tags=["uploaded-databases"],
+)
+async def delete_database_workspace(
+    workspace_id: str,
+    workspaces: Annotated[DatabaseWorkspaceService, Depends(get_database_workspaces)],
+) -> DatabaseWorkspaceDeleteResponse:
+    return await run_in_threadpool(workspaces.delete, workspace_id)
+
+
 @router.get("/history", response_model=HistoryResponse, tags=["metadata"])
 async def history(
     runtime: Annotated[APIRuntime, Depends(get_runtime)],
@@ -211,3 +306,31 @@ def _log_agent_result(result: AgentRunResponse) -> None:
             ),
         },
     )
+
+
+async def _read_bounded_upload(request: Request, max_bytes: int) -> bytes:
+    content_length = request.headers.get("content-length")
+    if content_length is not None:
+        try:
+            declared_length = int(content_length)
+        except ValueError as exc:
+            raise InvalidRequestError("The upload Content-Length is invalid.") from exc
+        if declared_length > max_bytes:
+            raise InvalidRequestError(
+                "The uploaded file exceeds the configured size limit.",
+                details={"max_bytes": max_bytes},
+            )
+
+    chunks: list[bytes] = []
+    received = 0
+    async for chunk in request.stream():
+        received += len(chunk)
+        if received > max_bytes:
+            raise InvalidRequestError(
+                "The uploaded file exceeds the configured size limit.",
+                details={"max_bytes": max_bytes},
+            )
+        chunks.append(chunk)
+    if received == 0:
+        raise InvalidRequestError("The uploaded file is empty.")
+    return b"".join(chunks)

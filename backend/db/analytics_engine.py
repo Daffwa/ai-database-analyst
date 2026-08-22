@@ -26,6 +26,7 @@ def _connect_read_only(database_path: Path, *, timeout_seconds: float) -> sqlite
         )
         connection.execute("PRAGMA query_only = ON")
         connection.execute("PRAGMA foreign_keys = ON")
+        connection.execute("PRAGMA trusted_schema = OFF")
     except sqlite3.Error as exc:
         if "connection" in locals():
             connection.close()

@@ -27,6 +27,10 @@ from backend.core.observability import (
     reset_request_id,
 )
 from backend.runtime.stage8 import create_stage8_runtime
+from backend.services.database_workspace import (
+    DatabaseWorkspaceService,
+    UploadedDatabaseWorkspaceService,
+)
 
 ROOT = Path(__file__).resolve().parents[2]
 LOGGER = get_logger(__name__)
@@ -72,6 +76,7 @@ def create_app(
     settings: AppSettings | None = None,
     *,
     runtime: APIRuntime | None = None,
+    database_workspaces: DatabaseWorkspaceService | None = None,
 ) -> FastAPI:
     """Create an app without opening a database connection at import time."""
 
@@ -80,11 +85,16 @@ def create_app(
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         owned = runtime is None
+        owned_workspaces = database_workspaces is None
         active_runtime = runtime or create_stage8_runtime(ROOT, active_settings)
+        active_workspaces = database_workspaces or UploadedDatabaseWorkspaceService(active_settings)
         app.state.runtime = active_runtime
+        app.state.database_workspaces = active_workspaces
         try:
             yield
         finally:
+            if owned_workspaces:
+                active_workspaces.close()
             if owned:
                 active_runtime.close()
 
@@ -103,8 +113,13 @@ def create_app(
         CORSMiddleware,
         allow_origins=active_settings.cors_allowed_origins,
         allow_credentials=False,
-        allow_methods=["GET", "POST"],
-        allow_headers=["Content-Type", "X-Evaluation-Token", "X-Request-ID"],
+        allow_methods=["GET", "POST", "DELETE"],
+        allow_headers=[
+            "Content-Type",
+            "X-Evaluation-Token",
+            "X-Request-ID",
+            "X-Upload-Filename",
+        ],
     )
     app.include_router(router)
 
@@ -117,6 +132,8 @@ def create_app(
             ErrorCode.EXTERNAL_SERVICE_ERROR: 503,
             ErrorCode.QUERY_TIMEOUT: 504,
             ErrorCode.LLM_TIMEOUT: 504,
+            ErrorCode.WORKSPACE_NOT_FOUND: 404,
+            ErrorCode.RESULT_TOO_LARGE: 413,
         }.get(exc.code, 500)
         _record_query_error(request, timeout=status_code == 504)
         return JSONResponse(
@@ -179,7 +196,9 @@ def create_app(
 
 
 def _record_query_error(request: Request, *, timeout: bool) -> None:
-    if request.url.path == "/api/v1/query":
+    if request.url.path == "/api/v1/query" or (
+        request.url.path.startswith("/api/v1/workspaces/") and request.url.path.endswith("/query")
+    ):
         metrics: OperationalMetrics = request.app.state.operational_metrics
         metrics.record_query_error(timeout=timeout)
 

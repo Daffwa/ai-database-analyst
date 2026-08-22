@@ -58,6 +58,8 @@ def test_read_only_engine_enables_query_only_and_rejects_writes(sample_database:
     engine = create_sqlite_read_only_engine(sample_database)
     try:
         assert sqlite_query_only_enabled(engine) is True
+        with engine.connect() as connection:
+            assert connection.exec_driver_sql("PRAGMA trusted_schema").scalar_one() == 0
         result = ManualQueryExecutor(engine).execute("SELECT COUNT(*) AS total FROM Album")
         assert result.rows == ((3,),)
 

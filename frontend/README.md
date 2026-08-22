@@ -46,3 +46,17 @@ uv run python scripts/dev.py ui
 
 The browser-facing process holds only `API_BASE_URL`; analytics and metadata
 credentials stay in the FastAPI process.
+
+The sidebar also accepts a SQLite database (`.db`, `.sqlite`, `.sqlite3`) or a
+SQLite dump/schema (`.sql`). A successful upload activates an expiring,
+server-owned workspace and switches both Database Explorer and prompt queries
+to that workspace. Delete the workspace from the sidebar to return to Chinook.
+
+SQL dumps are intentionally narrower than the full SQLite language. They may
+contain `CREATE TABLE`, `CREATE INDEX`, and literal `INSERT ... VALUES`
+statements plus transaction markers. Views, triggers, virtual tables,
+`ATTACH`, computed imports, and other statements fail closed. With the fake
+provider, arbitrary uploaded-schema prompts return unsupported; configure the
+approved Gemini provider for open-ended prompt-to-query behavior. Relevant
+schema metadata is sent to that provider, so do not upload private schemas or
+data until the provider and deployment data policy are approved.

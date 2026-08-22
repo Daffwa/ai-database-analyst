@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from typing import Any
+from urllib.parse import quote
 from uuid import uuid4
 
 import httpx
@@ -17,6 +18,7 @@ from backend.schemas.agent import (
 from backend.schemas.api import APIFeedbackRequest, APIQueryRequest, HealthResponse, HistoryResponse
 from backend.schemas.llm import QueryResponse
 from backend.schemas.result import DatabaseExplorerSnapshot, FeedbackRating, FeedbackRecord
+from backend.schemas.workspace import DatabaseWorkspace, DatabaseWorkspaceDeleteResponse
 
 
 class APIClientError(RuntimeError):
@@ -91,6 +93,39 @@ class AnalystAPIClient:
 
     def schema(self) -> DatabaseExplorerSnapshot:
         return DatabaseExplorerSnapshot.model_validate(self._request("GET", "/api/v1/schema"))
+
+    def create_database_workspace(self, filename: str, content: bytes) -> DatabaseWorkspace:
+        return DatabaseWorkspace.model_validate(
+            self._request(
+                "POST",
+                "/api/v1/workspaces",
+                content=content,
+                headers={
+                    "Content-Type": "application/octet-stream",
+                    "X-Upload-Filename": quote(filename, safe=""),
+                },
+            )
+        )
+
+    def workspace_schema(self, workspace_id: str) -> DatabaseExplorerSnapshot:
+        return DatabaseExplorerSnapshot.model_validate(
+            self._request("GET", f"/api/v1/workspaces/{workspace_id}/schema")
+        )
+
+    def workspace_query(self, workspace_id: str, question: str) -> QueryResponse:
+        payload = APIQueryRequest(question=question)
+        return QueryResponse.model_validate(
+            self._request(
+                "POST",
+                f"/api/v1/workspaces/{workspace_id}/query",
+                json=payload.model_dump(mode="json"),
+            )
+        )
+
+    def delete_database_workspace(self, workspace_id: str) -> DatabaseWorkspaceDeleteResponse:
+        return DatabaseWorkspaceDeleteResponse.model_validate(
+            self._request("DELETE", f"/api/v1/workspaces/{workspace_id}")
+        )
 
     def history(self, *, limit: int = 50, offset: int = 0) -> HistoryResponse:
         return HistoryResponse.model_validate(

@@ -24,6 +24,7 @@ class ErrorCode(StrEnum):
     SQL_VALIDATION_FAILED = "SQL_VALIDATION_FAILED"
     SEMANTIC_LAYER_INVALID = "SEMANTIC_LAYER_INVALID"
     SECURITY_POLICY_VIOLATION = "SECURITY_POLICY_VIOLATION"
+    WORKSPACE_NOT_FOUND = "WORKSPACE_NOT_FOUND"
     INTERNAL_ERROR = "INTERNAL_ERROR"
 
 
@@ -103,6 +104,13 @@ class DatabaseUnavailableError(AppError):
 
     default_code = ErrorCode.DATABASE_UNAVAILABLE
     default_public_message = "The analytics database is unavailable."
+
+
+class WorkspaceNotFoundError(AppError):
+    """Raised when an uploaded workspace is unknown or has expired."""
+
+    default_code = ErrorCode.WORKSPACE_NOT_FOUND
+    default_public_message = "The uploaded database workspace was not found or has expired."
 
 
 class QueryExecutionError(AppError):

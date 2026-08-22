@@ -74,6 +74,24 @@ class AppSettings(BaseSettings):
     chart_recommended_scatter_points: int = Field(default=8, ge=2, le=100)
     query_history_max_entries: int = Field(default=100, ge=1, le=1_000)
 
+    database_workspace_upload_max_bytes: int = Field(
+        default=25_000_000,
+        ge=1_024,
+        le=100_000_000,
+    )
+    database_workspace_max_database_bytes: int = Field(
+        default=50_000_000,
+        ge=1_024,
+        le=200_000_000,
+    )
+    database_workspace_max_active: int = Field(default=8, ge=1, le=100)
+    database_workspace_ttl_seconds: int = Field(default=1_800, ge=60, le=86_400)
+    database_workspace_import_timeout_seconds: int = Field(default=10, ge=1, le=120)
+    database_workspace_max_sql_statements: int = Field(default=10_000, ge=1, le=100_000)
+    database_workspace_max_tables: int = Field(default=100, ge=1, le=1_000)
+    database_workspace_max_columns: int = Field(default=2_000, ge=1, le=20_000)
+    database_workspace_storage_root: Path | None = None
+
     sql_dialect: str = "sqlite"
     sql_max_query_characters: int = Field(default=12_000, ge=100, le=100_000)
     sql_allow_explain: bool = False

@@ -19,10 +19,12 @@ from backend.schemas.agent import (
 )
 from backend.schemas.llm import (
     LanguageCode,
+    LLMIntent,
     PipelineEvent,
     PipelineStage,
     QueryResponse,
     QueryStatus,
+    StructuredSQLProposal,
 )
 from backend.schemas.result import (
     FeedbackRating,
@@ -31,6 +33,7 @@ from backend.schemas.result import (
     SafeSystemInfo,
     UXState,
 )
+from backend.services.database_workspace import UploadedDatabaseWorkspaceService
 from backend.services.experience_metadata import DatabaseExplorerService
 from backend.services.schema_service import load_schema_snapshot
 
@@ -321,3 +324,94 @@ def test_request_id_middleware_accepts_uuid_and_rejects_arbitrary_text() -> None
     assert accepted.headers["X-Request-ID"] == accepted_id
     assert rejected.headers["X-Request-ID"] != "untrusted-log-injection"
     assert UUID(rejected.headers["X-Request-ID"])
+
+
+def test_uploaded_database_api_lifecycle_is_isolated_and_typed(tmp_path: Path) -> None:
+    question = "Count users"
+    proposal = StructuredSQLProposal(
+        intent=LLMIntent.ANALYSIS,
+        language=LanguageCode.ENGLISH,
+        needs_clarification=False,
+        assumptions=(),
+        sql="SELECT COUNT(users.id) AS user_count FROM users",
+        tables=("users",),
+        columns=("users.id",),
+        confidence=1,
+        reasoning_summary="Count uploaded users.",
+    ).model_dump_json()
+    settings = _settings().model_copy(
+        update={
+            "database_workspace_storage_root": tmp_path / "workspaces",
+            "database_workspace_upload_max_bytes": 100_000,
+            "database_workspace_max_database_bytes": 200_000,
+        }
+    )
+    workspaces = UploadedDatabaseWorkspaceService(
+        settings,
+        fake_responses={question: proposal},
+    )
+    app = create_app(settings, runtime=FakeRuntime(), database_workspaces=workspaces)
+
+    try:
+        with TestClient(app) as client:
+            created = client.post(
+                "/api/v1/workspaces",
+                content=(
+                    b"CREATE TABLE users(id INTEGER PRIMARY KEY, name TEXT);"
+                    b"INSERT INTO users VALUES (1, 'A'), (2, 'B');"
+                ),
+                headers={
+                    "Content-Type": "application/octet-stream",
+                    "X-Upload-Filename": "pengguna%20%C3%BC.sql",
+                },
+            )
+            workspace_id = created.json()["workspace_id"]
+            schema = client.get(f"/api/v1/workspaces/{workspace_id}/schema")
+            queried = client.post(
+                f"/api/v1/workspaces/{workspace_id}/query",
+                json={"question": question},
+            )
+            deleted = client.delete(f"/api/v1/workspaces/{workspace_id}")
+            missing = client.get(f"/api/v1/workspaces/{workspace_id}/schema")
+    finally:
+        workspaces.close()
+
+    assert created.status_code == 201
+    assert created.json()["source_name"] == "pengguna ü.sql"
+    assert created.json()["schema_snapshot"]["tables"][0]["name"] == "users"
+    assert schema.status_code == 200
+    assert queried.status_code == 200
+    assert queried.json()["result"]["rows"] == [[2]]
+    assert deleted.json() == {"workspace_id": workspace_id, "deleted": True}
+    assert missing.status_code == 404
+    assert missing.json()["error_code"] == "WORKSPACE_NOT_FOUND"
+
+
+def test_uploaded_database_api_rejects_empty_and_oversized_bodies(tmp_path: Path) -> None:
+    settings = _settings().model_copy(
+        update={
+            "database_workspace_storage_root": tmp_path / "workspaces",
+            "database_workspace_upload_max_bytes": 1_024,
+        }
+    )
+    workspaces = UploadedDatabaseWorkspaceService(settings)
+    app = create_app(settings, runtime=FakeRuntime(), database_workspaces=workspaces)
+    try:
+        with TestClient(app) as client:
+            empty = client.post(
+                "/api/v1/workspaces",
+                content=b"",
+                headers={"X-Upload-Filename": "empty.sql"},
+            )
+            oversized = client.post(
+                "/api/v1/workspaces",
+                content=b"x" * 1_025,
+                headers={"X-Upload-Filename": "large.sql"},
+            )
+    finally:
+        workspaces.close()
+
+    assert empty.status_code == 400
+    assert empty.json()["error_code"] == "INVALID_REQUEST"
+    assert oversized.status_code == 400
+    assert oversized.json()["details"] == {"max_bytes": 1_024}

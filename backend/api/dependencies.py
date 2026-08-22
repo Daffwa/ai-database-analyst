@@ -17,6 +17,7 @@ from backend.schemas.result import (
     HistoryEntry,
     SafeSystemInfo,
 )
+from backend.services.database_workspace import DatabaseWorkspaceService
 from backend.services.orchestrator import QueryProcessor
 
 
@@ -65,6 +66,10 @@ def get_runtime(request: Request) -> APIRuntime:
 
 def get_settings(request: Request) -> AppSettings:
     return cast(AppSettings, request.app.state.settings)
+
+
+def get_database_workspaces(request: Request) -> DatabaseWorkspaceService:
+    return cast(DatabaseWorkspaceService, request.app.state.database_workspaces)
 
 
 def require_evaluation_token(
