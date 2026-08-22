@@ -15,7 +15,9 @@ def test_release_documents_disclose_public_boundaries() -> None:
     assert "fake-deterministic" in readme
     assert "not open-ended language generalization" in readme
     assert "Do not open a public issue" in security
-    assert "no application hosting platform selected" in deployment
+    assert "Railway public staging frontend active; authentication controls pending" in deployment
+    assert "temporary unauthenticated staging route" in deployment
+    assert "The API and frontend services are attached" in deployment
     assert "## Rollback" in deployment
 
 
@@ -27,6 +29,7 @@ def test_stage10_evaluator_records_local_and_external_state_separately() -> None
     assert report["local_release_gate_passed"] is True
     assert report["external_checks"]["project_license_selected"] is True
     assert report["external_checks"]["hosted_actions_verified"] is True
+    assert report["external_checks"]["public_staging_route_active"] is True
     assert report["external_checks"]["public_deployment_performed"] is False
     remote = report["github_remote"]
     assert report["external_checks"]["github_remote_verified"] is (
@@ -39,4 +42,5 @@ def test_stage10_evaluator_records_local_and_external_state_separately() -> None
         else ["Authorize and verify the GitHub owner, visibility, and remote."]
     )
     assert report["remaining_external_actions"]
+    assert "Harden the existing Railway staging route" in report["remaining_external_actions"][0]
     assert report["broken_local_links"] == []

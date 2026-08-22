@@ -3,15 +3,17 @@
 - Last updated: 2026-08-22
 - Last known merged commit: `42ba532 Implement secure real-model evaluation
   through Phase N (#26)`
-- Current working branch: `agent/uploaded-sqlite-workspace`
-- Current implementation: uploaded-SQLite workspace commit `fe7fcfe` is pushed
-  in stacked PR #32, based on the Point-5 policy/holdout branch in PR #28.
-- Review: PR #27 is ready; PR #28 is green; draft PR #32 is mergeable and its
+- Current working branch: `agent/railway-staging`
+- Current implementation: Railway staging tracks `agent/railway-staging`; its
+  uploaded workspace accepts SQLite `.bak`, CSV, and JSON in addition to the
+  original SQLite/SQL formats, with a 100 MB source-upload budget.
+- Review: PR #27 is ready; PR #28 is green; PR #32 is ready and mergeable, and its
   implementation commit passed every reported hosted check.
-- Active goal: preserve the real-model gate while adding safe local
-  uploaded-database analysis
+- Active goal: complete and publish the bounded upload-format extension while
+  preserving the public-staging security caveat
 - Active plans: `docs/real-llm-agent-implementation-plan.md` and
-  `docs/uploaded-database-workspace-plan.md`
+  `docs/uploaded-database-workspace-plan.md` plus
+  `docs/railway-deployment-plan.md`
 - Default implementation provider: `fake` / `fake-deterministic`
 - Opt-in real provider: `gemini` / `gemma-4-26b-a4b-it`
 
@@ -29,25 +31,41 @@
 
 ## Uploaded database workspace
 
-- Status: implemented, locally verified, and hosted-verified on 2026-08-22.
-- Streamlit accepts `.db`, `.sqlite`, `.sqlite3`, and restricted SQLite `.sql`,
-  shows the uploaded schema, routes prompts to the active upload, and supports
-  explicit deletion.
+- Status: the SQLite/SQL/SQLite-BAK/CSV/JSON path is committed, deployed, and
+  health-gated on Railway staging.
+- Streamlit accepts `.db`, `.sqlite`, `.sqlite3`, valid SQLite `.bak`,
+  restricted SQLite `.sql`, UTF-8 CSV, and bounded JSON; it shows the uploaded
+  schema, routes prompts to the active upload, and supports explicit deletion.
 - FastAPI owns opaque expiring workspaces and create/schema/query/delete
   endpoints. Upload paths and credentials are never returned.
 - SQL dump import permits only `CREATE TABLE`, `CREATE INDEX`, literal
   `INSERT ... VALUES`, and transaction markers. Every model query still passes
   the schema-derived SQL AST allowlist and a read-only SQLite executor.
+- CSV becomes one filename-derived `TEXT` table with normalized unique headers;
+  JSON supports a record/list or table-array object, preserves compatible
+  scalar types, and stores nested values as JSON text. SQL Server `.bak` is
+  rejected; `.bak` is SQLite-only.
 - Uploads never execute in or attach to either PostgreSQL database and are not
   written to durable metadata history. The feature remains loopback-only.
+- Each upload is capped at 100,000,000 bytes; converted databases are capped at
+  200,000,000 bytes. The 100,000-record, table/column, import-time, concurrency,
+  and TTL budgets still apply independently.
 - The fake provider can inspect schema but cannot generate arbitrary-schema
   answers; open-ended prompts require the configured Gemini provider. This does
   not change Point 5 qualification or holdout state.
 
 ## Immediate next action
 
+The owner explicitly directed creation of the public staging frontend domain
+`https://frontend-staging-ff78.up.railway.app`. PostgreSQL and API remain
+private; all three retained services are healthy in Singapore. Public HTTPS,
+Streamlit health, browser rendering, console health, and the synthetic customer
+count query passed end to end. Authentication, tenant authorization,
+request/body limits, and rate limiting are now the immediate remediation gate;
+do not use the route for private data or describe it as production-ready.
 Review PR #32 and merge the stacked PRs #27, #28, and #32 in dependency order
-when desired. For Point 5, an independent curator
+when desired.
+For Point 5, an independent curator
 must create the private 30-case replacement holdout and public manifest without
 this agent inspecting its contents. Development already passed every frozen
 gate. After the manifest is available, freeze the candidate, then obtain
@@ -55,6 +73,9 @@ separate authorization for the exact maximum-54 one-time holdout run.
 
 ## Decisions currently awaiting the user
 
+- Implement authentication, tenant authorization, request limits, and rate
+  limiting on the existing public staging frontend before approved demo use or
+  production promotion.
 - Select an independent curator for the required 30-case replacement holdout.
   The development agent must receive only its public manifest before freeze;
   the private payload is supplied to automation only after freeze.
@@ -81,6 +102,31 @@ The following memory/plan work was created on 2026-08-07. Always verify with
 
 ## Latest verification evidence
 
+- The upload-format extension passes Ruff format/lint, strict Mypy on 183
+  sources, and the full offline suite: 487 passed, 4 PostgreSQL skips, 90.10%
+  coverage. Its 100 MB budget adjustment passes 37 focused config/importer/
+  Docker-contract tests. No live provider or holdout call was made.
+- Railway CLI v5.43.1 is authenticated with access limited to this project and
+  linked to `staging`. PostgreSQL, FastAPI, and Streamlit report `SUCCESS` with
+  one Singapore replica each; production is empty. API and
+  frontend are connected to `Daffwa/ai-database-analyst` on
+  `agent/railway-staging`; the API and frontend build the same pushed commit
+  with their dedicated Dockerfiles and pass their healthchecks. The frontend
+  now exposes one Railway service
+  domain, `frontend-staging-ff78.up.railway.app`, targeting port 8501; API and
+  PostgreSQL expose no public domain/proxy. Browser QA found no console errors,
+  and the synthetic customer-count request completed with result `59`.
+  Bootstrap seeded the pinned counts and migrated to head, then its privileged
+  variables and service were removed. Railway staging is configured for Gemini
+  with its credential held only in Railway Variables; the code/test default
+  remains fake.
+- PR #33 passed all hosted checks on `eb90de0`, including Python 3.11/3.12,
+  PostgreSQL integration, Compose, source/container security, CodeQL, and
+  CodeRabbit. The first empty database/volume was replaced after its generated
+  credential appeared in CLI output.
+- Railway documentation PR #33 passed all hosted gates on corrective commit
+  `d858001`, including Python 3.11/3.12 quality, PostgreSQL integration, clean
+  Compose, source/container security, CodeQL, and CodeRabbit.
 - Uploaded workspace gate passed 479 tests with four unavailable PostgreSQL
   skips and 90.34% coverage. Ruff, strict Mypy on 183 sources, focused API/
   importer/security tests, and the complete offline suite passed. Tests cover

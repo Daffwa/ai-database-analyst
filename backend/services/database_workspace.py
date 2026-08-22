@@ -26,6 +26,7 @@ from backend.schemas.result import DatabaseExplorerSnapshot
 from backend.schemas.workspace import (
     DatabaseWorkspace,
     DatabaseWorkspaceDeleteResponse,
+    WorkspaceSourceType,
 )
 from backend.services.chart_selector import ChartPolicy, DeterministicChartSelector
 from backend.services.experience_metadata import DatabaseExplorerService
@@ -136,6 +137,9 @@ class UploadedDatabaseWorkspaceService:
                     max_upload_bytes=self._settings.database_workspace_upload_max_bytes,
                     max_database_bytes=self._settings.database_workspace_max_database_bytes,
                     max_statements=self._settings.database_workspace_max_sql_statements,
+                    max_records=self._settings.database_workspace_max_records,
+                    max_tables=self._settings.database_workspace_max_tables,
+                    max_columns=self._settings.database_workspace_max_columns,
                     timeout_seconds=self._settings.database_workspace_import_timeout_seconds,
                 ),
             )
@@ -164,13 +168,14 @@ class UploadedDatabaseWorkspaceService:
             expires_at = created_at + timedelta(
                 seconds=self._settings.database_workspace_ttl_seconds
             )
-            warnings = (
+            provider_warning = (
                 "The fake provider cannot generate arbitrary uploaded-schema queries; "
                 "configure the approved Gemini provider to use prompt-to-query."
                 if self._settings.llm_provider.casefold() == "fake"
                 else "Uploaded schema and relevant table metadata are sent to the configured "
                 "LLM provider when a workspace question is submitted.",
             )
+            warnings = (*provider_warning, *_source_warnings(imported.source_type))
             public = DatabaseWorkspace(
                 workspace_id=workspace_id,
                 source_name=source_name,
@@ -409,6 +414,22 @@ def _safe_source_name(filename: str) -> str:
     if not source_name or source_name in {".", ".."} or len(source_name) > 255:
         raise InvalidRequestError("The upload filename is invalid.")
     return source_name
+
+
+def _source_warnings(source_type: WorkspaceSourceType) -> tuple[str, ...]:
+    if source_type is WorkspaceSourceType.CSV_TABLE:
+        return (
+            "CSV values are preserved as text and unsafe or duplicate headers are normalized "
+            "into unique SQLite column names.",
+        )
+    if source_type is WorkspaceSourceType.JSON_DOCUMENT:
+        return (
+            "JSON scalar types are preserved where SQLite supports them; nested arrays and "
+            "objects are stored as compact JSON text.",
+        )
+    if source_type is WorkspaceSourceType.SQLITE_BACKUP:
+        return ("The .bak upload was accepted because it is a valid SQLite backup.",)
+    return ()
 
 
 def _validate_uploaded_identifier(identifier: str) -> None:

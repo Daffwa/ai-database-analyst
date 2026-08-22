@@ -2,9 +2,9 @@
 
 - Project version: `0.1.0`
 - Last updated: 2026-08-22 (Asia/Bangkok)
-- Active work package: uploaded SQLite workspace follow-up
-- Active phase: upload feature locally complete; Point 5 independent holdout gate and public deployment decision pending
-- Overall status: public repository and hosted release gate passed; uploaded-workspace local and hosted gates passed; application is not publicly deployed
+- Active work package: Railway public-staging hardening
+- Active phase: frontend publicly routed; authentication/rate-limit remediation pending
+- Overall status: public repository and hosted release gate passed; public staging success smoke passed; production security gate remains open
 - Repository path: `D:\Capstone\AI Database Analyst Project\ai-database-analyst`
 
 ## Phase Status
@@ -21,7 +21,32 @@
 | Tahap 7 — Evaluation | Completed | Passed on 2026-07-20 |
 | Tahap 8 — PostgreSQL and FastAPI | Completed | Passed on 2026-07-21 |
 | Tahap 9 — Docker and CI/CD | Completed | Passed on 2026-07-21 |
-| Tahap 10 — Release | In progress | Repository/hosted gate passed; public deployment pending |
+| Tahap 10 — Release | In progress | Public staging smoke passed; production security gates pending |
+
+## Railway staging
+
+- The `ai-database-analyst` project is authenticated and linked to `staging`;
+  the default `production` environment remains untouched.
+- The owner's Hobby-plan authorization enabled a private PostgreSQL service,
+  FastAPI, and Streamlit in Singapore. The one-shot bootstrap seeded Chinook,
+  applied Alembic to head, removed its privileged variables, and was deleted.
+- API and frontend are connected to the public GitHub repository on
+  `agent/railway-staging` and are `SUCCESS` on Railway-gated healthcheck paths.
+  Every push to that branch automatically deploys through their dedicated
+  Dockerfiles; each service has one running replica. The frontend now has the
+  public HTTPS staging domain `frontend-staging-ff78.up.railway.app`; the API
+  and PostgreSQL remain private. Gemini is configured only in Railway Variables;
+  the credential is not stored in Git or frontend configuration.
+- Root rendering, `/_stcore/health`, browser console, and the synthetic question
+  “Berapa jumlah pelanggan?” passed through frontend -> private API -> Railway
+  PostgreSQL with the grounded result `59`.
+- The public staging route has no authentication, tenant authorization, request
+  limits, or rate limiting. It must not receive private data or be represented
+  as a production/public-demo security boundary.
+- Remaining deployment work is to implement those controls, complete the other
+  functional/security smokes, move the durable trigger to `main` after merges,
+  and verify rollback/monitoring; details are in
+  `docs/railway-deployment-plan.md` and ADR-0050.
 
 ## Post-release bounded-agent and upload extensions
 
@@ -33,13 +58,18 @@
   static state authority, one-use execution capabilities, bounded repair,
   restart-safe canonical clarification, `/api/v1/agent/*`, and Streamlit resume/
   cancel controls.
-- The uploaded-database extension adds isolated, expiring SQLite database/dump
-  workspaces, schema explorer, prompt-to-query, and explicit deletion through
-  FastAPI and Streamlit. It never imports into PostgreSQL or durable history.
-- Current local evidence is 479 passed, 4 PostgreSQL skips, 90.34% coverage,
-  Ruff and strict Mypy clean. Commit `fe7fcfe` passed every hosted check in
-  stacked PR #32: Python 3.11/3.12 quality, PostgreSQL integration, clean
-  Compose, source/container security, CodeQL, and CodeRabbit.
+- The uploaded-database extension adds isolated, expiring SQLite/backup/SQL/
+  CSV/JSON workspaces, schema explorer, prompt-to-query, and explicit deletion
+  through FastAPI and Streamlit. SQL Server `.bak` remains unsupported. It
+  never imports into PostgreSQL or durable history. The source upload cap is
+  100,000,000 bytes and the resulting SQLite cap is 200,000,000 bytes; the
+  independent record/table/column/time/concurrency/TTL limits remain enforced.
+- Current evidence after the format extension is 487 passed, 4 PostgreSQL
+  skips, 90.10% coverage, with Ruff and strict Mypy clean; the 100 MB budget
+  change passes 37 focused tests. The extension is hosted on Railway staging.
+  Earlier commit `fe7fcfe` passed every hosted check in stacked PR #32: Python
+  3.11/3.12 quality, PostgreSQL integration, clean Compose, source/container
+  security, CodeQL, and CodeRabbit.
 - This extension is called a bounded agent and does not qualify the blocked
   real model or claim a public deployment.
 
@@ -708,16 +738,17 @@ check rather than a substitute for hosted CI.
 - [x] The machine report separates local readiness from external decisions.
 - [x] Project license selected: MIT.
 - [x] Authorized public GitHub remote and hosted Actions verified.
-- [ ] Deployment smoke, logs, authentication, HTTPS, rate limit, managed
-  secrets/database, and rollback verified if a public demo is selected.
+- [x] Railway staging HTTPS, public frontend routing, health, browser rendering,
+  synthetic success query, and relevant logs verified.
+- [ ] Authentication, tenant authorization, rate limits, abuse controls,
+  monitoring, and rollback verified before treating staging as a public demo.
 
 ## Open Issues
 
-1. The public application deployment platform and authentication design remain
-   unselected.
-2. The real LLM provider remains deliberately
-   undecided until its current capabilities, costs, and data policies are
-   reviewed.
+1. Railway staging is selected and publicly routed, but authentication, tenant
+   authorization, and rate-limiting designs remain unimplemented.
+2. Gemini/Gemma is selected, but final real-model qualification remains blocked
+   on the independently sealed holdout sequence.
 
 ## Current Risks
 
@@ -734,15 +765,15 @@ check rather than a substitute for hosted CI.
 The MIT license, public visibility, owner `Daffwa`, and repository name
 `ai-database-analyst` are resolved. These optional production decisions remain:
 
-- Real LLM provider and paid API authorization.
-- Production deployment platform and any paid resources.
+- Real-model qualification and any future paid API authorization.
+- Production promotion and any additional paid resources.
 - Authentication approach for a public demo.
 
 ## Next Step
 
-Select the public deployment platform/account, region and budget, plus the
-authentication approach. Then provision HTTPS, rate limits, managed
-secrets/PostgreSQL, monitoring, smoke tests, and a tested rollback before
-recording any deployed URL. Preserve `verify`, live `test-postgres`, no-cache
-`docker-smoke`, `security-stage9`, clean-checkout, and `evaluate-stage10` as
-mandatory release gates.
+Implement authentication, tenant authorization, request/body limits, and rate
+limits on the existing public Railway staging route. Then complete the pending
+security smokes, monitoring, and tested rollback before production promotion.
+Preserve `verify`, live `test-postgres`, no-cache `docker-smoke`,
+`security-stage9`, clean-checkout, and `evaluate-stage10` as mandatory release
+gates.

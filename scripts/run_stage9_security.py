@@ -23,6 +23,7 @@ TRIVY_IMAGE = (
 )
 APPLICATION_IMAGES = (
     "ai-database-analyst-api:local",
+    "ai-database-analyst-bootstrap:local",
     "ai-database-analyst-frontend:local",
 )
 

@@ -46,7 +46,7 @@ The final frontend may select an independent ephemeral SQLite source:
 ```mermaid
 flowchart LR
     U["User upload + prompt"] --> API["FastAPI workspace API"]
-    API --> I["Bounded SQLite importer / integrity check"]
+    API --> I["Bounded SQLite/BAK/SQL/CSV/JSON importer"]
     I --> S["Schema snapshot + allowlist"]
     S --> L["Configured LLM adapter"]
     L --> V["SQLGlot read-only policy"]
@@ -57,7 +57,8 @@ flowchart LR
 ```
 
 The API owns an opaque-ID registry and server temporary directories. Each
-upload receives its own engine, schema snapshot, validator, and query
+upload is copied or deterministically converted to a new SQLite file and
+receives its own engine, schema snapshot, validator, and query
 processor. The generic path uses prompt v4 without the Chinook semantic layer;
 it does not pretend that Chinook metrics or joins apply to arbitrary schemas.
 The normal PostgreSQL runtime remains unchanged.
@@ -80,7 +81,7 @@ The normal PostgreSQL runtime remains unchanged.
 - Function and system-catalog policy.
 - Row, column, byte, and time budgets.
 - SQLite read-only mode for the MVP.
-- Restricted SQLite upload import, integrity checks, expiring server-owned
+- Restricted SQLite/BAK/SQL/CSV/JSON import, integrity checks, expiring server-owned
   storage, `trusted_schema=OFF`, and a per-upload schema allowlist.
 - PostgreSQL `analytics_readonly` role for the final runtime.
 - Network, credential, and secret configuration.
@@ -346,7 +347,9 @@ for future phases are intentionally not created during Tahap 0.
 16. A canonical request ID crosses frontend, API, orchestration, SQL policy,
     database execution, and privacy-safe logs.
 17. Uploaded SQL is never executed against either PostgreSQL database; only a
-    restricted allowlist may initialize a new temporary SQLite file.
+    restricted allowlist may initialize a new temporary SQLite file. CSV and
+    JSON use deterministic parameterized conversion, while `.bak` must carry a
+    valid SQLite header.
 18. An uploaded workspace never reuses the Chinook semantic layer or durable
     metadata history.
 
@@ -419,9 +422,10 @@ reporting and public-exposure boundary; `deployment.md` defines managed
 database, secret, TLS, authentication, rate-limit, migration, smoke-test, and
 rollback requirements.
 
-The authorized public GitHub remote and hosted workflow runs are part of the
-current evidence. No public cloud resource, application hostname, registry, or
-real-provider credential is. A future deployment may claim completion only
-when its exact platform, cost approval, identities, secret manager, HTTPS route,
-authentication/authorization, rate limits, health/log evidence, and rollback
-result are recorded.
+The authorized public GitHub remote, hosted workflow runs, Railway-managed
+PostgreSQL, private API, and public HTTPS staging frontend are part of the
+current evidence. The staging provider remains fake, and the public route lacks
+authentication, tenant authorization, and rate limits. A production deployment
+may claim completion only when its exact identities, secret controls,
+authentication/authorization, rate limits, complete smoke/log evidence,
+monitoring, and rollback result are recorded.

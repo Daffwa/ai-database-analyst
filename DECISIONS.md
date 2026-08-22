@@ -1632,12 +1632,128 @@ data governance exist.
 - Local evidence passes 479 tests with four PostgreSQL skips and 90.34%
   coverage; no provider or holdout call was made.
 
+## ADR-0050 - Use Railway for a Private Staging Path Before Public Exposure
+
+- Date: 2026-08-22
+- Status: Accepted
+
+### Context
+
+The owner asked to connect the project to Railway. The repository already has
+separate API/frontend Dockerfiles, a PostgreSQL bootstrap job, health endpoints,
+and a Compose topology, but it intentionally lacks public authentication,
+tenant authorization, and rate limiting. Railway maps Compose services to
+separate services and its compute/database resources may consume trial credit
+or incur cost.
+
+### Decision
+
+Select Railway as the initial managed staging platform. Create and locally link
+an empty Railway project named `ai-database-analyst`, but do not provision
+services, databases, volumes, or public domains until the owner approves the
+environment/region and a maximum budget. The owner subsequently approved the
+Hobby plan on 2026-08-22; use the Singapore region, add a USD 5 workspace soft
+alert, and do not raise the workspace hard limit to its USD 10 minimum. The
+Hobby inclusion is not itself a hard workspace cap, so usage must still be
+monitored.
+
+When authorized, map the topology to managed PostgreSQL, a one-shot bootstrap/
+migration service, private FastAPI, and Streamlit. Use Railway private-network
+references for service and database traffic. Keep FastAPI without a public
+domain. Do not expose Streamlit publicly until authentication, authorization,
+request limits, and rate limiting are implemented and verified. Keep the fake
+provider as the staging default unless Gemini data governance and secret use
+are separately approved. Use a dedicated non-root `Dockerfile.bootstrap` whose
+immutable command runs the one-shot bootstrap, because the Railway CLI did not
+apply the service start-command override reliably.
+
+### Consequences
+
+- Railway account authentication and project linkage are complete. Private
+  PostgreSQL, FastAPI, and Streamlit are health-gated in Singapore; the
+  successful one-shot bootstrap was stripped of privileged variables and
+  deleted. Functional private smoke remains, and no public application
+  deployment is claimed.
+- The owner authorized a durable GitHub source for private staging. API and
+  frontend track the reviewed `agent/railway-staging` branch and must move to
+  `main` only after stacked PRs #27, #28, and #32 are merged.
+- Railway Variables may be evaluated as the staging secret store, but no local
+  credential may be copied into source, documentation, chat, build arguments,
+  or image layers.
+- DD-003 is resolved for staging. Authentication, budget, region, public
+  exposure, and production secret-management decisions remain open gates.
+
+## ADR-0051 - Convert CSV and JSON into Bounded SQLite Workspaces
+
+- Date: 2026-08-22
+- Status: Accepted
+
+### Context
+
+The owner requested `.bak`, `.csv`, and `.json` upload support. The existing
+workspace boundary deliberately accepts only isolated SQLite files or a narrow
+SQLite SQL subset. Treating a SQL Server backup as an ordinary file, inferring
+types from CSV values, or executing JSON-derived SQL would weaken fidelity and
+the existing trust boundary.
+
+### Decision
+
+Keep SQLite as the only workspace execution engine. Accept `.bak` only when
+the bytes have a valid SQLite header; SQL Server `.bak` restoration remains an
+explicit non-goal. Convert CSV into one filename-derived table with `TEXT`
+columns so identifiers such as leading-zero IDs are not silently changed.
+Normalize empty, unsafe, and duplicate headers into bounded unique names, pad
+short rows with `NULL`, and reject rows wider than their header.
+
+Convert bounded JSON deterministically. A top-level record/list becomes one
+table; an object whose values are arrays becomes multiple tables. Preserve
+SQLite-compatible scalar types and store nested arrays/objects as compact JSON
+text. Reject duplicate keys, non-standard numbers, excessive nesting, invalid
+UTF-8, record overruns, and all normal upload/database budgets. Use only
+parameterized inserts into a fresh server-owned SQLite file.
+
+### Consequences
+
+- The normal schema snapshot, AST allowlist, read-only executor, TTL, deletion,
+  and non-persistence controls continue unchanged for every new format.
+- CSV/JSON conversion does not clean, infer relationships, or modify the
+  original upload. Semantic quality still depends on the uploaded data and
+  configured model.
+- Public staging remains unapproved for private data because authentication,
+  tenant ownership, rate limiting, and abuse controls are absent.
+
+## ADR-0052 - Raise the Bounded Workspace Upload Budget to 100 MB
+
+- Date: 2026-08-22
+- Status: Accepted
+
+### Context
+
+The owner requested support for source files up to 100 MB. Merely increasing
+the request-byte limit would still reject large SQLite files and converted
+CSV/JSON/SQL inputs under the smaller imported-database budget.
+
+### Decision
+
+Set the per-file source limit to 100,000,000 bytes and the resulting SQLite
+database limit to 200,000,000 bytes. Align the hosted Streamlit uploader at
+100 MB. Keep the independent 100,000-record, 100-table, 2,000-column, import-
+time, concurrency, and TTL limits unchanged.
+
+### Consequences
+
+- A source file can reach 100 MB without being rejected by the former 25 MB
+  application limit, while conversions have bounded room for SQLite overhead.
+- The larger memory, temporary-disk, and denial-of-service exposure reinforces
+  the existing rule that public staging is not approved for private data or
+  production use until authentication, ownership, and rate limits exist.
+
 ## Deferred Decisions
 
 | ID | Decision | Required by | Reason for deferral |
 |---|---|---|---|
 | DD-001 | Real LLM provider and model | Resolved 2026-08-07 | ADR-0035 selects Gemini API with `gemma-4-26b-a4b-it`; paid budget USD 0. |
 | DD-002 | Public project license | Resolved 2026-07-21 | MIT selected by the owner. |
-| DD-003 | Deployment platform | Tahap 10 | Availability and pricing are time-sensitive. |
+| DD-003 | Deployment platform | Resolved 2026-08-22 | ADR-0050 selects Railway; private staging is health-gated in Singapore with no public domain. |
 | DD-004 | Authentication provider | Public production-like demo | Not required for the local portfolio MVP. |
 | DD-005 | Cloud secret manager | Deployment | Depends on the selected platform. |

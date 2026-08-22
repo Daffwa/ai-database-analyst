@@ -54,6 +54,14 @@ deployment template. Before any internet exposure, the operator must provide:
 7. Post-deployment success, clarification, blocked, timeout, health, and log
    smoke tests.
 
+Known staging exception: on 2026-08-22 the owner explicitly directed creation
+of a public Railway frontend domain before item 2 was implemented. HTTPS,
+private API/database networking, health, and one synthetic success smoke are
+verified, but authentication, per-user authorization, request limits, and rate
+limiting are absent. Treat that route as temporary unauthenticated staging, do
+not submit private data, and complete or remove the exposure before approved
+public-demo or production use.
+
 See [`docs/deployment.md`](docs/deployment.md) for the release procedure.
 
 ## Verification
@@ -73,4 +81,3 @@ The security runner covers dependency audit, Bandit, Gitleaks, SQL adversarial
 tests, container image vulnerability/secret scans, and Dockerfile
 configuration checks. Passing a finite scanner set is regression evidence, not
 a vulnerability-free guarantee.
-

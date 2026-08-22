@@ -292,9 +292,12 @@ def _render_workspace_sidebar() -> DatabaseWorkspace | None:
         st.header("Sumber data")
         st.caption("Upload disimpan sementara di backend dan hanya dibuka read-only.")
         uploaded = st.file_uploader(
-            "SQLite database atau dump SQL",
-            type=("db", "sqlite", "sqlite3", "sql"),
-            help="Format SQLite-first; batas ukuran akhir tetap diterapkan oleh API.",
+            "Database, backup SQLite, CSV, JSON, atau dump SQL",
+            type=("db", "sqlite", "sqlite3", "bak", "sql", "csv", "json"),
+            help=(
+                "BAK hanya untuk backup SQLite; backup SQL Server memerlukan restore "
+                "di luar aplikasi. Semua batas ukuran tetap diterapkan oleh API."
+            ),
         )
         if (
             st.button(

@@ -44,10 +44,11 @@ def test_safe_defaults_require_no_provider_secret() -> None:
     assert settings.chart_recommended_line_points == 8
     assert settings.chart_recommended_scatter_points == 8
     assert settings.query_history_max_entries == 100
-    assert settings.database_workspace_upload_max_bytes == 25_000_000
-    assert settings.database_workspace_max_database_bytes == 50_000_000
+    assert settings.database_workspace_upload_max_bytes == 100_000_000
+    assert settings.database_workspace_max_database_bytes == 200_000_000
     assert settings.database_workspace_max_active == 8
     assert settings.database_workspace_ttl_seconds == 1_800
+    assert settings.database_workspace_max_records == 100_000
     assert settings.database_workspace_storage_root is None
 
 
@@ -115,6 +116,12 @@ def test_query_budget_validation_fails_closed() -> None:
 
     with pytest.raises(ValidationError):
         AppSettings(database_workspace_upload_max_bytes=1_000, _env_file=None)
+
+    with pytest.raises(ValidationError):
+        AppSettings(database_workspace_upload_max_bytes=100_000_001, _env_file=None)
+
+    with pytest.raises(ValidationError):
+        AppSettings(database_workspace_max_database_bytes=200_000_001, _env_file=None)
 
     with pytest.raises(ValidationError):
         AppSettings(database_workspace_ttl_seconds=59, _env_file=None)

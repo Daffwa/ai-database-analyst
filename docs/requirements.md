@@ -73,7 +73,7 @@ Features planned after the MVP security gate:
 6. PostgreSQL analytics database with a dedicated read-only role.
 7. Separate metadata database credentials and Alembic migrations.
 8. FastAPI backend and versioned API contracts.
-9. Ephemeral uploaded SQLite workspaces for schema inspection and prompt-to-query.
+9. Ephemeral SQLite-backed upload workspaces for database, CSV, JSON, schema inspection, and prompt-to-query.
 10. Docker Compose, observability, GitHub Actions, and security checks.
 11. Reproducible documentation, deployment, and portfolio release.
 
@@ -194,13 +194,13 @@ Acceptance:
 
 ### US-011 — Analyze an Uploaded SQLite Database
 
-As a data analyst, I want to upload a SQLite database or schema/data dump so
+As a data analyst, I want to upload a SQLite database, CSV, JSON, or schema/data dump so
 that I can inspect its tables and ask questions without connecting it to the
 configured Chinook database.
 
 Acceptance:
 
-- The UI accepts supported SQLite/database dump files and shows the inspected
+- The UI accepts supported SQLite, SQLite-backup, CSV, JSON, and database-dump files and shows the inspected
   schema before a query.
 - Generated SQL receives an exact per-upload allowlist and the normal read-only
   AST gate.
@@ -280,8 +280,9 @@ Acceptance:
 
 ### Uploaded Database Workspaces
 
-- FR-060: Accept bounded SQLite `.db`, `.sqlite`, `.sqlite3`, and restricted
-  UTF-8 SQLite `.sql` uploads.
+- FR-060: Accept bounded SQLite `.db`, `.sqlite`, `.sqlite3`, valid SQLite
+  `.bak`, restricted UTF-8 SQLite `.sql`, UTF-8 `.csv`, and bounded `.json`
+  uploads. SQL Server `.bak` remains unsupported.
 - FR-061: Create an opaque, expiring, server-owned workspace without accepting
   a client filesystem path.
 - FR-062: Inspect a validated upload into a schema snapshot and exact
@@ -292,6 +293,9 @@ Acceptance:
   metadata PostgreSQL database.
 - FR-065: Delete workspace bytes on explicit deletion, expiry cleanup, or API
   shutdown and exclude workspace payloads from durable query history.
+- FR-066: Convert CSV and JSON deterministically into an isolated SQLite file
+  under record, nesting, time, byte, table, and column budgets without
+  inferring destructive cleanup or changing the original upload.
 
 ## 8. Non-Functional Requirements
 

@@ -29,7 +29,7 @@ def test_container_scan_uses_and_removes_a_docker_cache_volume(
     trivy_runs = [
         arguments for arguments, _ in calls if run_stage9_security.TRIVY_IMAGE in arguments
     ]
-    assert len(trivy_runs) == 3
+    assert len(trivy_runs) == len(run_stage9_security.APPLICATION_IMAGES) + 1
     assert all(
         f"type=volume,source={volume_name},target=/root/.cache/trivy" in arguments
         for arguments in trivy_runs

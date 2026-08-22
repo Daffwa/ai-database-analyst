@@ -19,7 +19,7 @@ The implemented portfolio includes:
 - recursive SQL AST validation, allowlists, and limit rewriting;
 - exact PostgreSQL least-privilege roles and read-only transactions;
 - database-grounded tables, KPI/charts, explanations, sources, and CSV export;
-- expiring SQLite database/dump workspaces with schema inspection and
+- expiring SQLite, SQLite-backup, CSV, JSON, and restricted-dump workspaces with schema inspection and
   prompt-to-query through the same read-only AST boundary;
 - privacy-minimized history, feedback, logs, metrics, and request correlation;
 - a typed, state-authorized bounded agent with one-use validation handles,
@@ -35,8 +35,11 @@ images behind a four-service Compose stack. The deterministic Tahap 7 baseline
 is 100/100 and the live PostgreSQL gate is 4/4. The MIT-licensed source is
 published at [Daffwa/ai-database-analyst](https://github.com/Daffwa/ai-database-analyst),
 and CI, Docker, Security, and Evaluation have passed on GitHub-hosted runners.
-No public application deployment is claimed: hosting, authentication, and any
-paid resource still require explicit choices and verification.
+A Railway staging frontend is publicly reachable at
+`https://frontend-staging-ff78.up.railway.app`. HTTPS, Streamlit health, browser
+rendering, and one synthetic Chinook query passed on 2026-08-22. This is not a
+production claim: the staging provider remains fake and end-user
+authentication, tenant authorization, and rate limiting are not implemented.
 
 Roadmap Points 6 and 7 are implemented as `bounded-agent-v1` while Point 5
 remains blocked. This separation is deliberate: the tool authority and loop
@@ -186,8 +189,8 @@ After PostgreSQL bootstrap and migration, start FastAPI with
 `python scripts/dev.py api` and the final client with `python scripts/dev.py ui`.
 Use `ui-stage6` for the SQLite in-process regression fixture.
 
-In the final client sidebar, upload `.db`, `.sqlite`, `.sqlite3`, or a
-restricted SQLite `.sql` dump, then submit prompts normally. Database Explorer
+In the final client sidebar, upload `.db`, `.sqlite`, `.sqlite3`, a SQLite
+`.bak`, a restricted SQLite `.sql` dump, `.csv`, or `.json`, then submit prompts normally. Database Explorer
 and query execution switch to that expiring upload until **Hapus workspace
 upload** is selected. The default fake provider can inspect the schema but
 cannot generalize to arbitrary questions; the approved Gemini configuration is
@@ -235,8 +238,10 @@ The safe default configuration:
 - Requires no API key.
 - Does not store raw questions, SQL, or result rows.
 - Applies row, column, response-size, and SQL-length budgets to manual queries.
-- Bounds uploaded SQLite bytes, imported database size, statement/table/column
-  counts, import time, active workspaces, and workspace lifetime.
+- Bounds each upload to 100,000,000 bytes (100 MB decimal), the imported
+  SQLite database to 200,000,000 bytes, and also limits statement/record/table/
+  column counts, JSON depth, import time, active workspaces, and workspace
+  lifetime.
 - Uses an explicit SQLite dialect for the regression fixture and PostgreSQL for
   the final API runtime, a maximum rewritten limit of 500, and a reviewed
   dangerous-function blocklist.
@@ -396,20 +401,23 @@ rate limiting, and deployment hardening remain later-stage gates.
 - The 100/100 result is measured on a finite, versioned Chinook corpus. It is
   not evidence that unknown attacks, ambiguous definitions, or arbitrary
   schemas are solved.
-- The local Streamlit/FastAPI surface has no end-user authentication or tenant
-  authorization and is intentionally bound to loopback.
-- Uploaded workspaces are SQLite-only, process-local, and intentionally reject
-  views, triggers, virtual tables, and unrestricted SQL dumps. They are not a
-  public multi-user upload service.
+- The local Streamlit/FastAPI surface and the temporary public Railway staging
+  frontend have no end-user authentication or tenant authorization. Do not use
+  the staging URL for private data or an unrestricted public demo.
+- Uploaded workspaces are SQLite-backed and process-local. CSV and JSON are
+  converted into isolated SQLite tables; `.bak` means SQLite backup only, not
+  SQL Server backup. Views, triggers, virtual tables, and unrestricted SQL
+  dumps remain rejected. This is not a public multi-user upload service.
 - Metrics and some UI history are process-local; production needs durable,
   access-controlled observability with an approved retention policy.
-- No public application deployment, authentication boundary, managed secret
-  store/database, or production monitoring is currently verified.
+- Railway-managed PostgreSQL and a public HTTPS staging frontend are verified;
+  an authentication boundary, rate limiting, production monitoring, and a
+  production release are not.
 
-The MIT license, public GitHub repository, and hosted CI are verified. Remaining
-roadmap items are a cost/data-policy-based hosting choice, authentication and
-rate limiting, managed secrets/PostgreSQL, and a separate hosted Gemma 4
-evaluation baseline.
+The MIT license, public GitHub repository, hosted CI, and Railway staging are
+verified. Remaining roadmap items include authentication, tenant authorization,
+rate limiting, production monitoring/rollback, and final hosted Gemma 4
+qualification.
 
 ## Documentation
 

@@ -59,6 +59,7 @@ jobs:
       - name: Build pinned application images
         run: |
           docker build --pull --file Dockerfile.api --tag ai-database-analyst-api:local .
+          docker build --pull --file Dockerfile.bootstrap --tag ai-database-analyst-bootstrap:local .
           docker build --pull --file Dockerfile.frontend --tag ai-database-analyst-frontend:local .
       - name: Run complete source and container security gate
         run: uv run python scripts/run_stage9_security.py

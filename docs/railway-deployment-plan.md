@@ -1,0 +1,141 @@
+# Railway Deployment Plan
+
+- Date: 2026-08-22
+- Status: public staging frontend active in Singapore; security controls pending
+- Target: temporary staging validation before an authenticated public demo
+- Source repository: `Daffwa/ai-database-analyst`
+
+## Goal
+
+Translate the verified local Compose topology into Railway services, preserve
+private API/database networking, and track the owner-directed temporary public
+frontend without claiming production readiness while authentication and abuse
+controls remain absent.
+
+## Completed connection work
+
+- [x] Review current Railway CLI, Docker/Compose, PostgreSQL, private-network,
+  healthcheck, and trial documentation.
+- [x] Authenticate the local Railway CLI through the owner's account.
+- [x] Create and link an empty Railway project named `ai-database-analyst`.
+- [x] Create an empty `staging` environment and make it the local CLI target;
+  leave the default `production` environment empty.
+- [x] Confirm the project contains no services, databases, buckets, volumes,
+  domains, or active deployments.
+- [x] Preserve a clean Git working tree and keep Railway credentials outside
+  the repository.
+- [x] Update the Stage 10 documentation contract to require the new Railway
+  connection state while preserving the no-service and no-public-routing gates.
+- [x] Pass PR #33 hosted gates on corrective commit `d858001`: Python
+  3.11/3.12 quality, PostgreSQL integration, clean Compose, source/container
+  security, CodeQL, and CodeRabbit.
+- [x] Accept the owner's Railway Hobby-plan authorization. Keep the CLI-reported
+  USD 5 agent/account limit unchanged, add a USD 5 workspace soft alert, and do
+  not create a workspace hard limit because Railway requires at least USD 10.
+- [x] Provision a private managed PostgreSQL service in Singapore
+  (`asia-southeast1-eqsg3a`) with no public TCP proxy or domain.
+- [x] Create private `bootstrap`, `api`, and `frontend` service placeholders,
+  configure Railway Variables without printing or persisting generated
+  credentials, and keep `fake` / `fake-deterministic` as the provider.
+- [x] Remove the first empty PostgreSQL deployment and volume after its initial
+  generated credential appeared in CLI configuration output; replace it with a
+  fresh healthy service and leave no registered temporary SSH key.
+- [x] Pass every hosted PR #33 gate on deployment commit `eb90de0`, including
+  the dedicated bootstrap image build and Trivy container/config scan.
+- [x] Run bootstrap deployment `4f75d32d-ff44-4731-b24e-2412bb8fdb25`, seed
+  the pinned Chinook counts, create separated roles/databases, and apply Alembic
+  through `20260816_0002`/head; then remove privileged bootstrap variables and
+  delete the completed ephemeral service.
+- [x] Deploy healthcheck-gated private API deployment
+  `b21897c1-abc0-4490-bbe7-3285ce04be71` and frontend deployment
+  `2caf7c74-bc68-4087-9951-5bca31943c46` from clean commit `eb90de0`.
+- [x] Verify all three retained services report `SUCCESS`, use one Singapore
+  replica each, and expose zero custom or Railway service domains. Production
+  remains empty.
+- [x] Attach API and frontend to `Daffwa/ai-database-analyst`, restrict both
+  deployment triggers to `agent/railway-staging`, persist their dedicated
+  Dockerfile paths, and pass fresh GitHub-source health-gated deployments from
+  commit `21252e2`.
+- [x] Under the owner's explicit instruction, generate the frontend Railway
+  domain `frontend-staging-ff78.up.railway.app` on port 8501. Keep API and
+  PostgreSQL private.
+- [x] Verify public HTTPS/root rendering, `/_stcore/health` (`200 ok`), a clean
+  browser console, and a synthetic end-to-end query returning customer count
+  `59` through the private API and Railway PostgreSQL.
+
+## Intended service mapping
+
+| Local Compose service | Railway service | Exposure |
+|---|---|---|
+| `db` | Managed PostgreSQL | Private only |
+| `bootstrap` | Ephemeral `Dockerfile.bootstrap` job, deleted after success | None retained |
+| `api` | FastAPI from `Dockerfile.api` | Private, no domain |
+| `frontend` | Streamlit from `Dockerfile.frontend` | Public staging domain on port 8501; unauthenticated and not production-approved |
+
+Use Railway variable references and private networking for database and
+service-to-service traffic. Set explicit service `PORT` values of `8000` for
+the API and `8501` for Streamlit because the current immutable image commands
+bind those ports. Configure healthcheck paths `/api/v1/health` and
+`/_stcore/health` respectively.
+
+## Remaining approval gates
+
+- [ ] Merge PRs #27, #28, and #32 in dependency order, then move the durable
+  GitHub deployment triggers from `agent/railway-staging` to `main` and deploy
+  an exact reviewed `main` commit.
+- [ ] Implement authentication, per-user authorization, request/body limits,
+  rate limiting, and abuse controls on the already-public staging route before
+  treating it as an approved demo or promoting it to production.
+- [ ] Review Gemini data governance before adding a real-provider credential;
+  otherwise deploy with `fake` / `fake-deterministic` only.
+- [x] Pass hosted checks for the dedicated one-shot `Dockerfile.bootstrap`,
+  bootstrap PostgreSQL, apply Alembic through the current head, and verify the
+  runtime starts only with separated analytics/metadata identities.
+- [x] Deploy the private API and frontend in Singapore after bootstrap succeeds.
+- [x] Pass Railway deployment healthchecks for `/api/v1/health` and
+  `/_stcore/health` and confirm the Streamlit-reported raw external IP is not
+  reachable without Railway public networking.
+- [x] Run the synthetic success smoke through the public frontend: the bounded
+  request completed with safe generated/executed SQL and customer count `59`.
+- [ ] Run clarification, blocked, timeout, privacy, authorization, metrics, and
+  explicit database read-only functional smokes. Railway SSH was intentionally
+  not trusted because Railway does not publish an authoritative host-key
+  fingerprint.
+- [x] Record source/deployment/image identifiers, rollback target, cost-limit
+  state, and hosted evidence without storing secret values.
+
+## GitHub-source connection evidence
+
+- Source attachment was verified from public GitHub repository
+  `Daffwa/ai-database-analyst`, branch `agent/railway-staging`, clean commit
+  `21252e297b42b986ff5cd9ea4261b81de2c4b607`. Each later push to that branch
+  automatically replaces these verification deployments with the new branch
+  head after its healthcheck passes.
+- API verification deployment `a581c51a-cd6d-4e5e-a0ff-42ec84070cab`; image
+  `sha256:da8e454902dacd8463c86efe99edd056705b2aeaf97d31a59895fab098f990af`.
+- Frontend verification deployment `11cef924-8f62-4849-b721-44c79a61d07e`; image
+  `sha256:fdb7fd65073b491a75f25996ec3d81cdee1f98a9ffba523ff78a0a3dc3b86281`.
+- Successful bootstrap image:
+  `sha256:946e474e2b19b76a1e73768542a74524d1d9cf383a4bac8afa0835d2ac5c2a86`.
+- Database image: `sha256:53f2aec0d73373caa91fe493e5d2bb908ee38310c79771cc1ce733dfee8d4545`.
+- Provider: `fake` / `fake-deterministic`; no `LLM_API_KEY` is present.
+- Cost evidence: USD 5 workspace soft alert, no workspace hard cap, and about
+  USD 0.239 workspace usage at final verification (not attributed solely to
+  this project). Hobby may bill overage beyond its included USD 5 usage.
+
+## Stop conditions
+
+Do not create Railway compute/database resources without an approved budget.
+Do not add another public domain or promote this route to production while
+application authentication and rate limiting are absent. The existing staging
+domain was created under explicit owner direction and is recorded as an open
+security risk. Do not copy local `.env` values into Git, documentation, chat,
+build arguments, or image layers.
+
+## Current Railway references
+
+- [Railway Docker Compose mapping](https://docs.railway.com/guides/docker-compose)
+- [Railway PostgreSQL](https://docs.railway.com/databases/postgresql)
+- [Railway healthchecks](https://docs.railway.com/deployments/healthchecks)
+- [Railway private-network best practices](https://docs.railway.com/overview/best-practices)
+- [Railway trial limits](https://docs.railway.com/pricing/free-trial)

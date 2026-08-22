@@ -3,6 +3,172 @@
 Append new entries at the top so the latest handoff is easy to find. Never store
 secrets or raw sensitive payloads.
 
+## 2026-08-22 - Workspace upload budget raised to 100 MB
+
+### Outcome
+
+- Raised the source upload cap from 25,000,000 to 100,000,000 bytes and the
+  resulting SQLite cap from 50,000,000 to 200,000,000 bytes.
+- Aligned the hosted Streamlit container at 100 MB while retaining the existing
+  record, table, column, import-time, active-workspace, and TTL budgets.
+- Documented the increased resource/denial-of-service exposure. Public staging
+  remains unsuitable for private data until authentication, tenant ownership,
+  and rate limiting are implemented.
+
+### Verification
+
+- Focused config/importer/Docker-contract suite: 37 passed.
+- Ruff format and lint: passed.
+- No provider or holdout request was made.
+
+## 2026-08-22 - SQLite BAK, CSV, and JSON uploads implemented
+
+### Outcome
+
+- Extended the existing opaque SQLite workspace importer to accept valid
+  SQLite `.bak`, UTF-8 CSV, and bounded JSON in addition to the existing
+  `.db`/`.sqlite`/`.sqlite3`/restricted `.sql` formats.
+- CSV becomes one filename-derived table with preserved text values,
+  normalized unique headers, `NULL` padding for short rows, and rejection for
+  rows wider than the header. JSON supports one record/list or a table-array
+  object, preserves compatible scalar storage, stores nested values as compact
+  JSON text, and rejects duplicate keys/non-standard numbers/excessive depth.
+- Added a 100,000-record default budget plus early table/column checks. All new
+  writes use parameters into a new temporary SQLite file; the existing schema
+  allowlist, AST policy, read-only reopening, TTL, and deletion remain intact.
+- `.bak` remains SQLite-only. SQL Server backup restoration is explicitly
+  rejected and must happen outside the application.
+
+### Verification and boundary
+
+- Focused importer/config/API tests: 46 passed.
+- Full offline suite: 487 passed, 4 PostgreSQL skips, 90.10% coverage.
+- Ruff format/lint and strict Mypy on 183 sources passed; provider and holdout
+  calls were zero.
+- The extension is local/uncommitted and not yet deployed. Public staging still
+  lacks authentication, tenant authorization, rate limiting, and abuse controls;
+  do not upload private data there.
+
+## 2026-08-22 - Railway public staging domain created and smoke-tested
+
+### Outcome
+
+- Under the owner's explicit direction, generated the Railway frontend domain
+  `frontend-staging-ff78.up.railway.app` for staging port 8501. API and
+  PostgreSQL remain on Railway private networking.
+- Verified the public root and `/_stcore/health` over HTTPS; both returned 200
+  and the health body was `ok`.
+- Browser QA rendered the full Streamlit application with no console warning or
+  error. The primary synthetic question completed successfully through the
+  private API and Railway PostgreSQL, producing the grounded customer count
+  `59` and safe bounded-agent audit output.
+- Railway reported API, frontend, and PostgreSQL deployments as `SUCCESS`; HTTP
+  assets and health requests returned 200 and API logs recorded the bounded
+  request completion without a traceback/exception/failure.
+
+### Boundary
+
+- The staging provider remains `fake` / `fake-deterministic`; no real-provider
+  credential was added.
+- Authentication, tenant authorization, request/body limits, rate limiting,
+  abuse controls, and the remaining security smokes are absent. The public URL
+  is temporary staging, must not receive private data, and is not a production
+  or approved public-demo boundary.
+
+## 2026-08-22 - Railway services attached to GitHub staging source
+
+### Outcome
+
+- Restricted the refreshed Railway CLI OAuth grant to the single
+  `ai-database-analyst` project in the owner's workspace.
+- Attached API and frontend to `Daffwa/ai-database-analyst` and set both
+  deployment triggers to `agent/railway-staging`.
+- Persisted `Dockerfile.api` and `Dockerfile.frontend` as the service build
+  paths without changing private variables, database roles, or public routing.
+- Deployed exact commit `21252e2`. API deployment `a581c51a` and frontend
+  deployment `11cef924` each report `SUCCESS`, one running Singapore replica,
+  and a passed Railway healthcheck. Both services still have zero domains.
+
+### Boundary
+
+- Production remains empty and the staging provider remains
+  `fake` / `fake-deterministic` with no real-provider key.
+- Move the deployment triggers to `main` only after the stacked PRs are merged.
+- The Railway CLI source-connect command returned a misleading
+  `ServiceInstance not found` after initiating the requested deployment; final
+  state and build logs, rather than that message, were used for verification.
+
+## 2026-08-22 - Railway private staging provisioned and health-gated
+
+### Outcome
+
+- Confirmed the owner's Hobby-plan authorization. Railway requires at least USD
+  10 for a workspace hard limit, so it was not raised; a USD 5 workspace soft
+  alert was added instead. Hobby overage remains possible and must be monitored.
+- Provisioned a fresh managed PostgreSQL service in Singapore with one private
+  volume and no public TCP proxy/domain. Created private bootstrap, API, and
+  frontend services in the same staging environment.
+- Generated distinct analytics, metadata, migration, and evaluation
+  credentials locally and sent them to Railway Variables through stdin without
+  printing or persisting their values. The deployed provider remains fake.
+- Added a dedicated one-shot `Dockerfile.bootstrap` after Railway's CLI service
+  start-command override did not apply. Added it to Dockerfile contracts and
+  hosted container build/security scans.
+- Bootstrapped the pinned Chinook data and separated roles/databases, applied
+  Alembic through head, removed all privileged bootstrap variables, and deleted
+  the completed ephemeral job.
+- Deployed private FastAPI and Streamlit from clean commit `eb90de0` and set
+  deployment healthchecks through the official Railway API.
+
+### Verification and boundary
+
+- PostgreSQL reports `SUCCESS`, one running Singapore replica, a ready volume,
+  and no public URL. Production remains untouched.
+- The first empty PostgreSQL instance was deleted and recreated after its
+  initial generated password appeared in CLI JSON output. Its replacement value
+  was never printed, and no temporary SSH key remains registered or on disk.
+- Full offline verification passes: formatting, lint, strict Mypy on 183 source
+  files, and 479 tests with four PostgreSQL skips and 90.34% coverage. Local
+  Docker image build is unavailable because Docker Desktop is not running;
+  hosted Linux checks subsequently built and scanned the image successfully.
+- Every hosted PR #33 gate passed on `eb90de0`, including the new bootstrap
+  image build and container/config scan.
+- PostgreSQL, API, and frontend report `SUCCESS`, one Singapore replica, and no
+  domain. Healthcheck-gated deployments pass `/api/v1/health` and
+  `/_stcore/health`; the raw IP printed by Streamlit was unreachable externally.
+- Railway SSH smoke was aborted without accepting the host key because Railway
+  does not publish an authoritative fingerprint. The temporary registered/local
+  key was removed. Functional query/security smoke remains for a trusted private
+  or authenticated channel; no public route was created.
+
+## 2026-08-22 - Railway project connected without provisioning resources
+
+### Outcome
+
+- Reviewed current official Railway CLI, Docker Compose mapping, PostgreSQL,
+  healthcheck, private networking, and trial documentation.
+- Authenticated Railway CLI v5.43.1 through the owner's account, created the
+  empty `ai-database-analyst` project, and linked this repository directory.
+- Created an empty `staging` environment and made it the explicit local CLI
+  target; the default `production` environment remains empty.
+- Recorded ADR-0050 and a staged service-mapping plan for managed PostgreSQL,
+  one-shot bootstrap/migration, private FastAPI, and Streamlit.
+
+### Verification and boundary
+
+- Railway status reported empty `staging` and `production` environments with
+  zero services, buckets, or volumes; no database, domain, active deployment,
+  GitHub service source, application secret, or provider call exists.
+- No paid or trial-credit-consuming resource was created. Provisioning awaits
+  explicit environment/region and budget approval. Public exposure remains
+  blocked on authentication, authorization, request limits, and rate limiting.
+- The first hosted quality run exposed one stale Stage 10 assertion that still
+  required the pre-selection phrase. The contract now verifies Railway is
+  connected while no service/database exists and public routing stays blocked.
+- Corrective commit `d858001` then passed every hosted PR #33 gate: Python
+  3.11/3.12 quality, PostgreSQL integration, clean Compose, source/container
+  security, CodeQL, and CodeRabbit.
+
 ## 2026-08-22 - Uploaded workspace isolated, pushed, and hosted-verified
 
 ### Outcome

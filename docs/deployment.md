@@ -1,18 +1,42 @@
 # Deployment and Rollback Guide
 
-- Status: public repository released; no application hosting platform selected
+- Status: Railway public staging frontend active; authentication controls pending
 - Scope: managed PostgreSQL, FastAPI, Streamlit, and optional real LLM
-- Last reviewed: 2026-07-28
+- Last reviewed: 2026-08-22
 
 ## Decision boundary
 
 The MIT-licensed source is published in the authorized public GitHub repository,
-and its hosted CI/security/evaluation evidence is recorded. No cloud account,
-paid resource, public application hostname, or real LLM credential has been
-created by this project. Platform selection requires a current cost and
-data-policy review plus explicit approval of the account, region, budget, and
-authentication design. Repository or local success must not be described as a
-deployed demo.
+and its hosted CI/security/evaluation evidence is recorded. Railway is selected
+for staging with a public frontend and private API/database; the
+`ai-database-analyst` project is linked locally to `staging`. The default
+`production` environment remains empty. The
+owner's Hobby-plan authorization enabled healthy private PostgreSQL, FastAPI,
+and Streamlit services in Singapore. The ephemeral bootstrap seeded Chinook,
+applied Alembic to head, removed its privileged variables, and was deleted. API
+and frontend passed Railway deployment healthchecks. The owner explicitly
+directed creation of the public staging frontend domain
+`frontend-staging-ff78.up.railway.app` on 2026-08-22. The API and PostgreSQL
+remain private, and no Git credential or real-provider secret exists. Because
+authentication, authorization, and rate limiting are absent, this is a
+temporary unauthenticated staging route rather than a production/public-demo
+security boundary. See
+`railway-deployment-plan.md` for the live checklist.
+
+## Railway connection state
+
+Railway does not run this repository's Compose file directly. The intended
+translation is managed PostgreSQL, a one-shot bootstrap/migration service,
+private FastAPI, and Streamlit. Database and API traffic use Railway private
+networking. The current containers bind fixed ports, so Railway service
+variables must set API `PORT=8000` and frontend `PORT=8501`; deployment
+healthchecks use `/api/v1/health` and `/_stcore/health`.
+
+The API and frontend services are attached to the public GitHub repository and
+track `agent/railway-staging`. Both build the exact commit recorded by Railway
+through `Dockerfile.api` and `Dockerfile.frontend`; local CLI actions also
+target `staging`, not `production`. Move both deployment triggers to `main`
+only after the reviewed stacked branches are merged.
 
 ## Required production topology
 
@@ -85,6 +109,13 @@ and redacted fingerprints—not raw payloads.
 | Timeout | controlled test at a non-production limit | safe timeout contract |
 | Privacy | inspect logs for test request IDs | no raw question, SQL, rows, token, or URL |
 | Metrics | authenticated operations endpoint | aggregate counters only |
+
+Public staging evidence on 2026-08-22 covers the health and success rows:
+`GET /_stcore/health` returned `200 ok`, the Streamlit page rendered without
+browser console warnings/errors, and “Berapa jumlah pelanggan?” completed
+through the private API/PostgreSQL path with `Customer Count: 59`. Clarification,
+blocked, controlled-timeout, authorization, privacy, and metrics smokes remain
+open.
 
 Also confirm database writes fail as `analytics_readonly`, metadata access uses
 only `app_metadata_user`, physical owner tables remain denied, and alerts can be

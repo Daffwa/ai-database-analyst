@@ -47,8 +47,9 @@ uv run python scripts/dev.py ui
 The browser-facing process holds only `API_BASE_URL`; analytics and metadata
 credentials stay in the FastAPI process.
 
-The sidebar also accepts a SQLite database (`.db`, `.sqlite`, `.sqlite3`) or a
-SQLite dump/schema (`.sql`). A successful upload activates an expiring,
+The sidebar accepts a SQLite database (`.db`, `.sqlite`, `.sqlite3`), a valid
+SQLite backup (`.bak`), a SQLite dump/schema (`.sql`), CSV, or JSON. A
+successful upload activates an expiring,
 server-owned workspace and switches both Database Explorer and prompt queries
 to that workspace. Delete the workspace from the sidebar to return to Chinook.
 
@@ -60,3 +61,12 @@ provider, arbitrary uploaded-schema prompts return unsupported; configure the
 approved Gemini provider for open-ended prompt-to-query behavior. Relevant
 schema metadata is sent to that provider, so do not upload private schemas or
 data until the provider and deployment data policy are approved.
+
+CSV becomes one table named from the filename. Values remain text, missing
+trailing fields become `NULL`, and unsafe/duplicate headers receive stable
+unique names. JSON accepts a top-level record/list or an object whose values
+are table arrays; nested objects/arrays are retained as compact JSON text.
+SQL Server `.bak` files are not parsed and must be restored/exported outside
+the application first. The hosted uploader and backend both cap each source
+file at 100 MB; the converted SQLite database has a separate 200,000,000-byte
+limit plus the existing record/table/column and import-time budgets.
