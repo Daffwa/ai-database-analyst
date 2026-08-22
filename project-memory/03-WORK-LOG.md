@@ -3,6 +3,24 @@
 Append new entries at the top so the latest handoff is easy to find. Never store
 secrets or raw sensitive payloads.
 
+## 2026-08-22 - Workspace upload budget raised to 100 MB
+
+### Outcome
+
+- Raised the source upload cap from 25,000,000 to 100,000,000 bytes and the
+  resulting SQLite cap from 50,000,000 to 200,000,000 bytes.
+- Aligned the hosted Streamlit container at 100 MB while retaining the existing
+  record, table, column, import-time, active-workspace, and TTL budgets.
+- Documented the increased resource/denial-of-service exposure. Public staging
+  remains unsuitable for private data until authentication, tenant ownership,
+  and rate limiting are implemented.
+
+### Verification
+
+- Focused config/importer/Docker-contract suite: 37 passed.
+- Ruff format and lint: passed.
+- No provider or holdout request was made.
+
 ## 2026-08-22 - SQLite BAK, CSV, and JSON uploads implemented
 
 ### Outcome

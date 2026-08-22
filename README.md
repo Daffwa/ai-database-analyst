@@ -238,8 +238,10 @@ The safe default configuration:
 - Requires no API key.
 - Does not store raw questions, SQL, or result rows.
 - Applies row, column, response-size, and SQL-length budgets to manual queries.
-- Bounds uploaded bytes, imported database size, statement/record/table/column
-  counts, JSON depth, import time, active workspaces, and workspace lifetime.
+- Bounds each upload to 100,000,000 bytes (100 MB decimal), the imported
+  SQLite database to 200,000,000 bytes, and also limits statement/record/table/
+  column counts, JSON depth, import time, active workspaces, and workspace
+  lifetime.
 - Uses an explicit SQLite dialect for the regression fixture and PostgreSQL for
   the final API runtime, a maximum rewritten limit of 500, and a reviewed
   dangerous-function blocklist.

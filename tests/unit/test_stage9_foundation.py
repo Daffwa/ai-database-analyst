@@ -22,6 +22,7 @@ def test_dockerfiles_pin_base_and_run_as_non_root() -> None:
     frontend_source = (ROOT / "Dockerfile.frontend").read_text(encoding="utf-8")
     assert "HEALTHCHECK" in api_source
     assert "HEALTHCHECK" in frontend_source
+    assert '"--server.maxUploadSize=100"' in frontend_source
     assert "COPY --chown=10001:10001 scripts ./scripts" not in api_source
     assert "scripts/bootstrap_postgres.py" in api_source
     assert "data/evaluation/stage-7-v1.jsonl" in api_source

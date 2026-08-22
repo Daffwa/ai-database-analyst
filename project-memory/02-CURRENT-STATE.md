@@ -4,9 +4,9 @@
 - Last known merged commit: `42ba532 Implement secure real-model evaluation
   through Phase N (#26)`
 - Current working branch: `agent/railway-staging`
-- Current implementation: uploaded-SQLite workspace commit `fe7fcfe` is pushed
-  in stacked PR #32; uncommitted local work extends it with SQLite `.bak`, CSV,
-  and JSON ingestion.
+- Current implementation: Railway staging tracks `agent/railway-staging`; its
+  uploaded workspace accepts SQLite `.bak`, CSV, and JSON in addition to the
+  original SQLite/SQL formats, with a 100 MB source-upload budget.
 - Review: PR #27 is ready; PR #28 is green; PR #32 is ready and mergeable, and its
   implementation commit passed every reported hosted check.
 - Active goal: complete and publish the bounded upload-format extension while
@@ -31,9 +31,8 @@
 
 ## Uploaded database workspace
 
-- Status: the original SQLite/SQL path is hosted-verified; the `.bak`/CSV/JSON
-  extension is implemented and locally verified but not yet committed or
-  deployed.
+- Status: the SQLite/SQL/SQLite-BAK/CSV/JSON path is committed, deployed, and
+  health-gated on Railway staging.
 - Streamlit accepts `.db`, `.sqlite`, `.sqlite3`, valid SQLite `.bak`,
   restricted SQLite `.sql`, UTF-8 CSV, and bounded JSON; it shows the uploaded
   schema, routes prompts to the active upload, and supports explicit deletion.
@@ -48,6 +47,9 @@
   rejected; `.bak` is SQLite-only.
 - Uploads never execute in or attach to either PostgreSQL database and are not
   written to durable metadata history. The feature remains loopback-only.
+- Each upload is capped at 100,000,000 bytes; converted databases are capped at
+  200,000,000 bytes. The 100,000-record, table/column, import-time, concurrency,
+  and TTL budgets still apply independently.
 - The fake provider can inspect schema but cannot generate arbitrary-schema
   answers; open-ended prompts require the configured Gemini provider. This does
   not change Point 5 qualification or holdout state.
@@ -100,23 +102,24 @@ The following memory/plan work was created on 2026-08-07. Always verify with
 
 ## Latest verification evidence
 
-- The local upload-format extension passes Ruff format/lint, strict Mypy on 183
+- The upload-format extension passes Ruff format/lint, strict Mypy on 183
   sources, and the full offline suite: 487 passed, 4 PostgreSQL skips, 90.10%
-  coverage. Focused importer/config/API verification passed 46 tests. No live
-  provider or holdout call was made.
+  coverage. Its 100 MB budget adjustment passes 37 focused config/importer/
+  Docker-contract tests. No live provider or holdout call was made.
 - Railway CLI v5.43.1 is authenticated with access limited to this project and
   linked to `staging`. PostgreSQL, FastAPI, and Streamlit report `SUCCESS` with
   one Singapore replica each; production is empty. API and
   frontend are connected to `Daffwa/ai-database-analyst` on
-  `agent/railway-staging`; current API deployment `7f4a7fac` and frontend
-  deployment `62e8ccff` built commit `ffcacde` with their dedicated Dockerfiles
-  and passed their healthchecks. The frontend now exposes one Railway service
+  `agent/railway-staging`; the API and frontend build the same pushed commit
+  with their dedicated Dockerfiles and pass their healthchecks. The frontend
+  now exposes one Railway service
   domain, `frontend-staging-ff78.up.railway.app`, targeting port 8501; API and
   PostgreSQL expose no public domain/proxy. Browser QA found no console errors,
   and the synthetic customer-count request completed with result `59`.
   Bootstrap seeded the pinned counts and migrated to head, then its privileged
-  variables and service were removed. Provider remains fake and no
-  real-provider key exists.
+  variables and service were removed. Railway staging is configured for Gemini
+  with its credential held only in Railway Variables; the code/test default
+  remains fake.
 - PR #33 passed all hosted checks on `eb90de0`, including Python 3.11/3.12,
   PostgreSQL integration, Compose, source/container security, CodeQL, and
   CodeRabbit. The first empty database/volume was replaced after its generated

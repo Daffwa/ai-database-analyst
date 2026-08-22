@@ -75,12 +75,12 @@ class AppSettings(BaseSettings):
     query_history_max_entries: int = Field(default=100, ge=1, le=1_000)
 
     database_workspace_upload_max_bytes: int = Field(
-        default=25_000_000,
+        default=100_000_000,
         ge=1_024,
         le=100_000_000,
     )
     database_workspace_max_database_bytes: int = Field(
-        default=50_000_000,
+        default=200_000_000,
         ge=1_024,
         le=200_000_000,
     )

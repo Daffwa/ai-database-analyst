@@ -126,6 +126,11 @@ connection using `mode=ro`, `query_only=ON`, and `trusted_schema=OFF`. Uploads
 never execute against or attach to the PostgreSQL analytics/metadata databases,
 and their questions/results are not added to durable history.
 
+Each source upload is capped at 100,000,000 bytes and each imported SQLite
+database at 200,000,000 bytes. Record, table, column, import-time, concurrency,
+and TTL budgets continue to apply independently; reaching any one budget fails
+closed.
+
 This workspace feature remains approved only for the loopback/local boundary.
 A public version requires authentication, per-user ownership checks, upload and
 LLM rate limits, aggregate disk/concurrency quotas, content-scanning/sandbox

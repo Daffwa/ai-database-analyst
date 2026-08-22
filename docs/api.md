@@ -99,7 +99,10 @@ Each response exposes only an opaque workspace ID, content hash, counts,
 expiry, provider readiness, warnings, and schema metadata. It never exposes a
 server path. Workspaces are process-local, expire after 30 minutes by default,
 and are deleted on API shutdown or explicit `DELETE`. Queries are never stored
-in the PostgreSQL metadata history through this route.
+in the PostgreSQL metadata history through this route. A source upload is
+limited to 100,000,000 bytes (100 MB decimal), and the resulting SQLite file is
+limited to 200,000,000 bytes; the record/table/column and import-time budgets
+remain independent.
 
 SQL dumps allow only ordinary `CREATE TABLE`, `CREATE INDEX`, literal
 `INSERT ... VALUES`, and transaction markers. The importer rejects views,

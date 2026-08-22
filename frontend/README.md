@@ -67,4 +67,6 @@ trailing fields become `NULL`, and unsafe/duplicate headers receive stable
 unique names. JSON accepts a top-level record/list or an object whose values
 are table arrays; nested objects/arrays are retained as compact JSON text.
 SQL Server `.bak` files are not parsed and must be restored/exported outside
-the application first.
+the application first. The hosted uploader and backend both cap each source
+file at 100 MB; the converted SQLite database has a separate 200,000,000-byte
+limit plus the existing record/table/column and import-time budgets.

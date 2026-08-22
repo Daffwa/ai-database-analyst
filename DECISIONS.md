@@ -1722,6 +1722,32 @@ parameterized inserts into a fresh server-owned SQLite file.
 - Public staging remains unapproved for private data because authentication,
   tenant ownership, rate limiting, and abuse controls are absent.
 
+## ADR-0052 - Raise the Bounded Workspace Upload Budget to 100 MB
+
+- Date: 2026-08-22
+- Status: Accepted
+
+### Context
+
+The owner requested support for source files up to 100 MB. Merely increasing
+the request-byte limit would still reject large SQLite files and converted
+CSV/JSON/SQL inputs under the smaller imported-database budget.
+
+### Decision
+
+Set the per-file source limit to 100,000,000 bytes and the resulting SQLite
+database limit to 200,000,000 bytes. Align the hosted Streamlit uploader at
+100 MB. Keep the independent 100,000-record, 100-table, 2,000-column, import-
+time, concurrency, and TTL limits unchanged.
+
+### Consequences
+
+- A source file can reach 100 MB without being rejected by the former 25 MB
+  application limit, while conversions have bounded room for SQLite overhead.
+- The larger memory, temporary-disk, and denial-of-service exposure reinforces
+  the existing rule that public staging is not approved for private data or
+  production use until authentication, ownership, and rate limits exist.
+
 ## Deferred Decisions
 
 | ID | Decision | Required by | Reason for deferral |

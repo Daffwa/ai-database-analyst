@@ -35,7 +35,8 @@
   Every push to that branch automatically deploys through their dedicated
   Dockerfiles; each service has one running replica. The frontend now has the
   public HTTPS staging domain `frontend-staging-ff78.up.railway.app`; the API
-  and PostgreSQL remain private and no real-provider credential exists.
+  and PostgreSQL remain private. Gemini is configured only in Railway Variables;
+  the credential is not stored in Git or frontend configuration.
 - Root rendering, `/_stcore/health`, browser console, and the synthetic question
   “Berapa jumlah pelanggan?” passed through frontend -> private API -> Railway
   PostgreSQL with the grounded result `59`.
@@ -60,12 +61,15 @@
 - The uploaded-database extension adds isolated, expiring SQLite/backup/SQL/
   CSV/JSON workspaces, schema explorer, prompt-to-query, and explicit deletion
   through FastAPI and Streamlit. SQL Server `.bak` remains unsupported. It
-  never imports into PostgreSQL or durable history.
-- Current local evidence after the format extension is 487 passed, 4
-  PostgreSQL skips, 90.10% coverage, with Ruff and strict Mypy clean. The new
-  extension is not yet hosted. Earlier commit `fe7fcfe` passed every hosted
-  check in stacked PR #32: Python 3.11/3.12 quality, PostgreSQL integration,
-  clean Compose, source/container security, CodeQL, and CodeRabbit.
+  never imports into PostgreSQL or durable history. The source upload cap is
+  100,000,000 bytes and the resulting SQLite cap is 200,000,000 bytes; the
+  independent record/table/column/time/concurrency/TTL limits remain enforced.
+- Current evidence after the format extension is 487 passed, 4 PostgreSQL
+  skips, 90.10% coverage, with Ruff and strict Mypy clean; the 100 MB budget
+  change passes 37 focused tests. The extension is hosted on Railway staging.
+  Earlier commit `fe7fcfe` passed every hosted check in stacked PR #32: Python
+  3.11/3.12 quality, PostgreSQL integration, clean Compose, source/container
+  security, CodeQL, and CodeRabbit.
 - This extension is called a bounded agent and does not qualify the blocked
   real model or claim a public deployment.
 

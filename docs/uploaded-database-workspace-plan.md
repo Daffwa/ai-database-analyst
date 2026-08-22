@@ -2,7 +2,7 @@
 
 - Date: 2026-08-18
 - Scope: SQLite/BAK/SQL/CSV/JSON upload, schema inspection, and prompt-to-query
-- Status: Extended implementation locally verified
+- Status: Extended implementation deployed to Railway staging
 - Model-qualification impact: none; Point 5 remains independently gated
 
 ## Goal
@@ -25,6 +25,8 @@ only against that upload.
 - [x] Test ordinary dump/database lifecycle and hostile import/model SQL paths.
 - [x] Update API, architecture, security, threat model, configuration, and memory.
 - [x] Pass full offline regression without provider or holdout calls.
+- [x] Align the backend and hosted Streamlit upload cap at 100 MB, with a
+  200 MB imported-database cap for bounded conversion overhead.
 
 ## Explicit non-goals
 
@@ -42,3 +44,5 @@ only against that upload.
 - Focused importer/config/API suite: 46 passed.
 - Live provider calls: zero.
 - Holdout calls: zero.
+- Upload budget: 100,000,000 source bytes; imported SQLite budget:
+  200,000,000 bytes.
