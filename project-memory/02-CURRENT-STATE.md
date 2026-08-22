@@ -1,15 +1,17 @@
 # Current State
 
-- Last updated: 2026-08-18
+- Last updated: 2026-08-22
 - Last known merged commit: `42ba532 Implement secure real-model evaluation
   through Phase N (#26)`
-- Current working branch: `agent/fix-point5-policy-holdout`
-- Current implementation: Point-5 policy/holdout corrections and passing v5
-  development evidence are stacked on the Point 6-7 branch in draft PR #28.
-- Review: PR #27 is ready; PR #28 passed all nine hosted checks on source
-  commit `23efdea` before the development evidence follow-up.
-- Active goal: implement the real LLM and bounded-agent roadmap
-- Active plan: `docs/real-llm-agent-implementation-plan.md`
+- Current working branch: `agent/uploaded-sqlite-workspace`
+- Current implementation: uploaded-SQLite workspace commit `fe7fcfe` is pushed
+  in stacked PR #32, based on the Point-5 policy/holdout branch in PR #28.
+- Review: PR #27 is ready; PR #28 is green; draft PR #32 is mergeable and its
+  implementation commit passed every reported hosted check.
+- Active goal: preserve the real-model gate while adding safe local
+  uploaded-database analysis
+- Active plans: `docs/real-llm-agent-implementation-plan.md` and
+  `docs/uploaded-database-workspace-plan.md`
 - Default implementation provider: `fake` / `fake-deterministic`
 - Opt-in real provider: `gemini` / `gemma-4-26b-a4b-it`
 
@@ -25,9 +27,27 @@
 | 6 | Create bounded agent tools | Selesai | Typed/versioned registry, one-use validation/result handles, repairable-only coordinator, safe audit; local gate passed |
 | 7 | Implement bounded agent loop | Selesai | `bounded-agent-v1`, explicit state authority/budgets, durable canonical continuation, API/UI; no model qualification claim |
 
+## Uploaded database workspace
+
+- Status: implemented, locally verified, and hosted-verified on 2026-08-22.
+- Streamlit accepts `.db`, `.sqlite`, `.sqlite3`, and restricted SQLite `.sql`,
+  shows the uploaded schema, routes prompts to the active upload, and supports
+  explicit deletion.
+- FastAPI owns opaque expiring workspaces and create/schema/query/delete
+  endpoints. Upload paths and credentials are never returned.
+- SQL dump import permits only `CREATE TABLE`, `CREATE INDEX`, literal
+  `INSERT ... VALUES`, and transaction markers. Every model query still passes
+  the schema-derived SQL AST allowlist and a read-only SQLite executor.
+- Uploads never execute in or attach to either PostgreSQL database and are not
+  written to durable metadata history. The feature remains loopback-only.
+- The fake provider can inspect schema but cannot generate arbitrary-schema
+  answers; open-ended prompts require the configured Gemini provider. This does
+  not change Point 5 qualification or holdout state.
+
 ## Immediate next action
 
-Review and merge PRs #27/#28 when desired. For Point 5, an independent curator
+Review PR #32 and merge the stacked PRs #27, #28, and #32 in dependency order
+when desired. For Point 5, an independent curator
 must create the private 30-case replacement holdout and public manifest without
 this agent inspecting its contents. Development already passed every frozen
 gate. After the manifest is available, freeze the candidate, then obtain
@@ -61,6 +81,16 @@ The following memory/plan work was created on 2026-08-07. Always verify with
 
 ## Latest verification evidence
 
+- Uploaded workspace gate passed 479 tests with four unavailable PostgreSQL
+  skips and 90.34% coverage. Ruff, strict Mypy on 183 sources, focused API/
+  importer/security tests, and the complete offline suite passed. Tests cover
+  SQL dump/database lifecycle, schema inspection, read-only prompt execution,
+  `ATTACH`, view/virtual-table/computed-index/import rejection, destructive
+  model SQL, deletion, and expired/missing API behavior. Provider and holdout
+  calls were zero. Commit `fe7fcfe` was pushed to
+  `agent/uploaded-sqlite-workspace`; stacked PR #32 then passed Python
+  3.11/3.12 quality, PostgreSQL integration, clean Compose, source and
+  container security, CodeQL, and CodeRabbit checks.
 - Points 6-7 local gate passed 447 tests with four unavailable PostgreSQL/
   Docker skips and 90.69% coverage. Ruff format/lint, strict Mypy on 176
   source files, and `git diff --check` passed. New authority tests cover safe
