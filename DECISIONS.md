@@ -1683,6 +1683,45 @@ apply the service start-command override reliably.
 - DD-003 is resolved for staging. Authentication, budget, region, public
   exposure, and production secret-management decisions remain open gates.
 
+## ADR-0051 - Convert CSV and JSON into Bounded SQLite Workspaces
+
+- Date: 2026-08-22
+- Status: Accepted
+
+### Context
+
+The owner requested `.bak`, `.csv`, and `.json` upload support. The existing
+workspace boundary deliberately accepts only isolated SQLite files or a narrow
+SQLite SQL subset. Treating a SQL Server backup as an ordinary file, inferring
+types from CSV values, or executing JSON-derived SQL would weaken fidelity and
+the existing trust boundary.
+
+### Decision
+
+Keep SQLite as the only workspace execution engine. Accept `.bak` only when
+the bytes have a valid SQLite header; SQL Server `.bak` restoration remains an
+explicit non-goal. Convert CSV into one filename-derived table with `TEXT`
+columns so identifiers such as leading-zero IDs are not silently changed.
+Normalize empty, unsafe, and duplicate headers into bounded unique names, pad
+short rows with `NULL`, and reject rows wider than their header.
+
+Convert bounded JSON deterministically. A top-level record/list becomes one
+table; an object whose values are arrays becomes multiple tables. Preserve
+SQLite-compatible scalar types and store nested arrays/objects as compact JSON
+text. Reject duplicate keys, non-standard numbers, excessive nesting, invalid
+UTF-8, record overruns, and all normal upload/database budgets. Use only
+parameterized inserts into a fresh server-owned SQLite file.
+
+### Consequences
+
+- The normal schema snapshot, AST allowlist, read-only executor, TTL, deletion,
+  and non-persistence controls continue unchanged for every new format.
+- CSV/JSON conversion does not clean, infer relationships, or modify the
+  original upload. Semantic quality still depends on the uploaded data and
+  configured model.
+- Public staging remains unapproved for private data because authentication,
+  tenant ownership, rate limiting, and abuse controls are absent.
+
 ## Deferred Decisions
 
 | ID | Decision | Required by | Reason for deferral |

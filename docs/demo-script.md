@@ -36,8 +36,9 @@ history containing secrets, or raw Docker environment output while recording.
    clean Compose/checkout evidence.
 7. **Limitations (45 seconds).** State clearly that the default provider is
    `fake`, the deterministic corpus does not prove real-model generalization,
-   and no public deployment or authentication scheme has been selected yet;
-   the project code is MIT licensed.
+   and the public Railway staging URL has no authentication, tenant
+   authorization, or rate limiting and must use synthetic data only; the
+   project code is MIT licensed.
 
 ## Close
 

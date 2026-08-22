@@ -1,6 +1,6 @@
 # Deployment and Rollback Guide
 
-- Status: Railway private staging health-gated; application not public
+- Status: Railway public staging frontend active; authentication controls pending
 - Scope: managed PostgreSQL, FastAPI, Streamlit, and optional real LLM
 - Last reviewed: 2026-08-22
 
@@ -8,15 +8,19 @@
 
 The MIT-licensed source is published in the authorized public GitHub repository,
 and its hosted CI/security/evaluation evidence is recorded. Railway is selected
-for a private staging path and the `ai-database-analyst` project is linked
-locally to `staging`. The default `production` environment remains empty. The
+for staging with a public frontend and private API/database; the
+`ai-database-analyst` project is linked locally to `staging`. The default
+`production` environment remains empty. The
 owner's Hobby-plan authorization enabled healthy private PostgreSQL, FastAPI,
 and Streamlit services in Singapore. The ephemeral bootstrap seeded Chinook,
 applied Alembic to head, removed its privileged variables, and was deleted. API
-and frontend passed Railway deployment healthchecks. No public domain, public
-database proxy, Git credential, or real-provider secret exists, so this is not
-a public deployed demo; public routing remains blocked on authentication,
-authorization, and rate limiting. See
+and frontend passed Railway deployment healthchecks. The owner explicitly
+directed creation of the public staging frontend domain
+`frontend-staging-ff78.up.railway.app` on 2026-08-22. The API and PostgreSQL
+remain private, and no Git credential or real-provider secret exists. Because
+authentication, authorization, and rate limiting are absent, this is a
+temporary unauthenticated staging route rather than a production/public-demo
+security boundary. See
 `railway-deployment-plan.md` for the live checklist.
 
 ## Railway connection state
@@ -105,6 +109,13 @@ and redacted fingerprints—not raw payloads.
 | Timeout | controlled test at a non-production limit | safe timeout contract |
 | Privacy | inspect logs for test request IDs | no raw question, SQL, rows, token, or URL |
 | Metrics | authenticated operations endpoint | aggregate counters only |
+
+Public staging evidence on 2026-08-22 covers the health and success rows:
+`GET /_stcore/health` returned `200 ok`, the Streamlit page rendered without
+browser console warnings/errors, and “Berapa jumlah pelanggan?” completed
+through the private API/PostgreSQL path with `Customer Count: 59`. Clarification,
+blocked, controlled-timeout, authorization, privacy, and metrics smokes remain
+open.
 
 Also confirm database writes fail as `analytics_readonly`, metadata access uses
 only `app_metadata_user`, physical owner tables remain denied, and alerts can be

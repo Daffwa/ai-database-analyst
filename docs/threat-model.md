@@ -1,9 +1,9 @@
 # Threat Model — Final Local Release Review
 
-- Status: controls through Tahap 9 implemented; public-exposure controls pending
+- Status: controls through Tahap 9 implemented; unauthenticated public staging active; remediation pending
 - Version: 0.1.0 local release candidate
-- Date: 2026-07-21
-- Scope: local release candidate and requirements for a future public deployment
+- Date: 2026-08-22
+- Scope: local release candidate, current Railway staging exception, and public-deployment requirements
 
 ## 1. Security Objectives
 
@@ -66,7 +66,7 @@ influence a later model call.
 | Config/files to application | YAML, environment, dataset | Tampering, secret leakage, invalid policy |
 | Application to metadata DB | Audit and feedback writes | Sensitive retention, injection, integrity loss |
 | CI/deployment | Build inputs and secrets | Supply-chain compromise, secret exposure |
-| User to upload workspace | SQLite/database dump bytes and filename | parser abuse, resource exhaustion, active schema objects, cross-database access, private-data disclosure |
+| User to upload workspace | SQLite/BAK/SQL/CSV/JSON bytes and filename | parser abuse, resource exhaustion, active schema objects, cross-database access, private-data disclosure |
 
 ## 5. Threats and Required Controls
 
@@ -277,13 +277,16 @@ Future controls:
 
 Controls:
 
-- Accept only bounded SQLite database files and UTF-8 SQLite SQL dumps.
+- Accept only bounded SQLite files/backups, restricted UTF-8 SQLite SQL dumps,
+  and bounded UTF-8 CSV/JSON documents. Treat `.bak` as SQLite-only.
 - Create a fresh server-owned directory from an opaque random ID; never accept
   a client filesystem path.
 - Integrity-check database files and reject views, triggers, virtual tables,
   attached databases, system objects, and computed dump statements.
-- Import dumps only into a new isolated SQLite file under statement, byte,
-  database-size, time, table, and column budgets.
+- Import dumps or structured data only into a new isolated SQLite file under
+  statement/record, nesting, byte, database-size, time, table, and column budgets.
+- Use parameterized CSV/JSON inserts, normalize identifiers, reject wider CSV
+  rows, duplicate JSON keys, non-standard JSON numbers, and excessive nesting.
 - Inspect schema into an exact allowlist, then reopen through SQLite read-only,
   query-only, untrusted-schema mode.
 - Run every generated query through the existing single-statement read-only
@@ -294,8 +297,8 @@ Controls:
 Verification:
 
 - Tests cover `ATTACH`, views, virtual tables, `INSERT SELECT`, destructive
-  DML, computed index functions, malformed SQLite, model-generated writes,
-  lifecycle deletion, and API not-found behavior.
+  DML, computed index functions, malformed SQLite/BAK/CSV/JSON, record limits,
+  model-generated writes, lifecycle deletion, and API not-found behavior.
 
 Residual risk:
 
@@ -511,15 +514,21 @@ a replacement for deployment authentication or an external monitoring system.
 
 Residual risk remains in compromised upstream registries/actions, delayed CVE
 databases, finite scanner rules, local environment-file exposure, process-local
-metrics loss, denial of service, and any future public network exposure. Tahap
-10 must choose a secret manager, TLS/authentication/rate-limit design, hosting
-boundary, and post-deployment monitoring before public use.
+metrics loss, denial of service, and the current public staging exposure. Tahap
+10 must complete authentication/rate-limit design, monitoring, and rollback
+before approved public-demo or production use.
 
 ## 15. Tahap 10 Final Review and Disposition
 
 The current release candidate is approved only for local, synthetic-data
 demonstration. Public exposure is not approved. The review retains these
 explicit dispositions:
+
+On 2026-08-22 the owner explicitly directed creation of a public Railway
+frontend domain for staging. This operational exception does not change the
+security disposition: the route is limited to synthetic validation, lacks
+authentication/rate limiting, and must not receive private data or be treated
+as an approved public-demo/production boundary.
 
 - **Accepted locally:** deterministic fake provider, finite known-attack corpus,
   process-local metrics/history, and loopback-only Compose.

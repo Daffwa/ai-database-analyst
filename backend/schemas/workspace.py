@@ -14,7 +14,10 @@ class WorkspaceSourceType(StrEnum):
     """Supported uploaded database representations."""
 
     SQLITE_DATABASE = "sqlite_database"
+    SQLITE_BACKUP = "sqlite_backup"
     SQLITE_SQL_DUMP = "sqlite_sql_dump"
+    CSV_TABLE = "csv_table"
+    JSON_DOCUMENT = "json_document"
 
 
 class DatabaseWorkspace(StrictAPIModel):

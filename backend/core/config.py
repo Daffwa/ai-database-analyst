@@ -88,6 +88,7 @@ class AppSettings(BaseSettings):
     database_workspace_ttl_seconds: int = Field(default=1_800, ge=60, le=86_400)
     database_workspace_import_timeout_seconds: int = Field(default=10, ge=1, le=120)
     database_workspace_max_sql_statements: int = Field(default=10_000, ge=1, le=100_000)
+    database_workspace_max_records: int = Field(default=100_000, ge=1, le=1_000_000)
     database_workspace_max_tables: int = Field(default=100, ge=1, le=1_000)
     database_workspace_max_columns: int = Field(default=2_000, ge=1, le=20_000)
     database_workspace_storage_root: Path | None = None

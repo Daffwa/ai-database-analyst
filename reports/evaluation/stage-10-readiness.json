@@ -1,14 +1,15 @@
 {
   "blockers": [],
   "broken_local_links": [],
-  "checked_at": "2026-07-28T06:47:57.755443+00:00",
+  "checked_at": "2026-08-22T10:40:14.858371+00:00",
   "deployment_required_for_local_gate": false,
   "deployment_required_for_stage_gate": false,
   "external_checks": {
     "github_remote_verified": true,
     "hosted_actions_verified": true,
     "project_license_selected": true,
-    "public_deployment_performed": false
+    "public_deployment_performed": false,
+    "public_staging_route_active": true
   },
   "external_evidence_path": "reports/evaluation/stage-10-external-evidence.json",
   "github_remote": "https://github.com/Daffwa/ai-database-analyst.git",
@@ -61,26 +62,28 @@
   },
   "local_release_gate_passed": true,
   "public_deployment_evidence": {
-    "blocker": "Awaiting a user-selected platform/account, region, budget, and authentication design.",
+    "blocker": "Public Railway staging exists, but authentication, authorization, rate limiting, complete security smokes, monitoring, and tested rollback remain required before approved demo or production use.",
     "controls": {
       "authentication": false,
       "authorization": false,
-      "https": false,
-      "managed_postgresql": false,
-      "managed_secrets": false,
+      "https": true,
+      "managed_postgresql": true,
+      "managed_secrets": true,
       "monitoring": false,
       "rate_limiting": false,
       "rollback_tested": false,
       "smoke_tests": false
     },
-    "performed": false,
-    "platform": null,
-    "public_url": null
+    "environment": "staging",
+    "performed": true,
+    "platform": "Railway",
+    "provider": "fake",
+    "public_url": "https://frontend-staging-ff78.up.railway.app"
   },
   "remaining_external_actions": [
-    "Select and verify a public deployment platform, authentication, HTTPS, rate limiting, managed secrets/PostgreSQL, monitoring, smoke tests, and rollback."
+    "Harden the existing Railway staging route with authentication, authorization, request limits, rate limiting, complete security smokes, monitoring, and rollback."
   ],
-  "report_version": "stage-10-readiness-v2",
+  "report_version": "stage-10-readiness-v3",
   "screenshot_dimensions": {
     "stage-9-ui-details.jpg": [
       1280,

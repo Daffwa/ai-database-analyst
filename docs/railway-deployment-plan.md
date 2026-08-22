@@ -1,14 +1,16 @@
 # Railway Deployment Plan
 
 - Date: 2026-08-22
-- Status: private staging health-gated in Singapore; no public domain
-- Target: private staging before any authenticated public demo
+- Status: public staging frontend active in Singapore; security controls pending
+- Target: temporary staging validation before an authenticated public demo
 - Source repository: `Daffwa/ai-database-analyst`
 
 ## Goal
 
-Translate the verified local Compose topology into Railway services without
-claiming a public deployment or exposing unauthenticated application routes.
+Translate the verified local Compose topology into Railway services, preserve
+private API/database networking, and track the owner-directed temporary public
+frontend without claiming production readiness while authentication and abuse
+controls remain absent.
 
 ## Completed connection work
 
@@ -54,6 +56,12 @@ claiming a public deployment or exposing unauthenticated application routes.
   deployment triggers to `agent/railway-staging`, persist their dedicated
   Dockerfile paths, and pass fresh GitHub-source health-gated deployments from
   commit `21252e2`.
+- [x] Under the owner's explicit instruction, generate the frontend Railway
+  domain `frontend-staging-ff78.up.railway.app` on port 8501. Keep API and
+  PostgreSQL private.
+- [x] Verify public HTTPS/root rendering, `/_stcore/health` (`200 ok`), a clean
+  browser console, and a synthetic end-to-end query returning customer count
+  `59` through the private API and Railway PostgreSQL.
 
 ## Intended service mapping
 
@@ -62,7 +70,7 @@ claiming a public deployment or exposing unauthenticated application routes.
 | `db` | Managed PostgreSQL | Private only |
 | `bootstrap` | Ephemeral `Dockerfile.bootstrap` job, deleted after success | None retained |
 | `api` | FastAPI from `Dockerfile.api` | Private, no domain |
-| `frontend` | Streamlit from `Dockerfile.frontend` | No public domain until authentication and rate limits exist |
+| `frontend` | Streamlit from `Dockerfile.frontend` | Public staging domain on port 8501; unauthenticated and not production-approved |
 
 Use Railway variable references and private networking for database and
 service-to-service traffic. Set explicit service `PORT` values of `8000` for
@@ -75,8 +83,9 @@ bind those ports. Configure healthcheck paths `/api/v1/health` and
 - [ ] Merge PRs #27, #28, and #32 in dependency order, then move the durable
   GitHub deployment triggers from `agent/railway-staging` to `main` and deploy
   an exact reviewed `main` commit.
-- [ ] Select and implement authentication, per-user authorization, request/body
-  limits, rate limiting, and abuse controls before generating a public domain.
+- [ ] Implement authentication, per-user authorization, request/body limits,
+  rate limiting, and abuse controls on the already-public staging route before
+  treating it as an approved demo or promoting it to production.
 - [ ] Review Gemini data governance before adding a real-provider credential;
   otherwise deploy with `fake` / `fake-deterministic` only.
 - [x] Pass hosted checks for the dedicated one-shot `Dockerfile.bootstrap`,
@@ -86,10 +95,12 @@ bind those ports. Configure healthcheck paths `/api/v1/health` and
 - [x] Pass Railway deployment healthchecks for `/api/v1/health` and
   `/_stcore/health` and confirm the Streamlit-reported raw external IP is not
   reachable without Railway public networking.
-- [ ] Run success, clarification, blocked, timeout, privacy, and explicit
-  database read-only functional smoke tests through an authenticated/private
-  test channel. Railway SSH was intentionally not trusted because Railway does
-  not publish an authoritative host-key fingerprint.
+- [x] Run the synthetic success smoke through the public frontend: the bounded
+  request completed with safe generated/executed SQL and customer count `59`.
+- [ ] Run clarification, blocked, timeout, privacy, authorization, metrics, and
+  explicit database read-only functional smokes. Railway SSH was intentionally
+  not trusted because Railway does not publish an authoritative host-key
+  fingerprint.
 - [x] Record source/deployment/image identifiers, rollback target, cost-limit
   state, and hosted evidence without storing secret values.
 
@@ -115,9 +126,11 @@ bind those ports. Configure healthcheck paths `/api/v1/health` and
 ## Stop conditions
 
 Do not create Railway compute/database resources without an approved budget.
-Do not generate a public domain while application authentication and rate
-limiting are absent. Do not copy local `.env` values into Git, documentation,
-chat, build arguments, or image layers.
+Do not add another public domain or promote this route to production while
+application authentication and rate limiting are absent. The existing staging
+domain was created under explicit owner direction and is recorded as an open
+security risk. Do not copy local `.env` values into Git, documentation, chat,
+build arguments, or image layers.
 
 ## Current Railway references
 

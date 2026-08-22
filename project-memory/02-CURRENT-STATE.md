@@ -5,11 +5,12 @@
   through Phase N (#26)`
 - Current working branch: `agent/railway-staging`
 - Current implementation: uploaded-SQLite workspace commit `fe7fcfe` is pushed
-  in stacked PR #32, based on the Point-5 policy/holdout branch in PR #28.
+  in stacked PR #32; uncommitted local work extends it with SQLite `.bak`, CSV,
+  and JSON ingestion.
 - Review: PR #27 is ready; PR #28 is green; PR #32 is ready and mergeable, and its
   implementation commit passed every reported hosted check.
-- Active goal: preserve the health-gated private Railway staging deployment
-  while completing its remaining private functional smoke evidence
+- Active goal: complete and publish the bounded upload-format extension while
+  preserving the public-staging security caveat
 - Active plans: `docs/real-llm-agent-implementation-plan.md` and
   `docs/uploaded-database-workspace-plan.md` plus
   `docs/railway-deployment-plan.md`
@@ -30,15 +31,21 @@
 
 ## Uploaded database workspace
 
-- Status: implemented, locally verified, and hosted-verified on 2026-08-22.
-- Streamlit accepts `.db`, `.sqlite`, `.sqlite3`, and restricted SQLite `.sql`,
-  shows the uploaded schema, routes prompts to the active upload, and supports
-  explicit deletion.
+- Status: the original SQLite/SQL path is hosted-verified; the `.bak`/CSV/JSON
+  extension is implemented and locally verified but not yet committed or
+  deployed.
+- Streamlit accepts `.db`, `.sqlite`, `.sqlite3`, valid SQLite `.bak`,
+  restricted SQLite `.sql`, UTF-8 CSV, and bounded JSON; it shows the uploaded
+  schema, routes prompts to the active upload, and supports explicit deletion.
 - FastAPI owns opaque expiring workspaces and create/schema/query/delete
   endpoints. Upload paths and credentials are never returned.
 - SQL dump import permits only `CREATE TABLE`, `CREATE INDEX`, literal
   `INSERT ... VALUES`, and transaction markers. Every model query still passes
   the schema-derived SQL AST allowlist and a read-only SQLite executor.
+- CSV becomes one filename-derived `TEXT` table with normalized unique headers;
+  JSON supports a record/list or table-array object, preserves compatible
+  scalar types, and stores nested values as JSON text. SQL Server `.bak` is
+  rejected; `.bak` is SQLite-only.
 - Uploads never execute in or attach to either PostgreSQL database and are not
   written to durable metadata history. The feature remains loopback-only.
 - The fake provider can inspect schema but cannot generate arbitrary-schema
@@ -47,12 +54,13 @@
 
 ## Immediate next action
 
-Choose a trusted private/authenticated test channel for success,
-clarification, blocked, timeout, privacy, and explicit read-only smoke cases.
-PostgreSQL, API, and frontend are health-gated and running privately in
-Singapore under the owner's Hobby-plan authorization; bootstrap is complete
-and removed, and no public domain exists. Authentication remains required
-before any public domain.
+The owner explicitly directed creation of the public staging frontend domain
+`https://frontend-staging-ff78.up.railway.app`. PostgreSQL and API remain
+private; all three retained services are healthy in Singapore. Public HTTPS,
+Streamlit health, browser rendering, console health, and the synthetic customer
+count query passed end to end. Authentication, tenant authorization,
+request/body limits, and rate limiting are now the immediate remediation gate;
+do not use the route for private data or describe it as production-ready.
 Review PR #32 and merge the stacked PRs #27, #28, and #32 in dependency order
 when desired.
 For Point 5, an independent curator
@@ -63,8 +71,9 @@ separate authorization for the exact maximum-54 one-time holdout run.
 
 ## Decisions currently awaiting the user
 
-- Select authentication, tenant authorization, request limits, and rate
-  limiting before any public frontend domain is generated.
+- Implement authentication, tenant authorization, request limits, and rate
+  limiting on the existing public staging frontend before approved demo use or
+  production promotion.
 - Select an independent curator for the required 30-case replacement holdout.
   The development agent must receive only its public manifest before freeze;
   the private payload is supplied to automation only after freeze.
@@ -91,17 +100,23 @@ The following memory/plan work was created on 2026-08-07. Always verify with
 
 ## Latest verification evidence
 
+- The local upload-format extension passes Ruff format/lint, strict Mypy on 183
+  sources, and the full offline suite: 487 passed, 4 PostgreSQL skips, 90.10%
+  coverage. Focused importer/config/API verification passed 46 tests. No live
+  provider or holdout call was made.
 - Railway CLI v5.43.1 is authenticated with access limited to this project and
   linked to `staging`. PostgreSQL, FastAPI, and Streamlit report `SUCCESS` with
-  one Singapore replica each and zero domains; production is empty. API and
+  one Singapore replica each; production is empty. API and
   frontend are connected to `Daffwa/ai-database-analyst` on
-  `agent/railway-staging`; verified attachment deployments `a581c51a` and
-  `11cef924` built clean commit `21252e2` with their dedicated Dockerfiles and
-  passed their healthchecks. Later branch pushes auto-deploy and replace those
-  verification deployments only after the same health gates pass. Bootstrap
-  seeded the pinned counts and migrated to head, then its privileged variables
-  and service were removed. Provider remains fake and no real-provider key
-  exists.
+  `agent/railway-staging`; current API deployment `7f4a7fac` and frontend
+  deployment `62e8ccff` built commit `ffcacde` with their dedicated Dockerfiles
+  and passed their healthchecks. The frontend now exposes one Railway service
+  domain, `frontend-staging-ff78.up.railway.app`, targeting port 8501; API and
+  PostgreSQL expose no public domain/proxy. Browser QA found no console errors,
+  and the synthetic customer-count request completed with result `59`.
+  Bootstrap seeded the pinned counts and migrated to head, then its privileged
+  variables and service were removed. Provider remains fake and no
+  real-provider key exists.
 - PR #33 passed all hosted checks on `eb90de0`, including Python 3.11/3.12,
   PostgreSQL integration, Compose, source/container security, CodeQL, and
   CodeRabbit. The first empty database/volume was replaced after its generated

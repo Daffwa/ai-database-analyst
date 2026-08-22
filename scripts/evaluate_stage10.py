@@ -144,6 +144,18 @@ def _public_deployment_verified(evidence: dict[str, object]) -> bool:
     )
 
 
+def _public_staging_route_active(evidence: dict[str, object]) -> bool:
+    deployment = _mapping(evidence.get("public_deployment"))
+    public_url = deployment.get("public_url")
+    return (
+        deployment.get("performed") is True
+        and deployment.get("platform") == "Railway"
+        and deployment.get("environment") == "staging"
+        and isinstance(public_url, str)
+        and public_url.startswith("https://")
+    )
+
+
 def main() -> int:
     required_documents = (
         ROOT / "README.md",
@@ -203,10 +215,12 @@ def main() -> int:
     external_evidence = _json(EXTERNAL_EVIDENCE_PATH)
     hosted_actions_verified = _hosted_actions_verified(external_evidence)
     public_deployment_performed = _public_deployment_verified(external_evidence)
+    public_staging_route_active = _public_staging_route_active(external_evidence)
     external_checks = {
         "project_license_selected": (ROOT / "LICENSE").exists(),
         "github_remote_verified": remote is not None and "github.com" in remote.lower(),
         "hosted_actions_verified": hosted_actions_verified,
+        "public_staging_route_active": public_staging_route_active,
         "public_deployment_performed": public_deployment_performed,
     }
     stage_gate_passed = (
@@ -216,7 +230,7 @@ def main() -> int:
         and external_checks["hosted_actions_verified"]
     )
     report = {
-        "report_version": "stage-10-readiness-v2",
+        "report_version": "stage-10-readiness-v3",
         "checked_at": datetime.now(UTC).isoformat(),
         "local_checks": local_checks,
         "local_release_gate_passed": local_release_gate_passed,
@@ -250,8 +264,8 @@ def main() -> int:
             if blocked
         ],
         "remaining_external_actions": [
-            "Select and verify a public deployment platform, authentication, HTTPS, "
-            "rate limiting, managed secrets/PostgreSQL, monitoring, smoke tests, and rollback."
+            "Harden the existing Railway staging route with authentication, authorization, "
+            "request limits, rate limiting, complete security smokes, monitoring, and rollback."
         ]
         if not public_deployment_performed
         else [],

@@ -3,6 +3,60 @@
 Append new entries at the top so the latest handoff is easy to find. Never store
 secrets or raw sensitive payloads.
 
+## 2026-08-22 - SQLite BAK, CSV, and JSON uploads implemented
+
+### Outcome
+
+- Extended the existing opaque SQLite workspace importer to accept valid
+  SQLite `.bak`, UTF-8 CSV, and bounded JSON in addition to the existing
+  `.db`/`.sqlite`/`.sqlite3`/restricted `.sql` formats.
+- CSV becomes one filename-derived table with preserved text values,
+  normalized unique headers, `NULL` padding for short rows, and rejection for
+  rows wider than the header. JSON supports one record/list or a table-array
+  object, preserves compatible scalar storage, stores nested values as compact
+  JSON text, and rejects duplicate keys/non-standard numbers/excessive depth.
+- Added a 100,000-record default budget plus early table/column checks. All new
+  writes use parameters into a new temporary SQLite file; the existing schema
+  allowlist, AST policy, read-only reopening, TTL, and deletion remain intact.
+- `.bak` remains SQLite-only. SQL Server backup restoration is explicitly
+  rejected and must happen outside the application.
+
+### Verification and boundary
+
+- Focused importer/config/API tests: 46 passed.
+- Full offline suite: 487 passed, 4 PostgreSQL skips, 90.10% coverage.
+- Ruff format/lint and strict Mypy on 183 sources passed; provider and holdout
+  calls were zero.
+- The extension is local/uncommitted and not yet deployed. Public staging still
+  lacks authentication, tenant authorization, rate limiting, and abuse controls;
+  do not upload private data there.
+
+## 2026-08-22 - Railway public staging domain created and smoke-tested
+
+### Outcome
+
+- Under the owner's explicit direction, generated the Railway frontend domain
+  `frontend-staging-ff78.up.railway.app` for staging port 8501. API and
+  PostgreSQL remain on Railway private networking.
+- Verified the public root and `/_stcore/health` over HTTPS; both returned 200
+  and the health body was `ok`.
+- Browser QA rendered the full Streamlit application with no console warning or
+  error. The primary synthetic question completed successfully through the
+  private API and Railway PostgreSQL, producing the grounded customer count
+  `59` and safe bounded-agent audit output.
+- Railway reported API, frontend, and PostgreSQL deployments as `SUCCESS`; HTTP
+  assets and health requests returned 200 and API logs recorded the bounded
+  request completion without a traceback/exception/failure.
+
+### Boundary
+
+- The staging provider remains `fake` / `fake-deterministic`; no real-provider
+  credential was added.
+- Authentication, tenant authorization, request/body limits, rate limiting,
+  abuse controls, and the remaining security smokes are absent. The public URL
+  is temporary staging, must not receive private data, and is not a production
+  or approved public-demo boundary.
+
 ## 2026-08-22 - Railway services attached to GitHub staging source
 
 ### Outcome

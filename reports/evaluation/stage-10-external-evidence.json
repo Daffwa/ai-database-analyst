@@ -1,6 +1,6 @@
 {
-  "checked_at": "2026-07-28T06:40:11Z",
-  "evidence_version": "stage-10-external-v1",
+  "checked_at": "2026-08-22T08:44:17Z",
+  "evidence_version": "stage-10-external-v2",
   "hosted_actions": {
     "required_workflows": {
       "CI": {
@@ -35,21 +35,23 @@
     "verified_commit": "6002469142631a9b10f02c2eaa233bbe2f144fbf"
   },
   "public_deployment": {
-    "blocker": "Awaiting a user-selected platform/account, region, budget, and authentication design.",
+    "blocker": "Public Railway staging exists, but authentication, authorization, rate limiting, complete security smokes, monitoring, and tested rollback remain required before approved demo or production use.",
     "controls": {
       "authentication": false,
       "authorization": false,
-      "https": false,
-      "managed_postgresql": false,
-      "managed_secrets": false,
+      "https": true,
+      "managed_postgresql": true,
+      "managed_secrets": true,
       "monitoring": false,
       "rate_limiting": false,
       "rollback_tested": false,
       "smoke_tests": false
     },
-    "performed": false,
-    "platform": null,
-    "public_url": null
+    "environment": "staging",
+    "performed": true,
+    "platform": "Railway",
+    "provider": "fake",
+    "public_url": "https://frontend-staging-ff78.up.railway.app"
   },
   "repository": {
     "default_branch": "main",

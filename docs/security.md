@@ -105,13 +105,20 @@ The primary environment settings are:
 
 ## Uploaded SQLite Workspace Controls
 
-Uploaded database bytes are stored only in opaque, expiring server-owned
+Uploaded SQLite, SQLite-backup, SQL, CSV, and JSON bytes are stored only in opaque, expiring server-owned
 temporary directories and are removed on delete, expiry cleanup, or API
 shutdown. SQLite dump import is deny-by-default: only `CREATE TABLE`,
 `CREATE INDEX`, literal `INSERT ... VALUES`, and transaction markers are
 accepted. Views, triggers, virtual tables, attachments, computed
 imports/indexes, and all other statements are rejected before SQLite
 execution.
+
+CSV and JSON never become executable SQL. They are decoded as UTF-8, parsed
+under byte/time/record/depth limits, assigned bounded unique identifiers, and
+inserted with parameters into a fresh SQLite file. JSON duplicate keys and
+non-standard numbers fail closed. `.bak` is accepted only when its content has
+the SQLite file header; SQL Server backup restoration is outside the trust
+boundary.
 
 Uploaded database queries receive a snapshot-derived table/column allowlist,
 the normal SQL AST policy, response/time limits, and a separate SQLite

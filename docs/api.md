@@ -12,7 +12,7 @@ schema at `/api/v1/openapi.json`. Production disables the interactive docs.
 | `POST` | `/agent/continue` | resume an issued clarification using a canonical option ID | deployment auth and continuation claim |
 | `POST` | `/agent/cancel` | consume an unused clarification continuation | deployment auth and continuation claim |
 | `GET` | `/schema` | schema-only Database Explorer snapshot | deployment auth required |
-| `POST` | `/workspaces` | create an expiring workspace from raw SQLite/SQL bytes and `X-Upload-Filename` | loopback only; deployment auth and upload quota required before public use |
+| `POST` | `/workspaces` | create an expiring SQLite-backed workspace from supported upload bytes and `X-Upload-Filename` | loopback only; deployment auth and upload quota required before public use |
 | `GET` | `/workspaces/{id}/schema` | inspect the uploaded workspace schema | possession of ID is not authorization; deployment auth required |
 | `POST` | `/workspaces/{id}/query` | generate, validate, and execute against only that uploaded SQLite workspace | deployment auth and per-user workspace ownership required before public use |
 | `DELETE` | `/workspaces/{id}` | destroy the workspace and temporary database | deployment auth and per-user workspace ownership required before public use |
@@ -75,8 +75,9 @@ durable continuation fields, and the model-qualification boundary.
 The upload body is raw `application/octet-stream`; the percent-encoded UTF-8
 filename is carried in the bounded `X-Upload-Filename` header so filenames do
 not enter ordinary access-log URLs. Multipart parsing is intentionally not required. The
-API accepts SQLite `.db`, `.sqlite`, `.sqlite3`, and restricted SQLite `.sql`
-files. Example:
+API accepts SQLite `.db`, `.sqlite`, `.sqlite3`, SQLite `.bak`, restricted
+SQLite `.sql`, `.csv`, and `.json` files. SQL Server `.bak` is not accepted;
+restore it externally and export a supported format first. Example:
 
 ```powershell
 $path = Resolve-Path .\sample.sql
@@ -107,3 +108,13 @@ other than literal inserts, malformed encodings, and budget overruns. The
 resulting file is integrity-checked, opened with SQLite `mode=ro`,
 `query_only=ON`, and `trusted_schema=OFF`, and queried only after the normal
 SQLGlot allowlist policy passes.
+
+CSV uses a required header row and becomes one SQLite table named from the
+filename. Its values remain text; short rows receive trailing `NULL` fields,
+while rows wider than the header fail closed. Headers are normalized into
+bounded unique identifiers. JSON accepts one top-level object, an array of
+objects/scalars, or a top-level object whose values are table arrays. Native
+numbers, strings, booleans, and nulls are preserved where SQLite supports
+them; nested arrays/objects are stored as compact JSON text. Duplicate JSON
+keys, non-standard numeric constants, excessive nesting, invalid UTF-8, and
+record-budget overruns are rejected.
