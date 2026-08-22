@@ -27,6 +27,9 @@ secrets or raw sensitive payloads.
 - The first hosted quality run exposed one stale Stage 10 assertion that still
   required the pre-selection phrase. The contract now verifies Railway is
   connected while no service/database exists and public routing stays blocked.
+- Corrective commit `d858001` then passed every hosted PR #33 gate: Python
+  3.11/3.12 quality, PostgreSQL integration, clean Compose, source/container
+  security, CodeQL, and CodeRabbit.
 
 ## 2026-08-22 - Uploaded workspace isolated, pushed, and hosted-verified
 

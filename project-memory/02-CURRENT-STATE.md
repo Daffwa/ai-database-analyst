@@ -95,6 +95,9 @@ The following memory/plan work was created on 2026-08-07. Always verify with
   explicitly linked to `staging`, and zero services, databases/buckets,
   volumes, domains, or deployments. No resource, public URL, application
   secret, provider call, or cost was created by these connection steps.
+- Railway documentation PR #33 passed all hosted gates on corrective commit
+  `d858001`, including Python 3.11/3.12 quality, PostgreSQL integration, clean
+  Compose, source/container security, CodeQL, and CodeRabbit.
 - Uploaded workspace gate passed 479 tests with four unavailable PostgreSQL
   skips and 90.34% coverage. Ruff, strict Mypy on 183 sources, focused API/
   importer/security tests, and the complete offline suite passed. Tests cover

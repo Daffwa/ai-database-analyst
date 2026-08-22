@@ -24,6 +24,9 @@ claiming a public deployment or exposing unauthenticated application routes.
   the repository.
 - [x] Update the Stage 10 documentation contract to require the new Railway
   connection state while preserving the no-service and no-public-routing gates.
+- [x] Pass PR #33 hosted gates on corrective commit `d858001`: Python
+  3.11/3.12 quality, PostgreSQL integration, clean Compose, source/container
+  security, CodeQL, and CodeRabbit.
 
 ## Intended service mapping
 
