@@ -95,11 +95,13 @@ The following memory/plan work was created on 2026-08-07. Always verify with
   linked to `staging`. PostgreSQL, FastAPI, and Streamlit report `SUCCESS` with
   one Singapore replica each and zero domains; production is empty. API and
   frontend are connected to `Daffwa/ai-database-analyst` on
-  `agent/railway-staging`; deployments `a581c51a` and `11cef924` build clean
-  commit `21252e2` with their dedicated Dockerfiles and pass their healthchecks.
-  Bootstrap seeded the pinned counts and migrated to head, then its privileged
-  variables and service were removed. Provider remains fake and no
-  real-provider key exists.
+  `agent/railway-staging`; verified attachment deployments `a581c51a` and
+  `11cef924` built clean commit `21252e2` with their dedicated Dockerfiles and
+  passed their healthchecks. Later branch pushes auto-deploy and replace those
+  verification deployments only after the same health gates pass. Bootstrap
+  seeded the pinned counts and migrated to head, then its privileged variables
+  and service were removed. Provider remains fake and no real-provider key
+  exists.
 - PR #33 passed all hosted checks on `eb90de0`, including Python 3.11/3.12,
   PostgreSQL integration, Compose, source/container security, CodeQL, and
   CodeRabbit. The first empty database/volume was replaced after its generated

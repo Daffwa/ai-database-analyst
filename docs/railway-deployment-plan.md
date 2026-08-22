@@ -93,14 +93,16 @@ bind those ports. Configure healthcheck paths `/api/v1/health` and
 - [x] Record source/deployment/image identifiers, rollback target, cost-limit
   state, and hosted evidence without storing secret values.
 
-## Current deployment evidence
+## GitHub-source connection evidence
 
-- Source: public GitHub repository `Daffwa/ai-database-analyst`, branch
-  `agent/railway-staging`, clean commit
-  `21252e297b42b986ff5cd9ea4261b81de2c4b607`.
-- API deployment `a581c51a-cd6d-4e5e-a0ff-42ec84070cab`; image
+- Source attachment was verified from public GitHub repository
+  `Daffwa/ai-database-analyst`, branch `agent/railway-staging`, clean commit
+  `21252e297b42b986ff5cd9ea4261b81de2c4b607`. Each later push to that branch
+  automatically replaces these verification deployments with the new branch
+  head after its healthcheck passes.
+- API verification deployment `a581c51a-cd6d-4e5e-a0ff-42ec84070cab`; image
   `sha256:da8e454902dacd8463c86efe99edd056705b2aeaf97d31a59895fab098f990af`.
-- Frontend deployment `11cef924-8f62-4849-b721-44c79a61d07e`; image
+- Frontend verification deployment `11cef924-8f62-4849-b721-44c79a61d07e`; image
   `sha256:fdb7fd65073b491a75f25996ec3d81cdee1f98a9ffba523ff78a0a3dc3b86281`.
 - Successful bootstrap image:
   `sha256:946e474e2b19b76a1e73768542a74524d1d9cf383a4bac8afa0835d2ac5c2a86`.

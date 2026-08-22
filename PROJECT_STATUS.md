@@ -32,9 +32,9 @@
   applied Alembic to head, removed its privileged variables, and was deleted.
 - API and frontend are connected to the public GitHub repository on
   `agent/railway-staging` and are `SUCCESS` on Railway-gated healthcheck paths.
-  They use clean commit `21252e2`, their dedicated Dockerfiles, and one running
-  replica each; no public domain, public database proxy, or real provider
-  credential exists.
+  Every push to that branch automatically deploys through their dedicated
+  Dockerfiles; each service has one running replica. No public domain, public
+  database proxy, or real provider credential exists.
 - Public exposure still requires authentication, tenant authorization,
   request limits, rate limiting, and verified rollback/monitoring controls.
 - Remaining deployment work is functional smoke through an authenticated or
